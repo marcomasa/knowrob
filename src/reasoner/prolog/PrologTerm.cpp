@@ -677,7 +677,7 @@ bool PrologTerm::putCompound(CompoundFormula *phi, term_t pl_term, const functor
 	}
 }
 
-std::string PrologTerm::getVarName(term_t plTerm) {
+char* PrologTerm::getVarName(term_t plTerm) {
 	char *s;
 	if (PL_get_chars(plTerm, &s, CVT_VARIABLE)) {
 		return s;
@@ -767,11 +767,10 @@ TermPtr PrologTerm::toKnowRobTerm(const term_t &t) { //NOLINT
 			// construct Predicate object
 			return std::make_shared<Function>(functorName, arguments);
 		}
-		case PL_VARIABLE: {
-			// TODO: could reuse existing variables here.
-			// TODO: could support a mapping to internal names here
+
+		case PL_VARIABLE:
 			return std::make_shared<Variable>(getVarName(t));
-		}
+
 		case PL_ATOM: {
 			atom_t atom;
 			if (!PL_get_atom(t, &atom)) break;

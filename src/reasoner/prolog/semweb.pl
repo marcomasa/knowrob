@@ -396,7 +396,6 @@ sw_instance_of_expr1(Resource, class(Cls)) :-
 
 sw_instance_of_expr1(Resource, one_of(ExprList)) :-
     !,
-    % TODO: take into account sameAs
     member(individual(Resource), ExprList).
 
 sw_instance_of_expr1(Resource, union_of(ExprList)) :-

@@ -311,7 +311,6 @@ esg_query_(ESG, <(E0,E1)) :-
   esg:esg_endpoint(ESG,_,E0,N0),
   esg:esg_endpoint(ESG,_,E1,N1),
   N0 \= N1,
-  % TODO: faster path finding: store index with each node, then compare index instead.
   once(esg_path(ESG,N0,N1,_)).
 
 esg_query_(ESG, =(E0,E1)) :-

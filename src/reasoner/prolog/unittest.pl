@@ -466,7 +466,6 @@ xunit_failure_term_(Error,
 	element(failure, [ type=error, message=Msg ], [Txt])) :-
 	( atom(Error)
 	-> Msg = Error
-	% TODO: not allowed to keep the term in case of XML output? it would be nice for term output
 	;  term_to_atom(Error,Msg)
 	),
 	Txt=Msg.

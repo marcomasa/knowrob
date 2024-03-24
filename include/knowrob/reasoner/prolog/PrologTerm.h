@@ -243,7 +243,7 @@ namespace knowrob {
 		 * @param plTerm a Prolog variable term
 		 * @return the name of the variable
 		 */
-		static std::string getVarName(term_t plTerm);
+		static char* getVarName(term_t plTerm);
 
 		/**
 		 * @return a term representing the empty list

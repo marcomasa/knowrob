@@ -25,9 +25,18 @@ void MongoTaxonomy::update(
 	// below performs the server-side data transformation for updating hierarchy relations
 	// such as rdf::type.
 	// However, there are many steps for large ontologies so this might consume some time.
-	// TODO: list of parents could be supplied as a constant in aggregation queries below.
-	//       currently parents are computed in the query, maybe it would be a bit faster using a constant
-	//       baked into the query.
+	// TODO: MongoTaxonomy::update is rather slow and should be optimized.
+	//       The easiest way would be if one could use $merge in a pipeline where afterwards
+	// 	     the merged documents are accessible in the same pipeline. This actually seems to be possible
+	//       but the documentation is not clear about it. in my tests I observed random behaviour,
+	//       sometimes all tests passed, sometimes not. So it seems to be at least that ordering has an effect.
+	//       not sure if one could make it work with $merge which would be the most efficient way.
+	//       some other ideas:
+	//       (1) parents could be baked into query instead of retrieved via a sub-query.
+	//           this would have the advantage that the vocabulary is already updated with all assertions before
+	//           which is not the case for database records.
+	//       (2) some steps are independent, and could run in parallel.
+	//       (3) maybe bulk operations can be used
 
 	bson_t pipelineDoc = BSON_INITIALIZER;
 
@@ -72,9 +81,6 @@ void MongoTaxonomy::update(
 	}
 
 	// update property assertions
-	// TODO: below steps are independent, and could run in parallel.
-	//       could bake an array of properties into pipeline,
-	//       or rather use a bulk operation.
 	for (auto &newProperty: visited) {
 		bson_reinit(&pipelineDoc);
 

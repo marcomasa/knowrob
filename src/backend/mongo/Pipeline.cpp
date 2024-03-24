@@ -103,7 +103,7 @@ void Pipeline::appendUnion(const knowrob::GraphUnion &builtin) {
 	// TODO: Support Union operation in MongoDB knowledge graph.
 	//       afaik, this can only be achieved through multiple $lookup stages
 	//       then use $concatArrays and $unwind. $union does not work with variables!
-	// TODO: let variables need to be accessed with $$, so passing v_VARS into pipeline
+	//       let variables need to be accessed with $$, so passing v_VARS into pipeline
 	//       is not enough to make it work. mainly affects the triple lookup code.
 	/*
 aggregate_disjunction(FindallStages, StepVars, Pipeline, StepVars) :-

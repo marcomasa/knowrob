@@ -253,7 +253,9 @@ bool MongoKnowledgeGraph::removeAll(const TripleContainerPtr &triples) {
 				  });
 	bulk->execute();
 
-	// TODO: handle hierarchy updates
+	// TODO: Update documents when "taxonomic" triples are removed.
+	//       In this case, some documents may need to be updated as the class hierarchy
+	//       may have changed, and is stored in the documents.
 
 	return true;
 }

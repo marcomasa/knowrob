@@ -32,7 +32,6 @@ occurs(Evt) ?>
 occurs(Evt) +>
 	% read time scope provided by e.g. during/2 as in `occurs(Evt) during [Since,Until]`
 	% from compile context.
-	% TODO: this will be [0,inf] if not provided? is this a problem?
 	context(query_scope(QScope)),
 	pragma(mongolog_time_scope(QScope, Since0, Until0)),
 	pragma(mng_strip_operator(Since0,_,Since1)),
