@@ -88,9 +88,14 @@ bool Transaction::commit(const TripleContainerPtr &triples) {
 	static auto v_reification = std::make_shared<Variable>("reification");
 	if (isRemoval_ && !queryable_->supports(BackendFeature::TripleContext)) {
 		// FIXME: The name lookup only works in case the queryable backend does store reified triples.
-		//        (1) we could search for a queryable backend without context support and use this instead, or
+		//        - current: commit generates a ReificationContainer over FramedTriples, and the container forms
+		//        ground triples with explicit names of reified individuals for removal.
+		//        (1) we could search for a queryable backend without context support and use this instead
 		//        (2) we could store the reified names also in backends that support context, such they
 		//            can be queried from any queryable backend.
+		//        (3) remove for reified backends could use "removeAllMatching" instead, where the reified
+		//           name is used as a variable in the query. but this interface was removed from DataBackend class!
+		//           or allow none value as subject in removals, could be ok in the backends.
 		// Note: the container type does not provide a size method because it internally uses a generator
 		// without knowing when it will end. Also, container with additional filtering could be implemented.
 		// So we need to resize the reifiedNames vector while looping over the triples, but we can use

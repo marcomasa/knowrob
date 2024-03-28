@@ -39,7 +39,6 @@ class ActionStreamer(object):
         self.end_('ReleaseMotion',[using])
 
     def get_iri_(self,x):
-        # TODO rather use concepts from EASE ontology
         return 'http://knowrob.org/kb/parser-test.owl#'+x
 
     def make_token_(self,tok_polarization,tok_type,tok_objs):

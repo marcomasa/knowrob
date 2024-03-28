@@ -78,7 +78,6 @@ tf_republish_load_transforms(Time) :-
 	tf_mng_lookup_all(Transforms, Time),
 	forall(
 	    (   member([Ref,Frame,Pos,Rot],Transforms),
-	        % FIXME avoid this elsewhere
 	        Ref \= Frame,
 	        \+ atom_concat('/',Ref,Frame),
 	        \+ atom_concat('/',Frame,Ref)
@@ -213,13 +212,10 @@ is_at_direct(ObjFrame,PoseData,QS,FS) :-
 	time_scope_data(QS,[QSince,QUntil]),
 	mng_strip_operator(QSince, _, QSince0),
 	mng_strip_operator(QUntil, _, QUntil0),
-	% FIXME: this is pretty slow for "deep" trees as for each
-	%        level one call of is_at_direct is made.
-	%        problem is that it is difficult to find all parents
-	%        of a frame in mongo aggregation.
-	%        - $graphLookup would need to be used, but with additional
-	%        filter to only follow the one path (even possible?)
-	%        but if possible it would safe a lot IO here.
+	% FIXME: this is pretty slow for "deep" trees as for each level one call of is_at_direct is made.
+	%        problem is that it is difficult to find all parents of a frame in mongo aggregation.
+	%        - $graphLookup would need to be used, but with additional filter to only follow the one path (even possible?)
+	%           but if possible it would safe a lot IO here.
 	%        - or change datamodel to include this info in each document
 	% 
 	tf_mng_lookup(ObjFrame,QSince0,QUntil0,PoseData,FSince,FUntil),

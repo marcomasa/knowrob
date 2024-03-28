@@ -427,8 +427,6 @@ action_([G0,S0,A0]->[G3,S2,A2],
   }.
 
 %%
-% TODO: there is always also a thread that detects the sub-action starting at the current token.
-%       It would be good to wait on this thread here, and to integrate its result as sub-action.
 sub_action_([G0,S0,A0]->[G_n,S_n,A_n],
              Parent_WF,action(WF,Tsk,Constituents)) -->
   { parser_get_grammar_(_,WF,Tsk,[G1|TskConditions]),

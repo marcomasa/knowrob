@@ -89,10 +89,6 @@ annotation_property('http://www.w3.org/2000/01/rdf-schema#seeAlso').
 annotation_property('http://www.w3.org/2000/01/rdf-schema#label').
 annotation_property('http://www.w3.org/2002/07/owl#versionInfo').
 
-% TODO: set predicate properties, rdf_db supports some
-%   - rdf_predicate_property(?Predicate, ?Property)
-%       - symmetric(Bool), inverse_of(Inverse), transitive(Bool)
-
 		 /*******************************
 		  *          QUERYING           *
 		  *******************************/
@@ -524,7 +520,8 @@ subclass_expr2(min(Card1,Property1), min(Card2,Property2)) :-
 %
 sw_assert_triple(Subject, Predicate, Object) :-
     sw_default_graph(Graph),
-    sw_assert_triple(Subject, Predicate, Object, Graph).
+    sw_assert_triple(Subject, Predicate, Object, Graph),
+    sw_set_predicate(Subject, Predicate, Object).
 
 %% sw_assert_triple(+Subject, +Predicate, +Object, +Graph) is det.
 %
@@ -536,6 +533,17 @@ sw_assert_triple(Subject, Predicate, Object, Graph) :-
     -> sw_assert_dataproperty(Subject, Predicate, Object, Graph)
     ;  sw_assert_objectproperty(Subject, Predicate, Object, Graph)
     ).
+
+%%
+% Define a property of a predicate.
+%
+sw_set_predicate(P, owl:inverseOf, P_inv) :-
+	!, rdf_set_predicate(P, inverse_of(P_inv)).
+sw_set_predicate(P, rdf:type, owl:'TransitiveProperty') :-
+	!, rdf_set_predicate(P, transitive(true)).
+sw_set_predicate(P, rdf:type, owl:'SymmetricProperty') :-
+	!, rdf_set_predicate(P, symmetric(true)).
+sw_set_predicate(_, _, _).
 
 %%
 sw_assert_objectproperty(Subject, Predicate, Object, Graph) :-

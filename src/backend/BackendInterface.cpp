@@ -91,9 +91,11 @@ bool BackendInterface::mergeInsert(const QueryableBackendPtr &backend, const Fra
 	pat->setIsOccasionalTerm(groundable(Numeric::trueAtom()));
 	// Construct a merged triple
 	FramedTripleView mergedTriple(triple);
-	// TODO: query for individual name of reified triple and hand it to remove.
-	//       can be done by using query of original backend, or if the query can be changed to return the id
+	// Store overlapping triples to remove them after matching
 	std::vector<FramedTriplePtr> overlappingTriples;
+	// Match a triple pattern in backend.
+	// Note that the match will return the un-reified variant of the triple no matter
+	// if the backend stores the triple reified or not.
 	match(backend, *pat, [&](const FramedTriplePtr &matchedTriple) {
 		if (mergedTriple.mergeFrame(*matchedTriple)) {
 			auto &x = overlappingTriples.emplace_back();

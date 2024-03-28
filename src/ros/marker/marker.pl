@@ -7,13 +7,6 @@
 	  marker_action/2
 	]).
 
-%%%%%%%%%%%%%%%%
-%% TODO
-% - trajectory marker
-%    -> use points/lines primitive?
-% - hook to shows predicate
-%
-
 :- use_module(library(settings)).
 :- use_module(library('scope'),
     [ current_scope/1 ]).
@@ -84,12 +77,11 @@ show_marker(MarkerID, MarkerTerm) :-
 %
 show_marker(_MarkerID, _MarkerTerm, _Options) :-
 	writeln('WARNING show_marker called'),
-	fail.
-	% TODO: validate MarkerTerm
 %	thread_send_message(
 %		ros_marker_queue,
 %		marker(add, MarkerID, MarkerTerm, Options)
 %	).
+	fail.
 
 
 %% show_marker(+TimePoint) is semidet.
