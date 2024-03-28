@@ -1,16 +1,18 @@
 cmake_minimum_required(VERSION 3.5.0)
-set (CMAKE_CXX_FLAGS "-Wswitch -std=c++0x -pthread ${CMAKE_CXX_FLAGS} -Wno-undef")
-set (CMAKE_CXX_STANDARD 17)
-if(POLICY CMP0148) 
-	cmake_policy(SET CMP0148 OLD) 
-endif()
+set(CMAKE_CXX_FLAGS "-Wswitch -std=c++0x -pthread ${CMAKE_CXX_FLAGS} -Wno-undef")
+set(CMAKE_CXX_STANDARD 17)
+if (POLICY CMP0148)
+    cmake_policy(SET CMP0148 OLD)
+endif ()
+
+option(BUILD_ROS1_INTERFACE "Build the interface for ROS1 systems" OFF)
 
 project(KnowRob
-    DESCRIPTION "A Knowledge Base System for Cognition-enabled Robots")
+        DESCRIPTION "A Knowledge Base System for Cognition-enabled Robots")
 
-IF( NOT WIN32 )
-	INCLUDE( FindPkgConfig )
-ENDIF()
+IF (NOT WIN32)
+    INCLUDE(FindPkgConfig)
+ENDIF ()
 
 set(SOMA_VERSION "current")
 
@@ -23,7 +25,7 @@ find_package(spdlog REQUIRED)
 
 find_package(Python COMPONENTS Interpreter Development)
 
-# Construct Boost Python component name based on the found Python version
+# Construct Boost Python component name based on Python version
 set(Boost_Python_VERSION "python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}")
 set(Boost_Python_COMPONENT "Boost::${Boost_Python_VERSION}")
 message(STATUS "Using Boost Python component: ${Boost_Python_COMPONENT}")
@@ -49,21 +51,21 @@ include_directories(include ${REDLAND_INCLUDE_DIRS})
 # copy them into the workspace such the we can load them
 # from a local source at runtime.
 install_ontology(
-		URL		  "http://www.ease-crc.org/ont/DUL.owl"
-		VERSION   "3.34")
+        URL "http://www.ease-crc.org/ont/DUL.owl"
+        VERSION "3.34")
 install_ontology(
-		URL       "https://ease-crc.github.io/soma/owl/${SOMA_VERSION}/SOMA.owl"
-		VERSION   "${SOMA_VERSION}")
+        URL "https://ease-crc.github.io/soma/owl/${SOMA_VERSION}/SOMA.owl"
+        VERSION "${SOMA_VERSION}")
 install_ontology(
-		URL       "https://ease-crc.github.io/soma/owl/${SOMA_VERSION}/SOMA-HOME.owl"
-		VERSION   "${SOMA_VERSION}")
+        URL "https://ease-crc.github.io/soma/owl/${SOMA_VERSION}/SOMA-HOME.owl"
+        VERSION "${SOMA_VERSION}")
 
 set(CMAKE_CXX_FLAGS "-std=c++0x -pthread ${CMAKE_CXX_FLAGS}")
 include_directories(include
-		${SWIPL_INCLUDE_DIRS}
-		${EIGEN3_INCLUDE_DIR}
-		${Boost_INCLUDE_DIRS}
-		${Python_INCLUDE_DIRS})
+        ${SWIPL_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIR}
+        ${Boost_INCLUDE_DIRS}
+        ${Python_INCLUDE_DIRS})
 
 # define some constants for the compilation of source files that
 # are used to load project-relative files.
@@ -71,59 +73,58 @@ include_directories(include
 add_definitions(-DKNOWROB_INSTALL_PREFIX=\"${CMAKE_INSTALL_PREFIX}\")
 add_definitions(-DKNOWROB_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\")
 add_definitions(-DKNOWROB_BUILD_DIR=\"${CMAKE_BINARY_DIR}\")
-add_definitions(-DBOOST_ALLOW_DEPRECATED_HEADERS)
 # ignore BOOST deprecated headers
 add_definitions(-DBOOST_ALLOW_DEPRECATED_HEADERS)
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 ##############
-########## ROS1 block
+########## ROS1
 ##############
 # NOTE: seems catkin_package must be called *before* any library is build.
 
 find_package(catkin QUIET COMPONENTS
-		roscpp roslib tests/urdf message_generation
-		geometry_msgs message_generation json_prolog_msgs actionlib actionlib_msgs)
+        roscpp roslib tests/urdf message_generation
+        geometry_msgs message_generation json_prolog_msgs actionlib actionlib_msgs)
 
 if (false)
-	message(STATUS "Building with ROS1 support.")
+    message(STATUS "Building with ROS1 support.")
 
-	add_definitions(-DKNOWROB_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\")
+    add_definitions(-DKNOWROB_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\")
 
-	include_directories(${catkin_INCLUDE_DIRS})
+    include_directories(${catkin_INCLUDE_DIRS})
 
-	catkin_python_setup()
+    catkin_python_setup()
 
-	# build messages
-	add_action_files(
-			DIRECTORY action
-			FILES
-			askall.action
-			askone.action
-			askincremental.action
-			tell.action
-	)
+    # build messages
+    add_action_files(
+            DIRECTORY action
+            FILES
+            askall.action
+            askone.action
+            askincremental.action
+            tell.action
+    )
 
-	add_message_files(
-			FILES
-			KeyValuePair.msg
-			GraphQueryMessage.msg
-			GraphAnswerMessage.msg
-			EventToken.msg
-	)
+    add_message_files(
+            FILES
+            KeyValuePair.msg
+            GraphQueryMessage.msg
+            GraphAnswerMessage.msg
+            EventToken.msg
+    )
 
-	generate_messages(DEPENDENCIES
-			std_msgs
-			geometry_msgs
-			actionlib_msgs)
+    generate_messages(DEPENDENCIES
+            std_msgs
+            geometry_msgs
+            actionlib_msgs)
 
-	catkin_package(
-			CATKIN_DEPENDS roscpp roslib
-			CFG_EXTRAS ontologies.cmake
-	)
-else()
-	message(STATUS "Building without ROS1 support.")
-endif()
+    catkin_package(
+            CATKIN_DEPENDS roscpp roslib
+            CFG_EXTRAS ontologies.cmake
+    )
+else ()
+    message(STATUS "Building without ROS1 support.")
+endif ()
 
 ##############
 #### MONGO DB
@@ -152,71 +153,71 @@ link_directories(${MONGOC_LIBRARY_DIRS})
 ##############
 
 add_library(knowrob SHARED
-		src/knowrob.cpp
-		src/ThreadPool.cpp
-		src/Logger.cpp
-		src/KnowledgeBase.cpp
+        src/knowrob.cpp
+        src/ThreadPool.cpp
+        src/Logger.cpp
+        src/KnowledgeBase.cpp
         src/sources/DataSource.cpp
-		src/URI.cpp
+        src/URI.cpp
         src/TimePoint.cpp
-		src/TimeInterval.cpp
-		src/terms/Term.cpp
-		src/terms/Variable.cpp
-		src/terms/ListTerm.cpp
-		src/terms/OptionList.cpp
+        src/TimeInterval.cpp
+        src/terms/Term.cpp
+        src/terms/Variable.cpp
+        src/terms/ListTerm.cpp
+        src/terms/OptionList.cpp
         src/terms/Bindings.cpp
-		src/terms/Unifier.cpp
-		src/formulas/Formula.cpp
-		src/formulas/CompoundFormula.cpp
-		src/formulas/Conjunction.cpp
-		src/formulas/Disjunction.cpp
-		src/formulas/Implication.cpp
-		src/formulas/Negation.cpp
-		src/formulas/Predicate.cpp
-		src/formulas/Bottom.cpp
-		src/formulas/Top.cpp
-		src/formulas/ModalFormula.cpp
-		src/formulas/ModalOperator.cpp
+        src/terms/Unifier.cpp
+        src/formulas/Formula.cpp
+        src/formulas/CompoundFormula.cpp
+        src/formulas/Conjunction.cpp
+        src/formulas/Disjunction.cpp
+        src/formulas/Implication.cpp
+        src/formulas/Negation.cpp
+        src/formulas/Predicate.cpp
+        src/formulas/Bottom.cpp
+        src/formulas/Top.cpp
+        src/formulas/ModalFormula.cpp
+        src/formulas/ModalOperator.cpp
         src/formulas/FirstOrderLiteral.cpp
-		src/queries/Answer.cpp
-		src/queries/TokenStream.cpp
-		src/queries/TokenQueue.cpp
-		src/queries/ConjunctiveBroadcaster.cpp
-		src/queries/TokenBroadcaster.cpp
-		src/formulas/DependencyGraph.cpp
-		src/queries/QueryParser.cpp
-		src/queries/QueryTree.cpp
-		src/queries/TokenBuffer.cpp
+        src/queries/Answer.cpp
+        src/queries/TokenStream.cpp
+        src/queries/TokenQueue.cpp
+        src/queries/ConjunctiveBroadcaster.cpp
+        src/queries/TokenBroadcaster.cpp
+        src/formulas/DependencyGraph.cpp
+        src/queries/QueryParser.cpp
+        src/queries/QueryTree.cpp
+        src/queries/TokenBuffer.cpp
         src/triples/GraphQuery.cpp
-		src/queries/Query.cpp
-		src/queries/RedundantAnswerFilter.cpp
-		src/queries/QueryStage.cpp
-		src/queries/QueryPipeline.cpp
-		src/queries/NegationStage.cpp
-		src/semweb/PrefixRegistry.cpp
-		src/semweb/PrefixProbe.cpp
-		src/semweb/xsd.cpp
-		src/semweb/Vocabulary.cpp
-		src/semweb/owl.cpp
-		src/semweb/rdfs.cpp
-		src/semweb/rdf.cpp
-		src/semweb/Property.cpp
-		src/semweb/Class.cpp
+        src/queries/Query.cpp
+        src/queries/RedundantAnswerFilter.cpp
+        src/queries/QueryStage.cpp
+        src/queries/QueryPipeline.cpp
+        src/queries/NegationStage.cpp
+        src/semweb/PrefixRegistry.cpp
+        src/semweb/PrefixProbe.cpp
+        src/semweb/xsd.cpp
+        src/semweb/Vocabulary.cpp
+        src/semweb/owl.cpp
+        src/semweb/rdfs.cpp
+        src/semweb/rdf.cpp
+        src/semweb/Property.cpp
+        src/semweb/Class.cpp
         src/triples/FramedTriplePattern.cpp
-		src/semweb/ImportHierarchy.cpp
-		src/reasoner/Reasoner.cpp
-		src/reasoner/ReasonerManager.cpp
+        src/semweb/ImportHierarchy.cpp
+        src/reasoner/Reasoner.cpp
+        src/reasoner/ReasonerManager.cpp
         src/PropertyTree.cpp
         src/reasoner/prolog/PrologEngine.cpp
-		src/reasoner/prolog/PrologReasoner.cpp
-		src/reasoner/prolog/PrologTests.cpp
-		src/reasoner/prolog/logging.cpp
+        src/reasoner/prolog/PrologReasoner.cpp
+        src/reasoner/prolog/PrologTests.cpp
+        src/reasoner/prolog/logging.cpp
         src/reasoner/prolog/ext/algebra.cpp
-		src/reasoner/mongolog/MongologReasoner.cpp
-		src/reasoner/mongolog/mongo_kb.cpp
-		src/reasoner/mongolog/bson_pl.cpp
-		src/reasoner/swrl/SWRLReasoner.cpp
-		src/reasoner/esg/ESGReasoner.cpp
+        src/reasoner/mongolog/MongologReasoner.cpp
+        src/reasoner/mongolog/mongo_kb.cpp
+        src/reasoner/mongolog/bson_pl.cpp
+        src/reasoner/swrl/SWRLReasoner.cpp
+        src/reasoner/esg/ESGReasoner.cpp
         src/backend/QueryableBackend.cpp
         src/backend/BackendManager.cpp
         src/sources/DataSourceHandler.cpp
@@ -237,17 +238,17 @@ add_library(knowrob SHARED
         src/backend/mongo/BindingsCursor.cpp
         src/backend/mongo/Connection.cpp
         src/backend/mongo/bson-helper.cpp
-		src/queries/ModalStage.cpp
+        src/queries/ModalStage.cpp
         src/triples/Perspective.cpp
-		src/formulas/PredicateIndicator.cpp
-		src/queries/AnswerYes.cpp
-		src/queries/AnswerNo.cpp
-		src/queries/AnswerDontKnow.cpp
-		src/queries/DisjunctiveBroadcaster.cpp
-		src/queries/Token.cpp
-		src/triples/GraphSelector.cpp
-		src/queries/AnswerMerger.cpp
-		src/py/utils.cpp
+        src/formulas/PredicateIndicator.cpp
+        src/queries/AnswerYes.cpp
+        src/queries/AnswerNo.cpp
+        src/queries/AnswerDontKnow.cpp
+        src/queries/DisjunctiveBroadcaster.cpp
+        src/queries/Token.cpp
+        src/triples/GraphSelector.cpp
+        src/queries/AnswerMerger.cpp
+        src/py/utils.cpp
         src/triples/FramedTriple.cpp
         src/triples/TripleFormat.cpp
         src/semweb/OntologyLanguage.cpp
@@ -297,22 +298,22 @@ add_library(knowrob SHARED
         src/reasoner/DataDrivenReasoner.cpp
         src/reasoner/ReasonerEvent.cpp)
 set(KNOWROB_LIBRARIES
-		${SWIPL_LIBRARIES}
-		${MONGOC_LIBRARIES}
-		${RAPTOR_LIBRARIES}
-		${REDLAND_LIBRARIES}
-		${Python_LIBRARIES}
-		spdlog::spdlog
-		${GTEST_LIBRARIES})
+        ${SWIPL_LIBRARIES}
+        ${MONGOC_LIBRARIES}
+        ${RAPTOR_LIBRARIES}
+        ${REDLAND_LIBRARIES}
+        ${Python_LIBRARIES}
+        spdlog::spdlog
+        ${GTEST_LIBRARIES})
 target_link_libraries(knowrob ${KNOWROB_LIBRARIES})
 
 add_executable(knowrob-terminal src/terminal.cpp)
 target_link_libraries(knowrob-terminal
-		${KNOWROB_LIBRARIES}
-		Boost::program_options
-		Boost::serialization
-		${Boost_Python_COMPONENT}
-		knowrob)
+        ${KNOWROB_LIBRARIES}
+        Boost::program_options
+        Boost::serialization
+        ${Boost_Python_COMPONENT}
+        knowrob)
 install(TARGETS knowrob-terminal RUNTIME DESTINATION bin)
 
 ##############
@@ -324,104 +325,104 @@ set(CMAKE_SHARED_MODULE_PREFIX "")
 
 add_library(knowrob_py MODULE src/py/knowrob_module.cpp)
 target_include_directories(knowrob_py PRIVATE
-		${SWIPL_INCLUDE_DIRS}
-		${EIGEN3_INCLUDE_DIR}
-		${Boost_INCLUDE_DIRS}
-		${PYTHON_INCLUDE_DIRS})
+        ${SWIPL_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIR}
+        ${Boost_INCLUDE_DIRS}
+        ${PYTHON_INCLUDE_DIRS})
 target_link_libraries(knowrob_py PRIVATE
-		${KNOWROB_LIBRARIES}
-		Boost::program_options
-		Boost::serialization
-		${Boost_Python_COMPONENT}
-		knowrob)
+        ${KNOWROB_LIBRARIES}
+        Boost::program_options
+        Boost::serialization
+        ${Boost_Python_COMPONENT}
+        knowrob)
 # Rename the library to knowrob.so such that it can be loaded by the
 # Python interpreter through the "import knowrob" statement.
 # NOTE: The library needs to be copied into site-packages directory of Python, or
 #       the PYTHONPATH needs to be set to include the build directory.
 add_custom_command(TARGET knowrob_py POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy
-		${CMAKE_BINARY_DIR}/knowrob_py.so
-		${CMAKE_BINARY_DIR}/knowrob.so
-		COMMAND_EXPAND_LISTS)
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_BINARY_DIR}/knowrob_py.so
+        ${CMAKE_BINARY_DIR}/knowrob.so
+        COMMAND_EXPAND_LISTS)
 
 ##############
-########## Doxygen block
+########## Doxygen
 ##############
 
 find_package(Doxygen)
-if(DOXYGEN_FOUND)
+if (DOXYGEN_FOUND)
     set(doxyfile_in ${CMAKE_CURRENT_SOURCE_DIR}/doxyfile.in)
     set(doxyfile ${CMAKE_CURRENT_BINARY_DIR}/doxyfile)
     configure_file(${doxyfile_in} ${doxyfile} @ONLY)
 
     if (NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/doxygen-awesome.css")
-        message(STATUS "Downloading \"doxygen-awesome.css\" into build directory.")
+        message(STATUS "Downloading \"doxygen-awesome.css\" into directory \"${CMAKE_CURRENT_BINARY_DIR}\".")
         file(DOWNLOAD
-            https://raw.githubusercontent.com/jothepro/doxygen-awesome-css/v2.3.2/doxygen-awesome.css
-            ${CMAKE_CURRENT_BINARY_DIR}/doxygen-awesome.css)
-	endif()
+                https://raw.githubusercontent.com/jothepro/doxygen-awesome-css/v2.3.2/doxygen-awesome.css
+                ${CMAKE_CURRENT_BINARY_DIR}/doxygen-awesome.css)
+    endif ()
 
     add_custom_target(doc
-                      COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile}
-                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                      COMMENT "Generating API documentation with Doxygen"
-                      VERBATIM)
-endif()
+            COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Generating API documentation with Doxygen"
+            VERBATIM)
+endif ()
 
 ##############
-########## ROS1 block
+########## ROS1
 ##############
 
 if (false)
 
-	# install into ROS workspace
-	#add_dependencies(mongo_kb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-	add_dependencies(knowrob ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-	add_dependencies(knowrob-terminal ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+    # install into ROS workspace
+    #add_dependencies(mongo_kb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+    add_dependencies(knowrob ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+    add_dependencies(knowrob-terminal ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-	#	### TF messages ###
-	#	add_library(tf_knowrob SHARED
-	#		src/ros/tf/tf.cpp
-	#		src/ros/tf/memory.cpp
-	#		src/ros/tf/logger.cpp
-	#		src/ros/tf/publisher.cpp
-	#		src/ros/tf/republisher.cpp)
-	#	target_link_libraries(tf_knowrob
-	#		${SWIPL_LIBRARIES}
-	#		${MONGOC_LIBRARIES}
-	#		${catkin_LIBRARIES})
-	#		#mongo_kb
-	#	add_dependencies(tf_knowrob
-	#		${${PROJECT_NAME}_EXPORTED_TARGETS}
-	#		${catkin_EXPORTED_TARGETS})
-	#
-	#	## RViz marker ###
-	#	add_library(marker_knowrob SHARED src/ros/marker/publisher.cpp)
-	#	target_link_libraries(marker_knowrob
-	#		${SWIPL_LIBRARIES} ${catkin_LIBRARIES})
-	#	add_dependencies(marker_knowrob
-	#		${${PROJECT_NAME}_EXPORTED_TARGETS}
-	#		${catkin_EXPORTED_TARGETS})
-	#
-	#	## URDf ###
-	#	add_library(urdf_parser SHARED src/ros/urdf/parser.cpp)
-	#	target_link_libraries(urdf_parser ${SWIPL_LIBRARIES} ${catkin_LIBRARIES})
-	#	add_dependencies(urdf_parser
-	#		${${PROJECT_NAME}_EXPORTED_TARGETS}
-	#		${catkin_EXPORTED_TARGETS})
+    #	### TF messages ###
+    #	add_library(tf_knowrob SHARED
+    #		src/ros/tf/tf.cpp
+    #		src/ros/tf/memory.cpp
+    #		src/ros/tf/logger.cpp
+    #		src/ros/tf/publisher.cpp
+    #		src/ros/tf/republisher.cpp)
+    #	target_link_libraries(tf_knowrob
+    #		${SWIPL_LIBRARIES}
+    #		${MONGOC_LIBRARIES}
+    #		${catkin_LIBRARIES})
+    #		#mongo_kb
+    #	add_dependencies(tf_knowrob
+    #		${${PROJECT_NAME}_EXPORTED_TARGETS}
+    #		${catkin_EXPORTED_TARGETS})
+    #
+    #	## RViz marker ###
+    #	add_library(marker_knowrob SHARED src/ros/marker/publisher.cpp)
+    #	target_link_libraries(marker_knowrob
+    #		${SWIPL_LIBRARIES} ${catkin_LIBRARIES})
+    #	add_dependencies(marker_knowrob
+    #		${${PROJECT_NAME}_EXPORTED_TARGETS}
+    #		${catkin_EXPORTED_TARGETS})
+    #
+    #	## URDf ###
+    #	add_library(urdf_parser SHARED src/ros/urdf/parser.cpp)
+    #	target_link_libraries(urdf_parser ${SWIPL_LIBRARIES} ${catkin_LIBRARIES})
+    #	add_dependencies(urdf_parser
+    #		${${PROJECT_NAME}_EXPORTED_TARGETS}
+    #		${catkin_EXPORTED_TARGETS})
 
-	## ROS Interface ###
-	add_executable(knowrob-ros
-			src/ros/ROSInterface.cpp
-	)
-	add_dependencies(knowrob-ros
-			${catkin_EXPORTED_TARGETS})
-	target_link_libraries(knowrob-ros
-			Boost::program_options
-			knowrob
-			${catkin_LIBRARIES})
-	install(TARGETS knowrob-ros RUNTIME DESTINATION bin)
-endif()
+    ## ROS Interface ###
+    add_executable(knowrob-ros
+            src/ros/ROSInterface.cpp
+    )
+    add_dependencies(knowrob-ros
+            ${catkin_EXPORTED_TARGETS})
+    target_link_libraries(knowrob-ros
+            Boost::program_options
+            knowrob
+            ${catkin_LIBRARIES})
+    install(TARGETS knowrob-ros RUNTIME DESTINATION bin)
+endif ()
 
 ##############
 ########## Unit Testing
@@ -432,19 +433,19 @@ endif()
 # where gtest won't find them without using the "--no-as-needed"
 # flag for the linker.
 add_executable(all_gtests
-		tests/gtests.cpp
-		src/neems/test.cpp
+        tests/gtests.cpp
+        src/neems/test.cpp
         tests/QueryParserTest.cpp
-		tests/KnowledgeBaseTest.cpp
+        tests/KnowledgeBaseTest.cpp
         tests/DataBackendTest.cpp
-		tests/py/test-module.cpp)
+        tests/py/test-module.cpp)
 add_dependencies(all_gtests knowrob_py)
 target_link_libraries(all_gtests
-		-Wl,--whole-archive,--no-as-needed
-		knowrob
-		-Wl,--no-whole-archive
-		${Boost_Python_COMPONENT}
-		${GTEST_MAIN_LIBRARIES})
+        -Wl,--whole-archive,--no-as-needed
+        knowrob
+        -Wl,--no-whole-archive
+        ${Boost_Python_COMPONENT}
+        ${GTEST_MAIN_LIBRARIES})
 
 ##############
 ##############
@@ -456,4 +457,4 @@ target_link_libraries(all_gtests
 #		DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/prolog)
 
 install(DIRECTORY src/reasoner/prolog DESTINATION share
-		PATTERN ".cpp" EXCLUDE)
+        PATTERN ".cpp" EXCLUDE)

@@ -121,8 +121,6 @@ void MongoKnowledgeGraph::initializeMongo() {
 		bson_decimal128_t infinity, zero;
 		bson_decimal128_from_string(BSON_DECIMAL128_INF, &infinity);
 		bson_decimal128_from_string("0", &zero);
-		// TODO: time interval is optional now, right? so we do not need to add the fields here? test it!
-		//        but maybe mongolog still needs it
 		BSON_APPEND_DOCUMENT_BEGIN(oneDoc.bson(), "v_scope", &scopeDoc);
 		BSON_APPEND_DOCUMENT_BEGIN(&scopeDoc, "time", &timeDoc);
 		BSON_APPEND_DECIMAL128(&timeDoc, "since", &zero);

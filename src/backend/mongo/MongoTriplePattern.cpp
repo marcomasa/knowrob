@@ -446,7 +446,7 @@ static void transitiveLookup(
 		KB_WARN("Ignoring term {} with invalid type for graph lookup.", *startTerm);
 	}
 	BSON_APPEND_UTF8(lookupStage, "connectToField", b_startWithSubject ? "s" : "o");
-	BSON_APPEND_UTF8(lookupStage, "connectFromField", b_startWithSubject ? "p" : "s");
+	BSON_APPEND_UTF8(lookupStage, "connectFromField", b_startWithSubject ? "o" : "s");
 	BSON_APPEND_UTF8(lookupStage, "as", "t_paths");
 	BSON_APPEND_UTF8(lookupStage, "depthField", "depth");
 	/* { restrictSearchWithMatch: { p*: Query_p, ... }" */
@@ -501,17 +501,29 @@ static void transitiveLookup(
 
 	// graph lookup uses "s" or "o" as start for recursive lookup but ignores the other.
 	// thus a matching must be performed for the results.
-	if (endTerm->termType() != TermType::VARIABLE) {
-		// FIXME: must add another match case for endTerm being a runtime grounded variable.
-		bson_t matchEndVal;
-		auto matchEnd = pipeline.appendStageBegin("$match");
-		BSON_APPEND_DOCUMENT_BEGIN(matchEnd, "next.o", &matchEndVal);
-		MongoTerm::append(&restrictSearchDoc,
-						  (b_startWithSubject ? "next.o" : "next.s"),
-						  endTerm);
-		bson_append_document_end(matchEnd, &matchEndVal);
-		pipeline.appendStageEnd(matchEnd);
+	auto matchEnd = pipeline.appendStageBegin("$match");
+	if (endTerm->termType() == TermType::VARIABLE) {
+		bson_t exprDoc, orArr, ungroundedMatch, groundedMatch, notArray;
+		BSON_APPEND_DOCUMENT_BEGIN(matchEnd, "$expr", &exprDoc);
+		BSON_APPEND_ARRAY_BEGIN(&exprDoc, "$or", &orArr);
+
+		BSON_APPEND_DOCUMENT_BEGIN(&orArr, "0", &ungroundedMatch);
+		BSON_APPEND_ARRAY_BEGIN(&ungroundedMatch, "$not", &notArray);
+		auto varKey = MongoTerm::variableKey(std::static_pointer_cast<Variable>(endTerm)->name());
+		BSON_APPEND_UTF8(&notArray, "0", (std::string("$") + varKey).c_str());
+		bson_append_array_end(&ungroundedMatch, &notArray);
+		bson_append_document_end(&orArr, &ungroundedMatch);
+
+		BSON_APPEND_DOCUMENT_BEGIN(&orArr, "1", &groundedMatch);
+		MongoTerm::append(&groundedMatch, (b_startWithSubject ? "next.o" : "next.s"), endTerm);
+		bson_append_document_end(&orArr, &groundedMatch);
+
+		bson_append_array_end(&exprDoc, &orArr);
+		bson_append_document_end(matchEnd, &exprDoc);
+	} else {
+		MongoTerm::append(matchEnd, (b_startWithSubject ? "next.o" : "next.s"), endTerm);
 	}
+	pipeline.appendStageEnd(matchEnd);
 
 	// project new variable groundings
 	setTripleVariables(pipeline, lookupData);
