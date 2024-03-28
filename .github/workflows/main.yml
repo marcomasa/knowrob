@@ -38,7 +38,8 @@ jobs:
         sudo apt-get install swi-prolog libspdlog-dev \
             libboost-python-dev libboost-serialization-dev libboost-program-options-dev \
             libraptor2-dev librdf0-dev \
-            libfmt-dev
+            libfmt-dev \
+            doxygen graphviz
         cd ros_ws
         catkin_make_isolated
     - name: Run unit tests
@@ -60,9 +61,8 @@ jobs:
       if: ${{ github.event_name == 'push' }}
       shell: bash
       run: |
-        sudo apt-get install doxygen graphviz
         cd $GITHUB_WORKSPACE/ros_ws/src/knowrob
-        doxygen doxygen.conf
+        make doc
     #- name: Run pldoc
     #  if: ${{ github.event_name == 'push' }}
     #  shell: bash

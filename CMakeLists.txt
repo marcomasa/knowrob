@@ -5,7 +5,8 @@ if(POLICY CMP0148)
 	cmake_policy(SET CMP0148 OLD) 
 endif()
 
-project(knowrob)
+project(KnowRob
+    DESCRIPTION "A Knowledge Base System for Cognition-enabled Robots")
 
 IF( NOT WIN32 )
 	INCLUDE( FindPkgConfig )
@@ -342,6 +343,30 @@ add_custom_command(TARGET knowrob_py POST_BUILD
 		${CMAKE_BINARY_DIR}/knowrob_py.so
 		${CMAKE_BINARY_DIR}/knowrob.so
 		COMMAND_EXPAND_LISTS)
+
+##############
+########## Doxygen block
+##############
+
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    set(doxyfile_in ${CMAKE_CURRENT_SOURCE_DIR}/doxyfile.in)
+    set(doxyfile ${CMAKE_CURRENT_BINARY_DIR}/doxyfile)
+    configure_file(${doxyfile_in} ${doxyfile} @ONLY)
+
+    if (NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/doxygen-awesome.css")
+        message(STATUS "Downloading \"doxygen-awesome.css\" into build directory.")
+        file(DOWNLOAD
+            https://raw.githubusercontent.com/jothepro/doxygen-awesome-css/v2.3.2/doxygen-awesome.css
+            ${CMAKE_CURRENT_BINARY_DIR}/doxygen-awesome.css)
+	endif()
+
+    add_custom_target(doc
+                      COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile}
+                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                      COMMENT "Generating API documentation with Doxygen"
+                      VERBATIM)
+endif()
 
 ##############
 ########## ROS1 block

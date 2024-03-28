@@ -4,9 +4,9 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
-PROJECT_NAME           = KnowRob
+PROJECT_NAME           = @CMAKE_PROJECT_NAME@
 PROJECT_NUMBER         = dev
-PROJECT_BRIEF          = A Knowledge Base System for Cognition-enabled Robots
+PROJECT_BRIEF          = @CMAKE_PROJECT_DESCRIPTION@
 PROJECT_LOGO           =
 OUTPUT_DIRECTORY       = ./doc
 CREATE_SUBDIRS         = NO
@@ -173,7 +173,7 @@ HTML_FILE_EXTENSION    = .html
 HTML_HEADER            =
 HTML_FOOTER            =
 HTML_STYLESHEET        =
-HTML_EXTRA_STYLESHEET  = doxygen-awesome.css doxygen-knowrob.css
+HTML_EXTRA_STYLESHEET  = @CMAKE_CURRENT_BINARY_DIR@/doxygen-awesome.css docu.css
 HTML_COLORSTYLE        = LIGHT # required with Doxygen >= 1.9.5
 HTML_EXTRA_FILES       =
 HTML_COLORSTYLE_HUE    = 213
