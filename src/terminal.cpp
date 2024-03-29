@@ -56,12 +56,15 @@ namespace knowrob {
 		}
 
 		void save(const std::string &historyFile) {
-			// FIXME: seems like history file will be corrupted in case the program is terminated during writing!
-			std::ofstream file(historyFile);
+			std::string tmpFileName = historyFile + ".tmp";
+			std::ofstream file(tmpFileName);
 			if (file.good()) {
 				boost::archive::text_oarchive oa(file);
 				oa << data_.size();
 				for (auto &x: data_) oa << x;
+				// the history file will be corrupted in case the program is terminated during writing,
+				// so better first write to a temporary file and then rename it.
+				std::filesystem::rename(tmpFileName, historyFile);
 			} else {
 				KB_WARN("unable to write history to file '{}'", historyFile);
 			}
