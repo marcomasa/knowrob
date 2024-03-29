@@ -441,7 +441,6 @@ public:
 				return true;
 			}
 		} else if (aliases.size() > 1) {
-			// TODO: auto-complete up to common prefix among aliases
 			displayOptions(aliases);
 			return true;
 		}
@@ -470,7 +469,6 @@ public:
 					return true;
 				}
 			} else if (options.size() > 1) {
-				// TODO: auto-complete up to common prefix among options
 				displayOptions(options);
 				return true;
 			}
@@ -480,7 +478,31 @@ public:
 		return false;
 	}
 
+	static std::string getCommonPrefix(const std::vector<std::string_view> &options) {
+		if (options.empty()) return "";
+
+		std::string_view commonPrefix = options[0];
+		for (const auto& option : options) {
+			auto mismatchPair = std::mismatch(
+					commonPrefix.begin(),
+					commonPrefix.end(),
+					option.begin(),
+					option.end());
+			commonPrefix = std::string_view(
+					commonPrefix.begin(),
+					mismatchPair.first - commonPrefix.begin());
+		}
+		return commonPrefix.data();
+	}
+
 	void displayOptions(const std::vector<std::string_view> &options) {
+		// auto-complete up to common prefix among options before displaying
+		auto commonPrefix = getCommonPrefix(options);
+		if (!commonPrefix.empty()) {
+			// auto-complete up to common prefix
+			insert(commonPrefix);
+		}
+
 		std::string optionsStr = "\n";
 		for (const auto &option: options) {
 			optionsStr += std::string(option) + "\n";
@@ -641,7 +663,6 @@ int run(int argc, char **argv) {
 	}
 
 	// read settings
-	// TODO: fallback to default settings
 	boost::property_tree::ptree config;
 	if (vm.count("config-file")) {
 		boost::property_tree::read_json(
