@@ -59,6 +59,9 @@ install_ontology(
 install_ontology(
         URL "https://ease-crc.github.io/soma/owl/${SOMA_VERSION}/SOMA-HOME.owl"
         VERSION "${SOMA_VERSION}")
+# install all ontologies and default settings files
+install(DIRECTORY owl DESTINATION share/knowrob)
+install(DIRECTORY settings DESTINATION share/knowrob)
 
 set(CMAKE_CXX_FLAGS "-std=c++0x -pthread ${CMAKE_CXX_FLAGS}")
 include_directories(include
@@ -69,7 +72,6 @@ include_directories(include
 
 # define some constants for the compilation of source files that
 # are used to load project-relative files.
-# TODO: needs to be defined differently when catkin is used?
 add_definitions(-DKNOWROB_INSTALL_PREFIX=\"${CMAKE_INSTALL_PREFIX}\")
 add_definitions(-DKNOWROB_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\")
 add_definitions(-DKNOWROB_BUILD_DIR=\"${CMAKE_BINARY_DIR}\")
@@ -306,6 +308,12 @@ set(KNOWROB_LIBRARIES
         spdlog::spdlog
         ${GTEST_LIBRARIES})
 target_link_libraries(knowrob ${KNOWROB_LIBRARIES})
+# install shared library and headers
+install(TARGETS knowrob PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/knowrob)
+install(DIRECTORY include/knowrob DESTINATION include)
+# Install Python and Prolog files into the share directory such that they can be loaded at runtime.
+install(DIRECTORY src/ DESTINATION share/knowrob FILES_MATCHING PATTERN "*.pl")
+install(DIRECTORY src/ DESTINATION share/knowrob FILES_MATCHING PATTERN "*.py")
 
 add_executable(knowrob-terminal src/terminal.cpp)
 target_link_libraries(knowrob-terminal
@@ -317,7 +325,7 @@ target_link_libraries(knowrob-terminal
 install(TARGETS knowrob-terminal RUNTIME DESTINATION bin)
 
 ##############
-########## Python block
+########## Python module
 ##############
 
 # Without this, any build libraries automatically have names "lib{x}.so"
@@ -344,6 +352,9 @@ add_custom_command(TARGET knowrob_py POST_BUILD
         ${CMAKE_BINARY_DIR}/knowrob_py.so
         ${CMAKE_BINARY_DIR}/knowrob.so
         COMMAND_EXPAND_LISTS)
+# install the Python module into the site-packages directory
+install(FILES ${CMAKE_BINARY_DIR}/knowrob.so
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
 
 ##############
 ########## Doxygen
@@ -446,15 +457,3 @@ target_link_libraries(all_gtests
         -Wl,--no-whole-archive
         ${Boost_Python_COMPONENT}
         ${GTEST_MAIN_LIBRARIES})
-
-##############
-##############
-
-# TODO: look into installation
-#install(DIRECTORY owl/
-#		DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/owl)
-#install(DIRECTORY prolog/
-#		DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/prolog)
-
-install(DIRECTORY src/reasoner/prolog DESTINATION share
-        PATTERN ".cpp" EXCLUDE)
