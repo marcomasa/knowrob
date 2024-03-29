@@ -215,7 +215,7 @@ namespace knowrob {
 		 * @param qid the query id
 		 * @return true if the query has a next solution
 		 */
-		static bool nextSolution(qid_t qid) ;
+		static bool nextSolution(qid_t qid);
 
 		/**
 		 * @return translates the term to a KnowRob term
@@ -243,7 +243,7 @@ namespace knowrob {
 		 * @param plTerm a Prolog variable term
 		 * @return the name of the variable
 		 */
-		static char* getVarName(term_t plTerm);
+		static char *getVarName(term_t plTerm);
 
 		/**
 		 * @return a term representing the empty list
@@ -255,7 +255,7 @@ namespace knowrob {
 		 * @param t a Prolog term
 		 * @return true if the term was displayed
 		 */
-		static bool display(std::ostream &os, term_t t);
+		static bool display(std::ostream &os, term_t t, const std::string &indent = "");
 
 	protected:
 		std::map<std::string, term_t, std::less<>> vars_;

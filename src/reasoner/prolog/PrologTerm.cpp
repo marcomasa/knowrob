@@ -396,7 +396,7 @@ bool PrologTerm::putTerm(const std::shared_ptr<GraphTerm> &kb_term, term_t pl_te
 
 		case GraphTermType::Union: {
 			PrologTerm goal;
-			for (const auto &subTerm: std::static_pointer_cast<GraphSequence>(kb_term)->terms()) {
+			for (const auto &subTerm: std::static_pointer_cast<GraphConnective>(kb_term)->terms()) {
 				goal = (goal | PrologTerm(subTerm));
 			}
 			unifyVars(goal);
@@ -404,7 +404,7 @@ bool PrologTerm::putTerm(const std::shared_ptr<GraphTerm> &kb_term, term_t pl_te
 		}
 		case GraphTermType::Sequence: {
 			PrologTerm goal;
-			for (const auto &subTerm: std::static_pointer_cast<GraphSequence>(kb_term)->terms()) {
+			for (const auto &subTerm: std::static_pointer_cast<GraphConnective>(kb_term)->terms()) {
 				goal = (goal & PrologTerm(subTerm));
 			}
 			unifyVars(goal);
@@ -908,7 +908,7 @@ const predicate_t &PrologTerm::PREDICATE_semicolon() {
 	return a;
 }
 
-bool PrologTerm::display(std::ostream &os, term_t t) { //NOLINT(misc-no-recursion)
+bool PrologTerm::display(std::ostream &os, term_t t, const std::string &indent) { //NOLINT(misc-no-recursion)
 	int n;
 	size_t len;
 	char *s;
@@ -941,12 +941,16 @@ bool PrologTerm::display(std::ostream &os, term_t t) { //NOLINT(misc-no-recursio
 			if (!PL_get_name_arity(t, &name, &arity)) break;
 			std::string_view functor(PL_atom_chars(name));
 
-			if (functor == ",") {
+			if (functor == "," || functor == ";") {
+				os << '(' << ' ';
 				for (n = 1; n <= arity; n++) {
 					if (!PL_get_arg(n, t, a)) break;
-					if (n > 1) os << ",\n";
-					if (!display(os, a)) os << "_";
+					if (n > 1) {
+						os << '\n' << indent << functor << ' ';
+					}
+					if (!display(os, a, indent+'\t')) os << "_";
 				}
+				os << ' ' << ')';
 			} else {
 				os << functor << '(';
 				for (n = 1; n <= arity; n++) {

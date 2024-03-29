@@ -98,7 +98,7 @@ namespace knowrob {
 		 * @param q a graph path query.
 		 * @return the expansion of the query.
 		 */
-		GraphQueryExpansionPtr expand(const GraphPathQueryPtr &q);
+		GraphQueryExpansionPtr expand(const GraphQueryPtr &q);
 
 		/**
 		 * Generates a positive answer to a query.
@@ -106,7 +106,9 @@ namespace knowrob {
 		 * @param bindings a set of bindings.
 		 * @return a positive answer to the query.
 		 */
-		static std::shared_ptr<AnswerYes> yes(const GraphQueryExpansionPtr &expansion, const BindingsPtr &bindings);
+		static std::shared_ptr<AnswerYes> yes(const GraphPathQueryPtr &original,
+											  const GraphQueryExpansionPtr &expansion,
+											  const BindingsPtr &bindings);
 
 		/**
 		 * Generates a negative answer to a query.

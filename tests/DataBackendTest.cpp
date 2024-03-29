@@ -69,13 +69,24 @@ public:
 
 	// void TearDown() override {}
 	template<class T>
-	std::list<BindingsPtr> lookup(const T &data) {
-		std::list<BindingsPtr> out;
+	std::vector<BindingsPtr> lookup(const T &data) {
+		std::vector<BindingsPtr> out;
 		auto pattern = std::make_shared<FramedTriplePattern>(data);
 		auto pattern_q = std::make_shared<GraphPathQuery>(pattern);
 		// only queries that go through submitQuery are auto-expanded, so we
 		// do the expansion here manually.
 		auto expanded_q = queryable_->expand(pattern_q);
+		backend_->query(queryable_, expanded_q->expanded, [&out](const BindingsPtr &next) {
+			out.push_back(next);
+		});
+		return out;
+	}
+
+	std::vector<BindingsPtr> query(const std::shared_ptr<GraphQuery> &query) {
+		std::vector<BindingsPtr> out;
+		// only queries that go through submitQuery are auto-expanded, so we
+		// do the expansion here manually.
+		auto expanded_q = queryable_->expand(query);
 		backend_->query(queryable_, expanded_q->expanded, [&out](const BindingsPtr &next) {
 			out.push_back(next);
 		});
@@ -127,6 +138,7 @@ using TestableBackends = ::testing::Types<RedlandModel, PrologBackend, MongoKnow
 TYPED_TEST_SUITE(DataBackendTest, TestableBackends);
 
 #define TEST_LOOKUP(x) DataBackendTest<TypeParam>::lookup(x)
+#define TEST_QUERY(x) DataBackendTest<TypeParam>::query(x)
 #define TEST_INSERT_ONE(x) DataBackendTest<TypeParam>::insertOne(x)
 #define TEST_MERGE_ONE(x) DataBackendTest<TypeParam>::mergeOne(x)
 
@@ -147,7 +159,7 @@ TYPED_TEST(DataBackendTest, Assert_a_b_c) {
 	EXPECT_EQ(TEST_LOOKUP(parse("triple(swrl_test:x, swrl_test:b, C)")).size(), 0);
 }
 
-TYPED_TEST(DataBackendTest, LoadSOMAandDUL) {
+TYPED_TEST(DataBackendTest, LoadTestOntology) {
 	EXPECT_NO_THROW(DataBackendTest<TypeParam>::loadOntology("owl/test/swrl.owl"));
 	EXPECT_NO_THROW(DataBackendTest<TypeParam>::loadOntology("owl/test/datatype_test.owl"));
 }
@@ -181,6 +193,39 @@ TYPED_TEST(DataBackendTest, AssertSubclassOf) {
 	EXPECT_NO_THROW(TEST_INSERT_ONE(existing));
 	EXPECT_EQ(TEST_LOOKUP(existing).size(), 1);
 	EXPECT_EQ(TEST_LOOKUP(not_existing).size(), 0);
+}
+
+TYPED_TEST(DataBackendTest, PathQuery) {
+	// hasAncestor(Lea, ?x) & hasAncestor(?x, Rex) -> ?x = Fred
+	auto q1 = std::make_shared<FramedTriplePattern>(
+			QueryParser::parsePredicate("triple(swrl_test:'Lea', swrl_test:hasAncestor, ?x)"));
+	auto q2 = std::make_shared<FramedTriplePattern>(
+			QueryParser::parsePredicate("triple(?x, swrl_test:hasAncestor, swrl_test:'Rex')"));
+	auto query = std::make_shared<GraphPathQuery>(std::vector<FramedTriplePatternPtr>{q1,q2});
+	auto fred_iri = IRIAtom::Tabled(swrl_test_"Fred");
+	auto fred_var = std::make_shared<Variable>("x");
+	auto results = TEST_QUERY(query);
+	// Note: there are two assertions satisfying q1:
+	//    (1) Lea -hasAncestor-> Fred, and (2) Lea -hasParent-> Fred
+	// It is ok though if backends produce duplicate results or not. so we check here for at least 1 result.
+	EXPECT_GE(results.size(), 1);
+	for (auto &result : results) {
+		EXPECT_EQ(*result, Bindings({{fred_var, fred_iri}}));
+	}
+}
+
+TYPED_TEST(DataBackendTest, UnionQuery) {
+	// hasAncestor(Fred, ?x) | hasSibling(Fred, ?x) -> ?x = Rex | Ernest
+	auto q1 = std::make_shared<FramedTriplePattern>(
+			QueryParser::parsePredicate("triple(swrl_test:'Fred', swrl_test:hasAncestor, ?x)"));
+	auto q2 = std::make_shared<FramedTriplePattern>(
+			QueryParser::parsePredicate("triple(swrl_test:'Fred', swrl_test:hasSibling, ?x)"));
+	auto t1 = std::make_shared<GraphPattern>(q1);
+	auto t2 = std::make_shared<GraphPattern>(q2);
+	auto unionTerm = std::make_shared<GraphUnion>(
+			std::vector<std::shared_ptr<GraphTerm>>{t1,t2});
+	auto results = TEST_QUERY(std::make_shared<GraphQuery>(unionTerm));
+	EXPECT_EQ(results.size(), 2);
 }
 
 TYPED_TEST(DataBackendTest, QueryNegatedTriple) {

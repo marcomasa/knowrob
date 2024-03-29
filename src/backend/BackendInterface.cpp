@@ -343,7 +343,7 @@ void BackendInterface::pushIntoCursor(const QueryableBackendPtr &backend, const 
 	try {
 		bool hasPositiveAnswer = false;
 		query(backend, expanded->expanded, [&](const BindingsPtr &bindings) {
-			channel->push(backend->yes(expanded, bindings));
+			channel->push(backend->yes(q, expanded, bindings));
 			hasPositiveAnswer = true;
 		});
 		if (!hasPositiveAnswer) {

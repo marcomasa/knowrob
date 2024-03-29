@@ -10,6 +10,7 @@
 #include "knowrob/triples/GraphBuiltin.h"
 #include "knowrob/semweb/ImportHierarchy.h"
 #include "knowrob/triples/GraphSequence.h"
+#include "knowrob/triples/GraphUnion.h"
 
 using namespace knowrob;
 
@@ -55,6 +56,7 @@ namespace knowrob {
 	class FramedTripleView_withBindings : public FramedTripleView {
 	public:
 		explicit FramedTripleView_withBindings(const BindingsPtr &bindings) : bindings_(bindings) {}
+
 	private:
 		const BindingsPtr &bindings_;
 	};
@@ -91,17 +93,19 @@ void QueryableBackend::foreach(const TripleVisitor &visitor) const {
 	});
 }
 
-std::shared_ptr<AnswerYes> QueryableBackend::yes(const GraphQueryExpansionPtr &expanded, const BindingsPtr &bindings) {
+std::shared_ptr<AnswerYes> QueryableBackend::yes(const GraphPathQueryPtr &original,
+												 const GraphQueryExpansionPtr &expanded,
+												 const BindingsPtr &bindings) {
 	static const auto edbTerm = Atom::Tabled("EDB");
 
 	auto positiveAnswer = std::make_shared<AnswerYes>(bindings);
 	// Indicate that EDB has computed the grounding.
 	positiveAnswer->setReasonerTerm(edbTerm);
 	// Apply query context to the answer for some parameters.
-	positiveAnswer->applyFrame(expanded->original->ctx()->selector);
+	positiveAnswer->applyFrame(original->ctx()->selector);
 
 	// Add predicate groundings to the answer
-	for (auto &rdfLiteral: expanded->original->path()) {
+	for (auto &rdfLiteral: original->path()) {
 		auto p = rdfLiteral->predicate();
 		auto p_instance = applyBindings(p, *positiveAnswer->substitution());
 		positiveAnswer->addGrounding(
@@ -298,7 +302,10 @@ expand_term(const std::shared_ptr<GraphTerm> &q, GraphQueryExpansion &ctx) { // 
 			}
 
 			if (hasExpansion) {
-				return std::make_shared<GraphSequence>(expandedTerms);
+				if (q->termType() == GraphTermType::Union)
+					return std::make_shared<GraphUnion>(expandedTerms);
+				else
+					return std::make_shared<GraphSequence>(expandedTerms);
 			}
 			break;
 		}
@@ -349,11 +356,10 @@ static GraphQueryPtr expand_query(const GraphQueryPtr &q, GraphQueryExpansion &c
 	}
 }
 
-GraphQueryExpansionPtr QueryableBackend::expand(const GraphPathQueryPtr &q) {
+GraphQueryExpansionPtr QueryableBackend::expand(const GraphQueryPtr &q) {
 	// Expand the query. Currently, this is mainly used to compute the answer frame here.
 	// But also to insert some builtins for occasional triples.
 	auto exp_ctx = std::make_shared<GraphQueryExpansion>();
-	exp_ctx->original = q;
 	exp_ctx->query_ctx = q->ctx();
 	exp_ctx->with_reassignment = supports(BackendFeature::ReAssignment);
 	exp_ctx->expanded = expand_query(q, *exp_ctx);

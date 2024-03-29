@@ -14,7 +14,6 @@ namespace knowrob {
 	struct GraphQueryExpansion {
 		GraphQueryExpansion() : counter(0), with_reassignment(false) {}
 
-		GraphPathQueryPtr original;
 		GraphQueryPtr expanded;
 		std::vector<VariablePtr> o_vars;
 		std::vector<VariablePtr> u_vars;
