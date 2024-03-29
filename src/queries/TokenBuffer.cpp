@@ -27,7 +27,6 @@ std::shared_ptr<TokenQueue> TokenBuffer::createQueue() {
 	auto queue = std::make_shared<TokenQueue>();
 	addSubscriber(Channel::create(queue));
 	stopBuffering();
-	// TODO: should keep reference on buffer?
 	return queue;
 }
 

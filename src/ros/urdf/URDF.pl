@@ -151,11 +151,9 @@ urdf_load(Object,URL,Options) :-
 	file_name_extension(Identifier,_,FileName),
 	kb_project(has_kinematics_file(Object,Identifier,'URDF')),
 	% assign urdf name to object
-	% TODO: only do this on first load
 	urdf_root_link(Object,RootLinkName),
 	kb_project(has_base_link_name(Object,RootLinkName)),
 	% assign prefix to object
-	% TODO: only do this on first load
 	option(prefix(OptPrefix),Options,''),
 	(	OptPrefix=''
 	->	true
