@@ -26,12 +26,16 @@ namespace knowrob::mongo {
 		/**
 		 * @param arrayDocument an initialized array document.
 		 */
-		explicit Pipeline(bson_t *arrayDocument);
+		explicit Pipeline(bson_t *arrayDocument = nullptr);
 
 		/**
 		 * @return the pipeline array.
 		 */
-		const auto *arrayDocument() const { return arrayDocument_; }
+		auto *arrayDocument() const { return arrayDocument_; }
+
+		auto isNested() const { return isNested_; }
+
+		void setIsNested(bool isNested) { isNested_ = isNested; }
 
 		bson_t *appendStageBegin();
 
@@ -133,6 +137,7 @@ namespace knowrob::mongo {
 		uint32_t numStages_;
 		std::list<bson_wrapper> stages_;
 		std::list<bson_wrapper> stageOperators_;
+		bool isNested_ = false;
 
 		bson_t *lastStage_;
 		bson_t *lastOperator_;
@@ -146,7 +151,9 @@ namespace knowrob::mongo {
 
 		void bindValue(const knowrob::GraphBuiltin &builtin);
 
-		void appendUnion(const knowrob::GraphUnion &builtin);
+		void appendUnion(const knowrob::GraphUnion &unionTerm,
+						 const TripleStore &tripleStore,
+						 std::set<std::string_view> &groundedVariables);
 	};
 
 } // knowrob

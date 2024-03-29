@@ -94,46 +94,66 @@ void Pipeline::appendTerm_recursive(const knowrob::GraphTerm &query, // NOLINT
 			}
 			break;
 		case knowrob::GraphTermType::Union:
-			appendUnion((const knowrob::GraphUnion &) query);
+			appendUnion((const knowrob::GraphUnion &) query, tripleStore, groundedVariables);
 			break;
 	}
 }
 
-void Pipeline::appendUnion(const knowrob::GraphUnion &builtin) {
-	// TODO: Support Union operation in MongoDB knowledge graph.
-	//       afaik, this can only be achieved through multiple $lookup stages
-	//       then use $concatArrays and $unwind. $union does not work with variables!
-	//       let variables need to be accessed with $$, so passing v_VARS into pipeline
-	//       is not enough to make it work. mainly affects the triple lookup code.
-	/*
-aggregate_disjunction(FindallStages, StepVars, Pipeline, StepVars) :-
-	% get a list of list variable keys
-	findall(string(X),
-		member([_,X,_],FindallStages),
-		VarKeys),
-	% prepend "$" for accessing values
-	maplist([string(In),string(Out)]>>
-		atom_concat('$',In,Out),
-		VarKeys, VarValues),
-	%
-	findall(QueryStage,
-		% first, compute array of results for each facet
-		(	member([QueryStage,_,_], FindallStages)
-		% second, concatenate the results
-		;	QueryStage=['$set', ['next', ['$concatArrays', array(VarValues)]]]
-		% third, delete unneeded array
-		;	QueryStage=['$unset', array(VarKeys)]
-		% unwind all solutions from disjunction
-		;	QueryStage=['$unwind', string('$next')]
-		% finally project the result of a disjunction goal
-		;	mongolog:set_next_vars(StepVars, QueryStage)
-		% and unset the next field
-		;	QueryStage=['$unset', string('next')]
-		),
-		Pipeline
-	).
-	 */
-	KB_WARN("Union not supported in pipeline yet {}", builtin);
+void Pipeline::appendUnion(const knowrob::GraphUnion &unionTerm,
+						   const TripleStore &tripleStore,
+						   std::set<std::string_view> &groundedVariables) {
+	// First run a $lookup operation for each branch of the union.
+	for (uint32_t i = 0; i < unionTerm.terms().size(); i++) {
+		auto branchVars = groundedVariables;
+		// construct inner pipelines, one for each branch of the union
+		Document pipelineDoc(bson_new());
+		Pipeline nestedPipeline(pipelineDoc.bson());
+		nestedPipeline.setIsNested(true);
+		nestedPipeline.appendTerm_recursive(*unionTerm.terms()[i], tripleStore, branchVars);
+		auto pipelineArray = nestedPipeline.arrayDocument();
+
+		// construct a lookup
+		bson_t letDoc;
+		auto lookupStage = appendStageBegin("$lookup");
+		BSON_APPEND_UTF8(lookupStage, "from", tripleStore.oneCollection->name().data());
+		BSON_APPEND_UTF8(lookupStage, "as", ("next" + std::to_string(i)).data());
+		BSON_APPEND_DOCUMENT_BEGIN(lookupStage, "let", &letDoc);
+		BSON_APPEND_UTF8(&letDoc, "v_VARS", isNested_ ? "$$v_VARS" : "$v_VARS");
+		bson_append_document_end(lookupStage, &letDoc);
+		BSON_APPEND_ARRAY_BEGIN(lookupStage, "pipeline", pipelineArray);
+		bson_append_array_end(lookupStage, pipelineArray);
+		appendStageEnd(lookupStage);
+	}
+
+	// concatenate individual results
+	bson_t concatDoc, concatArray;
+	auto setConcatStage = appendStageBegin("$set");
+	BSON_APPEND_DOCUMENT_BEGIN(setConcatStage, "next", &concatDoc);
+	BSON_APPEND_ARRAY_BEGIN(&concatDoc, "$concatArrays", &concatArray);
+	for (uint32_t i = 0; i < unionTerm.terms().size(); i++) {
+		BSON_APPEND_UTF8(&concatArray, std::to_string(i).c_str(), ("$next" + std::to_string(i)).data());
+	}
+	bson_append_array_end(&concatDoc, &concatArray);
+	bson_append_document_end(setConcatStage, &concatDoc);
+	appendStageEnd(setConcatStage);
+	// delete individual results
+	for (uint32_t i = 0; i < unionTerm.terms().size(); i++) {
+		unset("next" + std::to_string(i));
+	}
+	// unwind the concatenated array
+	unwind("$next");
+	// project the bindings of one of the branches into v_VARS field
+	bson_t setDoc, mergeArray;
+	auto setMergedStage = appendStageBegin("$set");
+	BSON_APPEND_DOCUMENT_BEGIN(setMergedStage, "v_VARS", &setDoc);
+	BSON_APPEND_ARRAY_BEGIN(&setDoc, "$mergeObjects", &mergeArray);
+	BSON_APPEND_UTF8(&mergeArray, "0", "$next.v_VARS");
+	BSON_APPEND_UTF8(&mergeArray, "1", "$v_VARS");
+	bson_append_array_end(&setDoc, &mergeArray);
+	bson_append_document_end(setMergedStage, &setDoc);
+	appendStageEnd(setMergedStage);
+	// and finally unset the next field
+	unset("next");
 }
 
 void Pipeline::appendBuiltin(const knowrob::GraphBuiltin &builtin) {

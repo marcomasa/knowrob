@@ -47,6 +47,10 @@ namespace knowrob::mongo {
 				bson_t *selectorDoc,
 				const FramedTriplePattern &tripleExpression);
 
+		static void setTripleVariables(Pipeline &pipeline,
+									   const FramedTriplePattern &expr,
+									   const std::set<std::string_view> &knownGroundedVariables);
+
 	protected:
 		mongo::Document document_;
 
@@ -68,6 +72,7 @@ namespace knowrob::mongo {
 		uint32_t maxNumOfTriples;
 		std::set<std::string_view> knownGroundedVariables;
 		bool mayHasMoreGroundings;
+		bool isNested = false;
 	};
 
 	void lookupTriple(Pipeline &pipeline, const TripleStore &tripleStore, const TripleLookupData &lookupData);

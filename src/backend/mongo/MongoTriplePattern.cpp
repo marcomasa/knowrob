@@ -267,32 +267,34 @@ static inline void appendMatchVariable(bson_t *doc,
 	bson_append_document_end(doc, &exprDoc);
 }
 
-static void setTripleVariables(Pipeline &pipeline, const TripleLookupData &lookupData) {
+void MongoTriplePattern::setTripleVariables(Pipeline &pipeline,
+											const FramedTriplePattern &expr,
+											const std::set<std::string_view> &knownGroundedVariables) {
 	std::list<std::pair<const char *, Variable *>> varList;
 
 	// the object can be specified as a triple (Value, Operator, ActualValue) such that
 	// a value constraint is given plus a variable where the actual value of the triple should be stored.
-	TermPtr objectVar = lookupData.expr->objectTerm();
-	if (objectVar && !objectVar->isVariable() && lookupData.expr->objectVariable()) {
-		objectVar = lookupData.expr->objectVariable();
+	TermPtr objectVar = expr.objectTerm();
+	if (objectVar && !objectVar->isVariable() && expr.objectVariable()) {
+		objectVar = expr.objectVariable();
 	}
 
 	for (auto &it: {
-			std::make_pair("$next.s", lookupData.expr->subjectTerm()),
-			std::make_pair("$next.p", lookupData.expr->propertyTerm()),
+			std::make_pair("$next.s", expr.subjectTerm()),
+			std::make_pair("$next.p", expr.propertyTerm()),
 			std::make_pair("$next.o", objectVar),
-			std::make_pair("$next.graph", lookupData.expr->graphTerm().get()),
-			std::make_pair("$next.confidence", lookupData.expr->confidenceTerm().get()),
-			std::make_pair("$next.agent", lookupData.expr->perspectiveTerm().get()),
-			std::make_pair("$next.scope.time.since", lookupData.expr->beginTerm().get()),
-			std::make_pair("$next.scope.time.until", lookupData.expr->endTerm().get()),
-			std::make_pair("$next.uncertain", lookupData.expr->isUncertainTerm().get()),
-			std::make_pair("$next.occasional", lookupData.expr->isOccasionalTerm().get())
+			std::make_pair("$next.graph", expr.graphTerm().get()),
+			std::make_pair("$next.confidence", expr.confidenceTerm().get()),
+			std::make_pair("$next.agent", expr.perspectiveTerm().get()),
+			std::make_pair("$next.scope.time.since", expr.beginTerm().get()),
+			std::make_pair("$next.scope.time.until", expr.endTerm().get()),
+			std::make_pair("$next.uncertain", expr.isUncertainTerm().get()),
+			std::make_pair("$next.occasional", expr.isOccasionalTerm().get())
 	}) {
 		if (!it.second || it.second->termType() != TermType::VARIABLE) continue;
 		auto var = (Variable *) it.second.get();
 		// skip variables that were instantiated in previous steps
-		if (lookupData.knownGroundedVariables.count(var->name()) > 0) continue;
+		if (knownGroundedVariables.count(var->name()) > 0) continue;
 		varList.emplace_back(it.first, var);
 	}
 
@@ -348,7 +350,12 @@ static void nonTransitiveLookup(
 	if (!b_skipInputGroundings) {
 		// pass "v_VARS" field to lookup pipeline
 		BSON_APPEND_DOCUMENT_BEGIN(lookupStage, "let", &letDoc);
-		BSON_APPEND_UTF8(&letDoc, "v_VARS", "$v_VARS");
+		if (pipeline.isNested()) {
+			// pass from outer "let" document
+			BSON_APPEND_UTF8(&letDoc, "v_VARS", "$$v_VARS");
+		} else {
+			BSON_APPEND_UTF8(&letDoc, "v_VARS", "$v_VARS");
+		}
 		bson_append_document_end(lookupStage, &letDoc);
 	}
 	BSON_APPEND_ARRAY_BEGIN(lookupStage, "pipeline", &lookupArray);
@@ -407,7 +414,7 @@ static void nonTransitiveLookup(
 		// Unwind, and set preserveEmpty=true if lookupData.expr->isOptional().
 		pipeline.unwind("$next", lookupData.expr->isOptional());
 		// project new variable groundings
-		setTripleVariables(pipeline, lookupData);
+		MongoTriplePattern::setTripleVariables(pipeline, *lookupData.expr, lookupData.knownGroundedVariables);
 	}
 
 	// finally, remove next field: { $unset: "next" }
@@ -423,7 +430,9 @@ static void transitiveLookup(
 								  tripleStore.vocabulary->isTaxonomicProperty(definedProperty->iri()));
 	// start with object in case it is known to be grounded before at runtime
 	bool b_objectIsKnownGrounded = lookupData.expr->objectTerm()->isVariable() &&
-			lookupData.knownGroundedVariables.count(std::static_pointer_cast<Variable>(lookupData.expr->objectTerm())->name()) > 0;
+								   lookupData.knownGroundedVariables.count(
+										   std::static_pointer_cast<Variable>(lookupData.expr->objectTerm())->name()) >
+								   0;
 	bool b_startWithSubject = lookupData.expr->subjectTerm()->isGround() || !b_objectIsKnownGrounded;
 
 	auto startTerm = (b_startWithSubject ?
@@ -455,7 +464,8 @@ static void transitiveLookup(
 		MongoTerm::append(&restrictSearchDoc,
 						  (b_isTaxonomicProperty ? "p" : "p*"),
 						  lookupData.expr->propertyTerm());
-		MongoTriplePattern::appendGraphSelector(&restrictSearchDoc, *lookupData.expr, tripleStore.vocabulary->importHierarchy());
+		MongoTriplePattern::appendGraphSelector(&restrictSearchDoc, *lookupData.expr,
+												tripleStore.vocabulary->importHierarchy());
 		MongoTriplePattern::appendEpistemicSelector(&restrictSearchDoc, *lookupData.expr);
 		MongoTriplePattern::appendTimeSelector(&restrictSearchDoc, *lookupData.expr);
 	}
@@ -526,7 +536,7 @@ static void transitiveLookup(
 	pipeline.appendStageEnd(matchEnd);
 
 	// project new variable groundings
-	setTripleVariables(pipeline, lookupData);
+	MongoTriplePattern::setTripleVariables(pipeline, *lookupData.expr, lookupData.knownGroundedVariables);
 	// remove next field again: { $unset: "next" }
 	pipeline.unset("next");
 }
