@@ -29,15 +29,15 @@ filtering based on the fluent value.
 :- use_module(library('scope')).
 
 %% Predicates that are stored in a mongo collection
-:- dynamic mongolog_fluent/4.
+:- dynamic mongolog_fluent/5.
 
-%% mongolog_fluent(+Term, -TimeField, -ArgFields, -Options) is semidet.
+%% mongolog_fluent(+Term, -TimeField, -ArgFields, -Module, -Options) is semidet.
 %
 %
-mongolog_fluent(Term, TimeField, ArgFields, Options) :-
+mongolog_fluent(Term, TimeField, ArgFields, Module, Options) :-
 	compound(Term),!,
 	Term =.. [Functor|_],
-	mongolog_fluent(Functor, TimeField, ArgFields, Options).
+	mongolog_fluent(Functor, TimeField, ArgFields, Module, Options).
 
 %% mongolog_add_fluent(+Functor, +ArgFields, +TimeField, +Options) is semidet.
 %
@@ -57,19 +57,20 @@ mongolog_fluent(Term, TimeField, ArgFields, Options) :-
 % @param Options option list
 %
 mongolog_add_fluent(Functor, _, _, _) :-
-    % TODO: allow that the same fluent is defined in different reasoner modules.
-    %   (look at database.pl handling of facts). This is needed when multiple instances
-    %   of Mongolog reasoner are used.
-	mongolog_fluent(Functor, _, _, _),
-	!,
+	mongolog_fluent(Functor, _, _, Module, _),
+	current_fluent_module(Module), !,
 	throw(permission_error(modify,database_fluent,Functor)).
 
 mongolog_add_fluent(Functor, ArgFields, TimeField, Options) :-
-	setup_fluent_collection(Functor, ArgFields, TimeField, Options),
-	assertz(mongolog_fluent(Functor, ArgFields, TimeField, Options)),
 	current_reasoner_module(ReasonerModule),
+	setup_fluent_collection(Functor, ArgFields, TimeField, Options),
+	assertz(mongolog_fluent(Functor, ArgFields, TimeField, ReasonerModule, Options)),
 	length(ArgFields, Arity),
 	mongolog:add_command(Functor, Arity, ReasonerModule).
+
+%%
+current_fluent_module(Module) :- current_reasoner_module(Module),!.
+current_fluent_module(user).
 
 %%
 setup_fluent_collection(Functor, ArgFields, TimeField, Options) :-
@@ -125,15 +126,18 @@ mongolog_drop_fluent(Functor) :-
 %%
 %
 mongolog:step_compile(assert(Term), Ctx, Pipeline, StepVars) :-
-	mongolog_fluent(Term, _, _, _),!,
+	mongolog_fluent(Term, _, _, Module, _),
+	current_fluent_module(Module),!,
 	mongolog_fluent_assert(Term, Ctx, Pipeline, StepVars).
 
 mongolog:step_compile(retractall(Term), Ctx, Pipeline, StepVars) :-
-	mongolog_fluent(Term, _, _, _),!,
+	mongolog_fluent(Term, _, _, Module, _),
+	current_fluent_module(Module),!,
 	mongolog_fluent_retractall(Term, Ctx, Pipeline, StepVars).
 
 mongolog:step_compile(Term, Ctx, Pipeline, StepVars) :-
-	mongolog_fluent(Term, _, _, _),!,
+	mongolog_fluent(Term, _, _, Module, _),
+	current_fluent_module(Module),!,
 	mongolog_fluent_call(Term, Ctx, Pipeline, StepVars).
 
 %%
@@ -230,7 +234,7 @@ mongolog_fluent_assert(Term, Ctx, Pipeline, StepVars) :-
 %%
 %
 fluent_zip(Term, Ctx, ZippedKeys, ZippedValues, TimeKey, Ctx_zipped, ReadOrWrite) :-
-	mongolog_fluent(Term, ArgFields, TimeKey, Options),
+	mongolog_fluent(Term, ArgFields, TimeKey, _Module, Options),
 	% get predicate functor and arguments
 	Term =.. [Functor|Args],
 	% get the database collection of the predicate
