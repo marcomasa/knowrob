@@ -87,6 +87,9 @@ void PrologEngine::initializeProlog() {
 	PL_initialise(pl_ac, pl_av);
 	KB_DEBUG("Prolog has been initialized.");
 
+	// expand the Prolog library_directory path used to locate Prolog files
+	expandSearchPaths();
+
 	// register some foreign predicates, i.e. cpp functions that are used to evaluate predicates.
 	// note: the predicates are loaded into module "user"
 	PL_register_foreign("knowrob_register_namespace",
@@ -101,6 +104,52 @@ void PrologEngine::initializeProlog() {
 
 	consult(std::filesystem::path("reasoner") / "prolog" / "__init__.pl", "user", false);
 	KB_DEBUG("KnowRob __init__.pl has been consulted.");
+}
+
+void PrologEngine::expandSearchPaths() {
+	static std::filesystem::path projectPath(KNOWROB_SOURCE_DIR);
+	static std::filesystem::path installPath(KNOWROB_INSTALL_PREFIX);
+
+	// expand library search path, e.g. used by use_module/2 to locate Prolog source files.
+	// prefer files from projectPath
+	auto libPaths = {
+			installPath / "share" / "knowrob" / "reasoner" / "prolog",
+			installPath / "share" / "knowrob" / "reasoner",
+			installPath / "share" / "knowrob",
+			projectPath / "src" / "reasoner" / "prolog",
+			projectPath / "src" / "reasoner",
+			projectPath / "src"
+	};
+	for (const auto &p: libPaths) {
+		if (!exists(p)) continue;
+		eval([&p] {
+			return PrologTerm("asserta", PrologTerm(":", "user", PrologTerm("library_directory", p.string())));
+		});
+	}
+
+	// expand file search path, e.g. used by absolute_file_name/3 predicate
+	// "knowrob" files:
+	auto filePaths_knowrob = {
+			projectPath,
+			installPath / "share" / "knowrob"
+	};
+	for (const auto &p: filePaths_knowrob) {
+		if (!exists(p)) continue;
+		eval([&p] {
+			return PrologTerm("assertz", PrologTerm("file_search_path", "knowrob", p.string()));
+		});
+	}
+
+	// "test" files:
+	auto filePaths_tests = {
+			projectPath / "tests"
+	};
+	for (const auto &p: filePaths_tests) {
+		if (!exists(p)) continue;
+		eval([&p] {
+			return PrologTerm("assertz", PrologTerm("file_search_path", "test", p.string()));
+		});
+	}
 }
 
 void PrologEngine::pushGoal(const std::shared_ptr<ThreadPool::Runner> &goal, const ErrorHandler &errHandler) {

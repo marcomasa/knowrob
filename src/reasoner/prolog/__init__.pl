@@ -13,24 +13,6 @@
         ]).
 :- set_prolog_flag(float_format, '%.12g').
 
-% rules may generate discontiguous clauses.
-%:- style_check(-discontiguous).
-
-% add the toplevel src directory as Prolog library_directory
-:- prolog_load_context(directory, PrologDir),
-   atom_concat(SrcDir, '/reasoner/prolog', PrologDir),
-   % FIXME: no "src" or "tests" directory if no source avaialbale (i.e., when installed)
-   atom_concat(KnowRobDir, '/src', SrcDir),
-   atom_concat(SrcDir, '/reasoner', ReasonerDir),
-   atom_concat(KnowRobDir, '/tests', TestDir),
-   % expand library search path, e.g. used by use_module/2 to locate Prolog source files
-   asserta(user:library_directory(PrologDir)),
-   asserta(user:library_directory(SrcDir)),
-   asserta(user:library_directory(ReasonerDir)),
-   % expand file search path, e.g. used by absolute_file_name/3 predicate
-   assertz(file_search_path(knowrob, KnowRobDir)),
-   assertz(file_search_path(test, TestDir)).
-
 % load common Prolog libraries
 :- use_module(library('semweb/rdf_db'), [rdf_meta/1, rdf_current_ns/2, rdf_register_prefix/3]).
 
@@ -47,7 +29,6 @@
 :- use_module(library('ext/filesystem')).
 :- use_module(library('ext/functional')).
 :- use_module(library('ext/algebra')).
-%:- use_module(library('ext/atom')).
 
 % extensions for semantic web
 :- use_module(library('semweb')).

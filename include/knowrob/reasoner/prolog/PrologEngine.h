@@ -107,12 +107,14 @@ namespace knowrob {
 
 		// Override ThreadPool
 		bool initializeWorker() override;
+
+		static void expandSearchPaths();
 	};
 }
 
 #define PROLOG_ENGINE_EVAL(term) PrologEngine::eval([&]() { return term; })
 #define PROLOG_ENGINE_ONE_SOL(term) PrologEngine::oneSolution([&]() { return term; })
 #define PROLOG_ENGINE_ALL_SOL(term) PrologEngine::allSolutions([&]() { return term; })
-#define PROLOG_ENGINE_QUERY(term,callback) PrologEngine::query([&]() { return term; }, callback)
+#define PROLOG_ENGINE_QUERY(term, callback) PrologEngine::query([&]() { return term; }, callback)
 
 #endif //KNOWROB_PROLOG_THREAD_POOL_H_
