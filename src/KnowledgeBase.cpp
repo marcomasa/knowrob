@@ -10,7 +10,6 @@
 #include <knowrob/Logger.h>
 #include <knowrob/KnowledgeBase.h>
 #include <knowrob/URI.h>
-#include <filesystem>
 #include "knowrob/semweb/PrefixRegistry.h"
 #include "knowrob/queries/QueryParser.h"
 #include "knowrob/queries/QueryTree.h"
@@ -23,20 +22,19 @@
 #include "knowrob/queries/DisjunctiveBroadcaster.h"
 #include "knowrob/queries/AnswerYes.h"
 #include "knowrob/triples/TripleFormat.h"
-#include "knowrob/sources/OntologyFile.h"
-#include "knowrob/sources/SPARQLService.h"
+#include "knowrob/ontologies/OntologyFile.h"
+#include "knowrob/ontologies/SPARQLService.h"
 #include "knowrob/triples/TripleContainer.h"
 #include "knowrob/semweb/rdf.h"
 #include "knowrob/semweb/owl.h"
 #include "knowrob/semweb/rdfs.h"
 #include "knowrob/backend/BackendTransaction.h"
 #include "knowrob/semweb/OntologyLanguage.h"
-#include "knowrob/sources/OntologyParser.h"
 #include "knowrob/backend/BackendInterface.h"
 #include "knowrob/KnowRobError.h"
 #include "knowrob/py/PythonError.h"
-#include "knowrob/alignment/GraphTransformation.h"
-#include "knowrob/alignment/TransformedOntology.h"
+#include "knowrob/ontologies/GraphTransformation.h"
+#include "knowrob/ontologies/TransformedOntology.h"
 
 using namespace std::chrono_literals;
 using namespace knowrob;

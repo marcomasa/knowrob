@@ -81,6 +81,16 @@ However, some application ontologies are available as part of public
 [repositories](https://github.com/knowrob/),
 and hosted by the [openEASE webservice](http://www.open-ease.org/).
 
+### Ontology Alignment
+
+*Ontological alignment* is
+the problem of aligning two or more ontologies,
+or parts of ontologies, in order to enable interoperability between them.
+
+Within KnowRob, the goal is to align external ontologies with the KnowRob ontology,
+so that data from external sources can be integrated with the Knowrob knowledge base.
+This is a crucial step in enabling KnowRob to reason over data from the web, and to integrate data from different sources.
+
 ### Activity Model
 
 In KnowRob, an *Action* is defined as an *Event* where at least one agent that participates in the event executes a *Task* which is typically defined in a *Plan*. Tasks are used to classify actions, similar to how roles are used to classify objects within some situational context. There may be multiple plans defining the same task which is useful to capture different ways to achieve the same goal. The distinction between *Action* and *Task* is further important as it enables us to put individual tasks into discourse without referring to a particular execution of them (i.e. an *Action*). This is needed because a *Plan* is a generalization of action executions, abstracting away from individual objects that were involved by only referring to the roles they have played.

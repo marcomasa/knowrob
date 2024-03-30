@@ -159,7 +159,7 @@ add_library(knowrob SHARED
         src/ThreadPool.cpp
         src/Logger.cpp
         src/KnowledgeBase.cpp
-        src/sources/DataSource.cpp
+        src/ontologies/DataSource.cpp
         src/URI.cpp
         src/TimePoint.cpp
         src/TimeInterval.cpp
@@ -222,9 +222,9 @@ add_library(knowrob SHARED
         src/reasoner/esg/ESGReasoner.cpp
         src/backend/QueryableBackend.cpp
         src/backend/BackendManager.cpp
-        src/sources/DataSourceHandler.cpp
-        src/sources/OntologyFile.cpp
-        src/sources/OntologyParser.cpp
+        src/ontologies/DataSourceHandler.cpp
+        src/ontologies/OntologyFile.cpp
+        src/ontologies/OntologyParser.cpp
         src/backend/BackendTransaction.cpp
         src/backend/mongo/MongoInterface.cpp
         src/backend/mongo/Database.cpp
@@ -256,12 +256,12 @@ add_library(knowrob SHARED
         src/reasoner/prolog/semweb.cpp
         src/reasoner/prolog/PrologBackend.cpp
         src/reasoner/prolog/PrologTerm.cpp
-        src/sources/SPARQLService.cpp
+        src/ontologies/SPARQLService.cpp
         src/backend/redland/RaptorContainer.cpp
-        src/alignment/GraphRenaming.cpp
-        src/alignment/GraphRestructuring.cpp
+        src/ontologies/GraphRenaming.cpp
+        src/ontologies/GraphRestructuring.cpp
         src/backend/redland/RedlandModel.cpp
-        src/alignment/GraphTransformation.cpp
+        src/ontologies/GraphTransformation.cpp
         src/terms/Atom.cpp
         src/terms/Atomic.cpp
         src/terms/Function.cpp
@@ -297,7 +297,7 @@ add_library(knowrob SHARED
         src/reasoner/GoalDrivenReasoner.cpp
         src/reasoner/DataDrivenReasoner.cpp
         src/reasoner/ReasonerEvent.cpp
-        src/alignment/TransformedOntology.cpp)
+        src/ontologies/TransformedOntology.cpp)
 set(KNOWROB_LIBRARIES
         ${SWIPL_LIBRARIES}
         ${MONGOC_LIBRARIES}

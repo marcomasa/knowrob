@@ -133,7 +133,7 @@ More complete information about reasoning in KnowRob can be found
 
 More documentation can be found in the following subpages:
 
-- [Ontologies](src/sources/README.md)
+- [Ontologies](src/ontologies/README.md)
 - [Querying](src/queries/README.md)
 - [Backends](src/backend/README.md)
 - [Reasoner](src/reasoner/README.md)

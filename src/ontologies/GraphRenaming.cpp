@@ -3,7 +3,7 @@
  * https://github.com/knowrob/knowrob for license details.
  */
 
-#include "knowrob/alignment/GraphRenaming.h"
+#include "knowrob/ontologies/GraphRenaming.h"
 #include "knowrob/Logger.h"
 #include <utility>
 #include <fstream>

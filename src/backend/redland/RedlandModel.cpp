@@ -7,7 +7,7 @@
 #include "knowrob/backend/redland/RedlandModel.h"
 #include "knowrob/backend/BackendError.h"
 #include "knowrob/backend/BackendManager.h"
-#include "knowrob/sources/OntologyParser.h"
+#include "knowrob/ontologies/OntologyParser.h"
 #include "knowrob/semweb/xsd.h"
 #include "knowrob/formulas/Bottom.h"
 #include "knowrob/terms/IRIAtom.h"

@@ -9,8 +9,8 @@
 #include <memory>
 #include "knowrob/PropertyTree.h"
 #include "knowrob/terms/Atom.h"
-#include "knowrob/sources//DataSource.h"
-#include "knowrob/sources/DataSourceHandler.h"
+#include "knowrob/ontologies/DataSource.h"
+#include "knowrob/ontologies/DataSourceHandler.h"
 #include "knowrob/backend/Backend.h"
 #include "knowrob/plugins/NamedPlugin.h"
 

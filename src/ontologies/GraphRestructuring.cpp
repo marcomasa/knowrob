@@ -3,7 +3,7 @@
  * https://github.com/knowrob/knowrob for license details.
  */
 
-#include "knowrob/alignment/GraphRestructuring.h"
+#include "knowrob/ontologies/GraphRestructuring.h"
 #include "knowrob/triples/SPARQLQuery.h"
 #include "knowrob/queries/QueryParser.h"
 #include <fstream>

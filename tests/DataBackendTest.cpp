@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 #include "knowrob/backend/mongo/MongoKnowledgeGraph.h"
 #include "knowrob/queries/QueryParser.h"
-#include "knowrob/sources/OntologyParser.h"
+#include "knowrob/ontologies/OntologyParser.h"
 #include "knowrob/semweb/rdfs.h"
 #include "knowrob/backend/redland/RedlandModel.h"
 #include "knowrob/semweb/PrefixRegistry.h"
@@ -14,7 +14,6 @@
 #include "knowrob/reasoner/prolog/PrologEngine.h"
 #include "knowrob/backend/BackendInterface.h"
 #include "knowrob/reasoner/prolog/PrologBackend.h"
-#include "knowrob/reasoner/prolog/PrologReasoner.h"
 
 using namespace knowrob;
 using namespace knowrob::mongo;

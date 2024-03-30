@@ -10,7 +10,7 @@
 #include <gtest/gtest.h>
 #include "knowrob/py/utils.h"
 
-#include "knowrob/sources/DataSource.h"
+#include "knowrob/ontologies/DataSource.h"
 
 using namespace knowrob;
 namespace fs = std::filesystem;

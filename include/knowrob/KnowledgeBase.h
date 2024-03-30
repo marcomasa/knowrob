@@ -14,7 +14,7 @@
 #include "knowrob/queries/QueryPipeline.h"
 #include "knowrob/queries/QueryContext.h"
 #include "knowrob/semweb/RDFComputable.h"
-#include "knowrob/sources/OntologyFile.h"
+#include "knowrob/ontologies/OntologyFile.h"
 #include "knowrob/backend/QueryableBackend.h"
 #include "knowrob/backend/BackendManager.h"
 #include "knowrob/triples/GraphPathQuery.h"

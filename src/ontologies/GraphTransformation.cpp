@@ -3,10 +3,10 @@
  * https://github.com/knowrob/knowrob for license details.
  */
 
-#include "knowrob/alignment/GraphTransformation.h"
+#include "knowrob/ontologies/GraphTransformation.h"
 #include "knowrob/Logger.h"
-#include "knowrob/alignment/GraphRenaming.h"
-#include "knowrob/alignment/GraphRestructuring.h"
+#include "knowrob/ontologies/GraphRenaming.h"
+#include "knowrob/ontologies/GraphRestructuring.h"
 
 #define TRANSFORMATION_SETTING_KEY_TYPE "type"
 #define TRANSFORMATION_SETTING_TYPE_RENAMING "renaming"

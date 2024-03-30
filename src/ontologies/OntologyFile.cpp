@@ -5,9 +5,9 @@
 
 #include <filesystem>
 #include <utility>
-#include "knowrob/sources/OntologyFile.h"
+#include "knowrob/ontologies/OntologyFile.h"
 #include "knowrob/Logger.h"
-#include "knowrob/sources/OntologyParser.h"
+#include "knowrob/ontologies/OntologyParser.h"
 
 using namespace knowrob;
 

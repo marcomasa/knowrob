@@ -12,7 +12,7 @@
 #include <optional>
 #include <boost/property_tree/ptree.hpp>
 #include "knowrob/terms/Term.h"
-#include "knowrob/sources/DataSource.h"
+#include "knowrob/ontologies/DataSource.h"
 
 namespace knowrob {
 	/**

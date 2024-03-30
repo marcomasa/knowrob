@@ -13,7 +13,7 @@
 #include "knowrob/semweb/Vocabulary.h"
 #include "knowrob/PropertyTree.h"
 #include "knowrob/ThreadPool.h"
-#include "knowrob/sources/DataSourceHandler.h"
+#include "knowrob/ontologies/DataSourceHandler.h"
 #include "knowrob/plugins/PluginFactory.h"
 #include "knowrob/plugins/TypedPluginFactory.h"
 
