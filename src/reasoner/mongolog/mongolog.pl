@@ -31,7 +31,7 @@
           reasoner_define_relation/2 ]).
 
 %% set of registered query commands.
-:- dynamic step_command/2.
+:- dynamic step_command/3.
 % optionally implemented by query commands.
 :- multifile step_expand/2.
 %% implemented by query commands to compile query documents
@@ -67,12 +67,11 @@ mongolog_current_predicate(PredicateIndicator, PredicateType) :-
 	mongolog_current_predicate1(CommandModule, Functor, Arity, PredicateType).
 
 %%
-mongolog_current_predicate1(_Module, Functor, _Arity, built_in) :-
-	% TODO: take arity into account. Same below
-    step_command(user, Functor), !.
+mongolog_current_predicate1(_Module, Functor, Arity, built_in) :-
+    step_command(user, Functor, Arity), !.
 
-mongolog_current_predicate1(Module, Functor, _Arity, idb_relation) :-
-    step_command(Module, Functor), !.
+mongolog_current_predicate1(Module, Functor, Arity, idb_relation) :-
+    step_command(Module, Functor, Arity), !.
 
 mongolog_current_predicate1(_Module, Functor, Arity, built_in) :-
     mongolog_rule(user, Functor, Args, _),
@@ -88,7 +87,7 @@ mongolog_current_predicate1(Module, Functor, Arity, idb_relation) :-
 %
 % @param Command a command term.
 %
-add_command(Command) :- add_command(Command, user).
+add_command(Command, Arity) :- add_command(Command, Arity, user).
 
 %% add_command(+Command, +CommandModule) is det.
 %
@@ -97,30 +96,32 @@ add_command(Command) :- add_command(Command, user).
 % @param Command a command term.
 % @param CommandModule the module in which the command is registered.
 %
-add_command(Command, _CommandModule) :-
-    step_command(user,Command), !.
-add_command(Command, CommandModule) :-
-    step_command(CommandModule,Command), !.
-add_command(Command, CommandModule) :-
-    assertz(step_command(CommandModule,Command)).
+add_command(Command, Arity, _CommandModule) :-
+    step_command(user,Command,Arity), !.
+add_command(Command, Arity, CommandModule) :-
+    step_command(CommandModule,Command,Arity), !.
+add_command(Command, Arity, CommandModule) :-
+    assertz(step_command(CommandModule,Command,Arity)).
 
 %%
-is_step_command(CommandModule, (/(Functor,_Arity))) :-
-	!, step_command1(CommandModule,Functor).
+is_step_command(CommandModule, (/(Functor,Arity))) :-
+	!, step_command1(CommandModule,Functor,Arity).
 
 is_step_command(CommandModule, Goal) :-
 	compound(Goal),!,
-	Goal =.. [Functor|_Args],
-	step_command1(CommandModule,Functor).
+	Goal =.. [Functor|Args],
+	length(Args, Arity),
+	step_command1(CommandModule,Functor,Arity).
 
 is_step_command(CommandModule, Functor) :-
 	atom(Functor),!,
-	step_command1(CommandModule,Functor).
+	once(step_command1(CommandModule,Functor,_)).
 
 %%
-step_command1(ReasonerModule, Functor) :-
-    step_command(RealReasonerModule, Functor),
-    once((RealReasonerModule==user ; RealReasonerModule==ReasonerModule)).
+step_command1(ReasonerModule, Functor, Arity) :-
+    step_command(RealReasonerModule, Functor, Arity),
+    once((RealReasonerModule==user ; RealReasonerModule==ReasonerModule)),
+    !.
 
 %% mongolog_add_rule(+Head, +Body) is semidet.
 %
@@ -871,10 +872,10 @@ step_compile(trace_predicate(Predicate), Ctx,
 	])]]]]) :-
 	var_key_or_val(Predicate, Ctx, Predicate0).
 
-step_command(user,ask).
-step_command(user,pragma).
-step_command(user,stepvars).
-step_command(user,trace_predicate).
+step_command(user,ask,1).
+step_command(user,pragma,1).
+step_command(user,stepvars,1).
+step_command(user,trace_predicate,1).
 
 %%
 match_equals(X, Exp, ['$match', ['$expr', ['$eq', array([X,Exp])]]]).

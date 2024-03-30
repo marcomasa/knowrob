@@ -24,8 +24,9 @@ for the new IRI.
 :- use_module('mongolog').
 
 %% query commands
-:- mongolog:add_command(iri_xml_namespace).
-:- mongolog:add_command(new_iri).
+:- mongolog:add_command(iri_xml_namespace,3).
+:- mongolog:add_command(new_iri,1).
+:- mongolog:add_command(new_iri,2).
 
 %%
 % projection queries can use new_iri/1 and new_iri/2 to generate

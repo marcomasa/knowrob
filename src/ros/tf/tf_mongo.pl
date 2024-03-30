@@ -45,7 +45,7 @@
 
 % add *tf* as a mongolog command such that it can be
 % used in mongolog queries.
-:- mongolog:add_command(tf).
+:- mongolog:add_command(tf,4).
 
 % tf/4
 lang_query:step_expand(

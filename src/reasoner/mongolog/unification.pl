@@ -17,9 +17,9 @@ The following predicates are supported:
 :- use_module('mongolog').
 
 %% mongolog:add_command
-:- mongolog:add_command(=).
-:- mongolog:add_command(\=).
-:- mongolog:add_command(assign).
+:- mongolog:add_command(=,2).
+:- mongolog:add_command(\=,2).
+:- mongolog:add_command(assign,2).
 
 %% @Term1 \= @Term2
 %

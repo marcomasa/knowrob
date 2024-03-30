@@ -16,8 +16,8 @@ The following predicates are supported:
 :- use_module('mongolog').
 
 %% mongolog:add_command
-:- mongolog:add_command(==).
-:- mongolog:add_command(\==).
+:- mongolog:add_command(==,2).
+:- mongolog:add_command(\==,2).
 
 %% @Term1 == @Term2
 % True if Term1 is equivalent to Term2. A variable is only identical to a sharing variable
@@ -84,4 +84,3 @@ test('\\==(+Term1,+Term2)'):-
 		(Atom \== 4.5), Atom, '4.5')).
 
 :- end_tests('mongolog_comparison').
-	

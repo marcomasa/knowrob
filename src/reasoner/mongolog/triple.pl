@@ -29,7 +29,7 @@ The following predicates are supported:
 :- rdf_meta(triple(t,t,t)).
 
 %% register query commands
-:- mongolog:add_command(triple).
+:- mongolog:add_command(triple,3).
 
 %%
 mongolog:step_compile(assert(triple(S,P,term(O))), Ctx, Pipeline, StepVars) :-

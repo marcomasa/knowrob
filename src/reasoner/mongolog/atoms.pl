@@ -22,13 +22,14 @@ The following predicates are supported:
 :- use_module('mongolog').
 
 %% query commands
-:- mongolog:add_command(atom_number).
-:- mongolog:add_command(atom_length).
-:- mongolog:add_command(atom_prefix).
-:- mongolog:add_command(atom_concat).
-:- mongolog:add_command(atomic_list_concat).
-:- mongolog:add_command(upcase_atom).
-:- mongolog:add_command(downcase_atom).
+:- mongolog:add_command(atom_number,2).
+:- mongolog:add_command(atom_length,2).
+:- mongolog:add_command(atom_prefix,2).
+:- mongolog:add_command(atom_concat,3).
+:- mongolog:add_command(atomic_list_concat,2).
+:- mongolog:add_command(atomic_list_concat,3).
+:- mongolog:add_command(upcase_atom,2).
+:- mongolog:add_command(downcase_atom,2).
 
 %% query compilation
 mongolog:step_compile(

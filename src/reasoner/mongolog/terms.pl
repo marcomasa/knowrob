@@ -18,10 +18,10 @@ The following predicates are supported:
 :- use_module('mongolog').
 
 %% query commands
-:- mongolog:add_command(functor).
-:- mongolog:add_command(arg).
-:- mongolog:add_command(copy_term).
-:- mongolog:add_command(=..).
+:- mongolog:add_command(functor,3).
+:- mongolog:add_command(arg,3).
+:- mongolog:add_command(copy_term,2).
+:- mongolog:add_command(=..,2).
 
 %% functor(?Term, ?Name, ?Arity) [ISO]
 % True when Term is a term with functor Name/Arity.

@@ -23,14 +23,14 @@ The following set of basic and special purpose predicates are supported:
 :- use_module('client', [ mng_strip_operator/3 ]).
 
 %% query commands
-:- mongolog:add_command(is).
-:- mongolog:add_command(>).
-:- mongolog:add_command(<).
-:- mongolog:add_command(=<).
-:- mongolog:add_command(>=).
-:- mongolog:add_command(=\=).
-:- mongolog:add_command(=:=).
-:- mongolog:add_command(between).
+:- mongolog:add_command(is,2).
+:- mongolog:add_command(>,2).
+:- mongolog:add_command(<,2).
+:- mongolog:add_command(=<,2).
+:- mongolog:add_command(>=,2).
+:- mongolog:add_command(=\=,2).
+:- mongolog:add_command(=:=,2).
+:- mongolog:add_command(between,3).
 
 %% query compilations
 %

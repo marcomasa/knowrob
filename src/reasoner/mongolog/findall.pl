@@ -15,7 +15,7 @@ The following predicates are supported:
 :- use_module('mongolog').
 
 %% register query commands
-:- mongolog:add_command(findall).
+:- mongolog:add_command(findall,3).
 
 %%
 mongolog:step_expand(

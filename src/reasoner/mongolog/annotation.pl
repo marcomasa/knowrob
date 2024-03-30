@@ -19,7 +19,7 @@ The following predicates are supported:
 :- rdf_meta(query_annotation(+,r,+,+,-)).
 
 %% query commands
-:- mongolog:add_command(annotation).
+:- mongolog:add_command(annotation,3).
 
 %% annotation(+Entity, +Property, -Annotation)
 %

@@ -20,13 +20,17 @@ The following predicates are supported:
 :- use_module('scope', [ mongolog_resolve_scope/3 ]).
 
 %%%% query commands
-:- mongolog:add_command(call).
-:- mongolog:add_command(once).
-:- mongolog:add_command(limit).
-:- mongolog:add_command(ignore).
-:- mongolog:add_command(call_with_args).
-:- mongolog:add_command(call_with_context).
-:- mongolog:add_command(context).
+:- mongolog:add_command(call,1).
+:- mongolog:add_command(call,2).
+:- mongolog:add_command(call,3).
+:- mongolog:add_command(call,4).
+:- mongolog:add_command(call,5).
+:- mongolog:add_command(once,1).
+:- mongolog:add_command(limit,2).
+:- mongolog:add_command(ignore,1).
+:- mongolog:add_command(call_with_args,2).
+:- mongolog:add_command(call_with_context,2).
+:- mongolog:add_command(context,1).
 
 %%%% query expansion
 	

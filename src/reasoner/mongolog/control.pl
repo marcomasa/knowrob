@@ -21,14 +21,13 @@ The following predicates are supported:
 :- use_module('mongolog').
 
 %% query commands
-:- mongolog:add_command(fail).
-:- mongolog:add_command(false).
-:- mongolog:add_command(true).
-:- mongolog:add_command(!).
-:- mongolog:add_command(\+).
-:- mongolog:add_command(->).
-%:- mongolog:add_command(*->).
-:- mongolog:add_command(;).
+:- mongolog:add_command(fail,0).
+:- mongolog:add_command(false,0).
+:- mongolog:add_command(true,0).
+:- mongolog:add_command(!,0).
+:- mongolog:add_command(\+,1).
+:- mongolog:add_command(->,2).
+:- mongolog:add_command(;,2).
 
 %% false
 %

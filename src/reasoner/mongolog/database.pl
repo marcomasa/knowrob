@@ -33,8 +33,8 @@ The following predicates are supported:
 :- dynamic mongolog_predicate/6.
 
 %% query commands
-:- mongolog:add_command(assert).
-:- mongolog:add_command(retractall).
+:- mongolog:add_command(assert,1).
+:- mongolog:add_command(retractall,1).
 
 %% mongolog_is_readonly is det.
 %
@@ -199,7 +199,7 @@ mongolog_add_predicate(Functor, Fields, SourceID, Options) :-
 	current_reasoner_module(DstModule),
 	setup_predicate_collection(Functor, Fields, Options),
 	assertz(mongolog_predicate(Functor, Arity, Fields, DstModule, SourceID, Options)),
-	mongolog:add_command(Functor, DstModule).
+	mongolog:add_command(Functor, Arity, DstModule).
 
 %%
 setup_predicate_collection(Functor, [FirstField|_], Options) :-

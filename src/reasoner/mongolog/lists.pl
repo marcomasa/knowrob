@@ -23,15 +23,15 @@ The following predicates are supported:
 :- use_module('mongolog').
 
 %% query commands
-:- mongolog:add_command(length).
-:- mongolog:add_command(max_list).
-:- mongolog:add_command(min_list).
-:- mongolog:add_command(sum_list).
-:- mongolog:add_command(member).
-:- mongolog:add_command(memberchk).
-:- mongolog:add_command(nth0).
-:- mongolog:add_command(list_to_set).
-:- mongolog:add_command(sort).
+:- mongolog:add_command(length,2).
+:- mongolog:add_command(max_list,2).
+:- mongolog:add_command(min_list,2).
+:- mongolog:add_command(sum_list,2).
+:- mongolog:add_command(member,2).
+:- mongolog:add_command(memberchk,2).
+:- mongolog:add_command(nth0,3).
+:- mongolog:add_command(list_to_set,2).
+:- mongolog:add_command(sort,2).
 
 %% member(?Elem, +List)
 % True if Elem is a member of List. 
