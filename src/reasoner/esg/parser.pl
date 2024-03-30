@@ -7,9 +7,7 @@
       parser_stop/2,
       parser_push_token/2,
       parser_pop_finalized/2,
-      parser_intermediate_results/2,
-      parser_jsonify/2,
-      ros_push_token/2
+      parser_intermediate_results/2
     ]).
 /** <module> Activity parsing.
 
@@ -28,6 +26,8 @@ can be casted as grammar for the parser.
 :- use_module(library('semweb/rdf_db')).
 :- use_module(library('semweb/rdfs'),
     [ rdfs_individual_of/2, rdfs_subclass_of/2 ]).
+:- use_module(library('semweb'),
+    [ sw_instance_of_expr/2 ]).
 
 :- use_module('interval',
 	[ interval_constraint/3 ]).
@@ -45,7 +45,6 @@ can be casted as grammar for the parser.
 
 :- dynamic parser_grammar_/4, % Parser, Workflow, Task Concept, Sequence Graph
            parser_queue_/3,
-           parser_subscriber_/2,
            composer_queue_/2,
            parser_thread_/2,
            parser_sub_thread_/3,
@@ -54,7 +53,7 @@ can be casted as grammar for the parser.
            composer_thread_/2.
 
 %%
-parser_info_(Msg) :- log_info(Msg).
+parser_info_(Msg) :- log_debug(Msg).
 
 %% parser_create(-Parser) is det.
 %
@@ -102,7 +101,10 @@ parser_unique_id_(Parser) :-
 %%
 parser_task_type_(Tsk,TskType) :-
   rdfs_individual_of(Tsk,TskType),
-  \+ rdf_equal(TskType, owl:'NamedIndividual').
+  \+ rdf_equal(TskType, owl:'NamedIndividual'),
+  \+ rdf_equal(TskType, owl:'Thing'),
+  \+ rdf_equal(TskType, rdfs:'Resource'),
+  !.
 parser_task_type_(Tsk,Tsk).
 
 %%
@@ -125,7 +127,7 @@ parser_create_grammar_(Parser,WF) :-
   ), Constraints),
   list_to_set(Constraints,Constraints0),
   % compute the sequence graph
-  parser_info_(loading_grammar(WF)),
+  parser_info_(loading_grammar(WF,Constraints0)),
   esg_truncated(Tsk,Steps0,Constraints0,[Sequence,
                            PreConditions, PostConditions]),
   % assert to Prolog KB
@@ -183,12 +185,6 @@ parser_start(Parser) :-
   assertz(parser_queue_(Parser,In,Out)),
   assertz(composer_queue_(Parser,Composed)),
   composer_set_intermediate_(Parser,[]),
-  %% obtain tokens from ROS topic '/parser/token'
-  ignore(ros_subscribe('/parser/token',
-      'knowrob/EventToken',
-      activity_parser:ros_push_token(Parser),
-      Subscriber)),
-  assertz(parser_subscriber_(Parser,Subscriber)),
   %% run the parser
   thread_create(parser_run_(Parser),Thread),
   assertz(parser_thread_(Parser,Thread)),
@@ -220,10 +216,6 @@ parser_time_(Parser,Time) :-
 % @param Outputs The result of the parser.
 %
 parser_stop(Parser) :-
-  %% stop listining to ROS topics
-  parser_subscriber_(Parser,Subscriber),
-  ros_unsubscribe(Subscriber,'/parser/token'),
-  retractall(parser_subscriber_(Parser,_)),
   %% wait until parser thread exits
   parser_stop_threads_(Parser),
   %% and destroy queues
@@ -293,27 +285,6 @@ parser_push_token(Parser,Token) :-
   is_active_thread_(Thread),
   thread_send_message(Thread,Token).
 
-%%
-ros_push_token(Parser,Tok) :-
-  %% read input
-  get_dict(timestamp,    Tok, Time),
-  get_dict(polarization, Tok, Polarization),
-  get_dict(event_type,   Tok, EventType),
-  get_dict(participants, Tok, Objects),
-  %%
-  atom_string(EventType_atom,EventType),
-  findall(OA, (
-    member(O,Objects),
-    atom_string(OA,O)
-  ), Object_Atoms),
-  %%
-  ( Polarization = 0 ->
-    Endoint = -(EventType_atom);
-    Endoint = +(EventType_atom)
-  ),
-  %%
-  parser_push_token(Parser,tok(Time,Endoint,Object_Atoms)).
-
 is_token_(tok(Time,_Endpoint,_Objects)) :- number(Time).
 
 %%
@@ -355,7 +326,6 @@ parse_verb_(Parser,States,[WF,Tsk,Graph,ActConditions]) :-
   %% Create a lazy list of tokens streamed into the message
   %% queue of the thread.
   thread_self(Thread),
-  %gtrace,
   setup_call_cleanup(
     lazy_list(lazy_message_queue(Thread, []), Tokens),
     %% Run the parser
@@ -554,9 +524,6 @@ parser_pop_finalized(Parser,Finalized) :-
 
 %%
 composer_push_finalized_(Parser,X) :-
-  X=action(_,Tsk,_),
-  parser_info_(composed(Tsk)),
-  %%
   composer_queue_(Parser,Q),
   thread_send_message(Q,X).
 
@@ -582,8 +549,6 @@ composer_set_intermediate_(Parser,X) :-
 
 %% add action in case it explains max num of endpoints
 activity_composer_add_(I_in,Act,I_out) :-
-  Act=action(_,Tsk,_),
-  parser_info_(detected(Tsk)),
   %%
   findall(E0,
     term_endpoint(Act,E0),
@@ -615,68 +580,6 @@ overlapping_action_(I,Endpoints,Act_overlapping) :-
     term_endpoint(Act_overlapping,Needle),
     member(Needle,Endpoints)
   )).
-
-		 /*******************************
-		 *	Serialization		*
-		 *******************************/
-
-%% parser_jsonify(+Terms,-JSON_String) is det.
-%
-% Converts a list of action terms into a JSON-encoded
-% atom.
-%
-% @param Terms A list of action terms.
-% @param JSON_String The list as a JSON string.
-%
-parser_jsonify(Terms,JSON_String) :-
-  %%
-  findall(Dict, (
-    member(X,Terms),
-    event_dict_(X,Dict)
-  ),ActDicts),
-  with_output_to(atom(JSON_String), 
-    json_write_dict(current_output, ActDicts)
-  ).
-
-%%
-event_dict_([],[]) :- !.
-event_dict_([X|Xs],[Y|Ys]) :- !,
-  event_dict_(X,Y),
-  event_dict_(Xs,Ys).
-
-event_dict_(action(Workflow,Tsk,Constituents),
-  _{ type: action,
-     event_type: EventType,
-     event_time: '',
-     event_polarization: '',
-     description: Descr,
-     children: Children,
-     participants: []
-  }
-) :-
-  rdf_split_url(_,EventType,Tsk),
-  rdf_split_url(_,Descr,Workflow),
-  event_dict_(Constituents,Children).
-
-event_dict_(phase(Time,Endpoint,Participants),
-  _{ type: phase,
-     event_type: EventType,
-     event_time: Time,
-     event_polarization: Polarization,
-     description: '',
-     children: [],
-     participants: ObjNames
-  }
-) :-
-  endpoint_type(Endpoint,EndpointType),
-  rdf_split_url(_,EventType,EndpointType),
-  %%
-  ( Endpoint=(-(_)) -> Polarization='-' ; Polarization='+' ),
-  %%
-  findall(N, (
-    member(Obj,Participants),
-    rdf_split_url(_,N,Obj)
-  ),ObjNames).
 
 		 /*******************************
 		 *	States		*
@@ -766,10 +669,14 @@ binding_create_(Objects,Roles,Bindings) :-
   ), Bindings).
 binding_create__(_,[],[]) :- !.
 binding_create__(Objects,[R|Rs],[[O,R]|Rest]) :-
-  once(rdf_has(R, dul:classifies, only(O_Type))),
+  %once(sw_instance_of_expr(R, only(dul:classifies, O_Type))),
   member(O,Objects),
-  once(rdfs_individual_of(O, O_Type)),
-  binding_create__(Objects,Rs,Rest).
+  %once(rdfs_individual_of(O, O_Type)),
+  binding_create__(Objects,Rs,Rest),
+  !.
+binding_create__(Objects,Roles,_) :-
+  log_warn(esg(failed(binding_create(Objects,Roles)))),
+  fail.
 
 binding_update_([O,OR],[]->[[O,OR]]) :- !.
 binding_update_([O,OR],[[O,_]|Xs]->[[O,OR]|Xs]) :- !.
@@ -780,7 +687,8 @@ binding_update_([O,OR],[X|Xs]->[X|Ys]) :-
 apply_role_assignments_([],A_0->A_0) :- !.
 apply_role_assignments_([First|Rest],A_0->A_X) :-
   apply_role_assignment_(First,A_0->A_1),
-  apply_role_assignments_(Rest,A_1->A_X).
+  apply_role_assignments_(Rest,A_1->A_X),
+  !.
 
 apply_role_assignment_([O0,O0_R],A_0->_) :-
   % avoid conflicting assignment
@@ -860,9 +768,7 @@ action_preceded_by_(G,S,A_0->A_1) :-
 action_preceded_by_(_G,_S,A_0->A_0).
 
 action_preceded_by__(Endpoints,S,A0->A1) :-
-  % check how many endpoints were observed that would satisfy
-  % the pre-conditions
-  % FIXME: what about action endpoint pre-conditions? these might fail now
+  % check how many endpoints were observed that would satisfy the pre-conditions
   findall(AE, (
     member(AE,Endpoints),
     AE=(-(_))
@@ -871,7 +777,7 @@ action_preceded_by__(Endpoints,S,A0->A1) :-
     member(Endpoint,ActiveEndpoints),
     endpoint_type(Endpoint,Concept),
     %%
-    rdfs_individual_of(Concept,ConceptType),
+    parser_task_type_(Concept,ConceptType),
     get_event_state_(S,_,ConceptType,Participants),
     %%
     concept_roles_(Concept,C_Roles)
@@ -892,13 +798,13 @@ concept_roles_(Concept,C_Roles_Set) :-
   list_to_set(C_Roles,C_Roles_Set).
 
 %%
-concept_endpoint_(-(X),-(Y)) :- !, rdfs_individual_of(X,Y).
-concept_endpoint_(+(X),+(Y)) :- !, rdfs_individual_of(X,Y).
+concept_endpoint_(-(X),-(Y)) :- !, parser_task_type_(X,Y).
+concept_endpoint_(+(X),+(Y)) :- !, parser_task_type_(X,Y).
 
 %%
 endpoint_type_(E,Type) :-
   endpoint_type(E,Iri),
-  rdfs_subclass_of(Iri,Type),!.
+  rdfs_subclass_of(Iri,Type), !.
 
 %%
 term_endpoint(phase(_,E,_),E) :- !.

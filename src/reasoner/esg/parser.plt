@@ -1,9 +1,11 @@
 :- use_module(library('rdf_test')).
 :- begin_rdf_tests('activity_parser', 'owl/test/parser-test.owl').
 
-:- use_module('parser.pl', [ parser_create/2 ]).
+:- use_module('parser.pl').
 :- use_module(library('semweb/rdf_db')).
 :- use_module(library('semweb'), [ sw_register_prefix/2 ]).
+:- use_module(library('logging')).
+:- use_module(library('unittest')).
 
 :- sw_register_prefix(test, 'http://knowrob.org/kb/parser-test.owl#').
 
@@ -15,14 +17,14 @@
 test_parser_run(Tokens,Expected) :-
   test_parser(Parser),
   parser_run(Parser,Tokens,Actual),
-  Actual=Expected.
+  assert_unifies(Actual, Expected).
 
 test_parser_run_asynch(Tokens,Expected) :-
   test_parser(Parser),
   parser_start(Parser),
   forall(member(Tok,Tokens), parser_push_token(Parser,Tok)),
   parser_stop(Parser,Actual),
-  Actual=Expected.
+  assert_unifies(Actual, Expected).
 
 test('parser_assert') :-
   parser_create(Parser, [
