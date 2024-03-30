@@ -1234,7 +1234,7 @@ user:term_expansion((?>(Head,Body)), Export) :-
     % note: expansion happens only the first time the file is loaded e.g. via use_module.
     %   a consequitive loading does not trigger expansion again but only makes the predicates
     %   created here available in the module that loads the file again.
-    % FIXME: behavior described above may cause problems in case file is loaded multiple times with different reasoner contexts.
+    % FIXME: The behavior described above may cause problems in case file is loaded multiple times with different reasoner contexts.
 	expand_ask_rule_(SourceURL, ReasonerModule, Head, Body, Export).
 
 %%

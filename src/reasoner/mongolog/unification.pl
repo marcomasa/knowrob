@@ -113,9 +113,12 @@ unify_list(List1Val, List2Val, MapList) :-
 			['if', ['$ne', array([string('$$this.type'), string('var')])]],
 			% then use $$this
 			['then', string('$$this')],
-			% else use argument of other term
-			% FIXME: $indexOfArray only return first occurence, but we need to call $range to iterate over every index.
-			%        Is there a way to get index from $map context? that would simplify it.
+			% else use argument of other term.
+			% Note: afaik there is no built-in way to access the index of the mapped element.
+			%    Here we use $indexOfArray to find the index of the element in List1 in List2, but this is
+			%    not very efficient, and could cause problems when the list holds multiple identical elements.
+			%    Another option would be to use $zip to combine the list with $range list, but not so sure about
+			%    if possible
 			['else', ['$arrayElemAt', array([
 				string(List2Val),
 				['$indexOfArray', array([string(List1Val),string('$$this')])]

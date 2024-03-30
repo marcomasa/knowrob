@@ -48,7 +48,7 @@ during(Statement, [Since,Until]) ?>
 	)),
 	call_with_context(Statement, [query_scope(Scope)]),
 	% read computed fact scope
-	% FIXME: this is not really accurate as get('v_scope') yields the accumulated scope so far.
+	% FIXME: This is not entirely accurate as get('v_scope') yields the accumulated scope so far.
 	%   but we only want the accumulated scope for Goal here.
 	%   SOLUTION: do the get within the *call* same for since and until.
 	assign(Since, string('$v_scope.time.since')),
