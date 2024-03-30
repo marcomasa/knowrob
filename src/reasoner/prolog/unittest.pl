@@ -111,15 +111,13 @@ plunit_message_hook(total_time(_)) :- !.
 
 % uncomment this if something breaks to see what messages are being sent
 % by plunit. Every now and then the format of the messages changes.
-%plunit_message_hook(MsgTerm) :-
-%    writeln(MsgTerm), fail.
+%plunit_message_hook(MsgTerm) :- writeln(MsgTerm), fail.
 
 plunit_message_hook(blocked(FileIndicator, Name, Msg)) :-
     log_warning(test_blocked(Name, Msg), FileIndicator).
 plunit_message_hook(fixme(0, 0, 0)) :- !.
 plunit_message_hook(fixme(Failed, Passed, Nondet)) :-
     Total is Failed + Passed + Nondet,
-    % TODO: add file indicator to log. Unfortunately the msg does not carry context. Same below.
     log_warning(test_fixme(num_tests(Total))).
 plunit_message_hook(no_tests) :-
     log_warning(no_tests).
@@ -138,14 +136,17 @@ plunit_message_hook(end(Unit:Test, _File:_Line, _STO)) :-
 	unpack_test_(Test,TestA),
 	get_time(Time), assertz(test_case_end(Unit,TestA,Time)).
 
-plunit_message_hook(failed(Unit, Name, Line, _ErrorTerm, _Time, FailedAssert)) :-
-	plunit_message_hook(failed(Unit, Name, Line, FailedAssert)).
+plunit_message_hook(failed(Unit, Name, Line, ErrorTerm, _Time, FailedAssert)) :-
+	plunit_message_hook(failed(Unit, Name, Line, failed(ErrorTerm, FailedAssert))).
 plunit_message_hook(failed(Unit, Name, Line, Error, _Time)) :-
 	plunit_message_hook(failed(Unit, Name, Line, Error)).
 plunit_message_hook(failed(Unit:Name, _Counter, Line, Error)) :-
 	% seems format has changed in newer versions of plunit, it starts with "Unit:Name" which
 	% was not the case before afaik.
 	plunit_message_hook(failed(Unit, Name, Line, Error)).
+plunit_message_hook(failed(Unit, Name, _Line, _Error)) :-
+	test_case_failure(Unit,Name,_),
+	!.
 plunit_message_hook(failed(Unit, Name, _Line, Error)) :-
 	% need to select the output stream for print_message explicitely in the
 	% the scope of *run_tests*.
@@ -155,7 +156,10 @@ plunit_message_hook(failed(Unit, Name, _Line, Error)) :-
 		print_message(warning,test_failed(Unit, Name, Error))),
 	close(OS),
 	assertz(test_case_failure(Unit,Name,Error)).
-plunit_message_hook(failed_assertion(Unit, Name, Line, _Error, _STO, Reason, Goal)) :-
+
+plunit_message_hook(failed_assertion(Unit:Name, Line, AssertLoc, Progress, Reason, Goal)) :-
+	plunit_message_hook(failed_assertion(Unit, Name, Line, AssertLoc, Progress, Reason, Goal)),!.
+plunit_message_hook(failed_assertion(Unit, Name, Line, _AssertLoc, _Progress, Reason, Goal)) :-
 	% get tests options
 	plunit:current_unit(Unit, Module, _Supers, _UnitOptions),
 	Module:'unit test'(Name, Line, Options, _Body),

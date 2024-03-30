@@ -13,6 +13,10 @@
         ]).
 :- set_prolog_flag(float_format, '%.12g').
 
+% make sure all messages are printed, even if tests succeed.
+% else also error messages are suppressed which makes it really hard to debug.
+:- plunit:set_test_options([output(always)]).
+
 % load common Prolog libraries
 :- use_module(library('semweb/rdf_db'), [rdf_meta/1, rdf_current_ns/2, rdf_register_prefix/3]).
 

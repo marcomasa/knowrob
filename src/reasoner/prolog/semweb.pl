@@ -771,35 +771,6 @@ load_rdf_xml1(URL, ParentGraph) :-
     current_reasoner_module(Reasoner),
     sw_load_rdf_xml_cpp(ReasonerManager, Reasoner, URL, ParentGraph).
 
-%load_rdf_xml1(URL, ParentGraph) :-
-%	rdf_equal(owl:'imports', OWL_Imports),
-%	rdf_equal(owl:'Ontology',OWL_Ontology),
-%	rdf_equal(rdf:'type',RDF_Type),
-%	% resolve URL, and read ontology graph name and version
-%	sw_url(URL, Resolved, OntologyGraph, OntologyVersion),
-%	% include ontology when parent graph is queried
-%	sw_graph_include(ParentGraph, OntologyGraph),
-%	% load RDF data
-%	setup_call_cleanup(
-%	    sw_url_stream(Resolved, QueryStage),
-%	    rdf_load(QueryStage, [graph(OntologyGraph), silent(true)]),
-%	    close(QueryStage)
-%	),
-%	% remember reasoner to graph association
-%	current_reasoner_module(Reasoner),
-%	sw_set_current_graph(Reasoner, OntologyGraph),
-%	% lookup ontology URL
-%	(	rdf(AssertedURL, RDF_Type, OWL_Ontology, OntologyGraph) -> true
-%	;	log_error_and_fail(type_error(ontology,URL))
-%	),
-%	% load RDF data of imported ontologies
-%	forall(
-%		rdf(AssertedURL, OWL_Imports, ImportedURL, OntologyGraph),
-%		load_rdf_xml1(ImportedURL, ParentGraph)
-%	),
-%	!,
-%	log_debug(prolog(ontology_loaded(OntologyGraph,OntologyVersion))).
-
      /*******************************
      *          UNIT TESTS          *
      *******************************/
