@@ -56,7 +56,6 @@ allen_symbol(d).
 % Read time interval data from RDF store.
 %
 time_interval_data(Event, Begin, End) :-
-    % TODO: restrict below calls to the RDF graph of the reasoner instance
     rdf_subject(Event),
 	(   rdf_has(Event, dul:hasTimeInterval, TI)
 	->  true

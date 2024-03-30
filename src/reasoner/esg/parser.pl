@@ -110,7 +110,6 @@ parser_create_grammar_(Parser,WF) :-
   rdf_has(WF,soma:isPlanFor,Tsk),
   once(parser_task_type_(Tsk,TskType)),
   % find constituents and their relation to each other
-  % TODO: put all of these underneath a shared super property
   findall(S, (
     rdf_has(WF, dul:describes, S) ;
     rdf_has(WF, dul:definesTask, S) ;

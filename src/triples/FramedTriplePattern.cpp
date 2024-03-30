@@ -92,10 +92,10 @@ void FramedTriplePattern::setTripleFrame(const GraphSelector &frame) {
 		endTerm_ = std::make_shared<Double>(frame.end.value());
 	}
 	if (frame.graph) {
-		graphTerm_ = getGraphTerm(frame.graph);
+		graphTerm_ = frame.graph;
 	}
 	if (frame.perspective) {
-		perspectiveTerm_ = Atom::Tabled(frame.perspective.value()->iri());
+		perspectiveTerm_ = Atom::Tabled(frame.perspective->iri());
 	}
 	if (frame.uncertain) {
 		isUncertain_ = Numeric::trueAtom();
@@ -121,8 +121,8 @@ void FramedTriplePattern::getTripleFrame(GraphSelector &frame) const {
 	if (isOccasionalTerm().has_grounding() && isOccasionalTerm().grounded()->isNumeric()) {
 		frame.occasional = std::static_pointer_cast<Numeric>(isOccasionalTerm().grounded())->asBoolean();
 	}
-	if (graphTerm().has_grounding() && graphTerm().grounded()->isAtomic()) {
-		frame.graph = std::static_pointer_cast<Atomic>(graphTerm().grounded())->stringForm().data();
+	if (graphTerm().has_grounding() && graphTerm().grounded()->isAtom()) {
+		frame.graph = std::static_pointer_cast<Atom>(graphTerm().grounded());
 	}
 	if (perspectiveTerm().has_grounding() && perspectiveTerm().grounded()->isAtomic()) {
 		frame.perspective = Perspective::get((perspectiveTerm().grounded())->stringForm());
@@ -199,7 +199,6 @@ std::vector<VariablePtr> FramedTriplePattern::getVariables(bool includeObjectVar
 uint32_t FramedTriplePattern::numVariables() const {
 	return getVariables(false).size();
 }
-
 
 
 static bool filterString(std::string_view value, const FramedTriplePattern &query) {
@@ -446,7 +445,7 @@ namespace knowrob {
 
 		auto object = applyBindings(pat->objectTerm(), bindings);
 		if (object != pat->objectTerm()) hasChanges = true;
-		else if(pat->objectVariable()) {
+		else if (pat->objectVariable()) {
 			auto actualObject = applyBindings(pat->objectVariable(), bindings);
 			if (actualObject && actualObject != pat->objectTerm()) {
 				object = actualObject;

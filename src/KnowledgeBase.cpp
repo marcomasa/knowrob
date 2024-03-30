@@ -4,14 +4,11 @@
  */
 
 #include <thread>
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-
 #include <knowrob/Logger.h>
 #include <knowrob/KnowledgeBase.h>
 #include <knowrob/URI.h>
 #include "knowrob/semweb/PrefixRegistry.h"
-#include "knowrob/queries/QueryParser.h"
 #include "knowrob/queries/QueryTree.h"
 #include "knowrob/queries/ConjunctiveBroadcaster.h"
 #include "knowrob/queries/QueryStage.h"
@@ -24,15 +21,11 @@
 #include "knowrob/triples/TripleFormat.h"
 #include "knowrob/ontologies/OntologyFile.h"
 #include "knowrob/ontologies/SPARQLService.h"
-#include "knowrob/triples/TripleContainer.h"
 #include "knowrob/semweb/rdf.h"
 #include "knowrob/semweb/owl.h"
 #include "knowrob/semweb/rdfs.h"
 #include "knowrob/backend/BackendTransaction.h"
 #include "knowrob/semweb/OntologyLanguage.h"
-#include "knowrob/backend/BackendInterface.h"
-#include "knowrob/KnowRobError.h"
-#include "knowrob/py/PythonError.h"
 #include "knowrob/ontologies/GraphTransformation.h"
 #include "knowrob/ontologies/TransformedOntology.h"
 
@@ -211,41 +204,6 @@ void KnowledgeBase::configureReasoner(const boost::property_tree::ptree &config)
 	}
 }
 
-void KnowledgeBase::configureDataSources(const boost::property_tree::ptree &config) {
-	auto dataSourcesList = config.get_child_optional("data-sources");
-	if (dataSourcesList) {
-		for (const auto &pair: dataSourcesList.value()) {
-			auto &subtree = pair.second;
-			auto dataSource = createDataSource(subtree);
-			if (!dataSource) {
-				KB_ERROR("Failed to create data source \"{}\".", pair.first);
-				continue;
-			}
-			bool has_error = false;
-			auto transformationConfig = config.get_child_optional("transformation");
-			if (transformationConfig) {
-				if (dataSource->dataSourceType() != DataSourceType::ONTOLOGY) {
-					KB_ERROR("Transformations can only be applied on ontology data sources.");
-					continue;
-				}
-				auto ontology = std::static_pointer_cast<OntologySource>(dataSource);
-				// apply a transformation to the data source if "transformation" key is present
-				auto transformation = GraphTransformation::create(transformationConfig.value());
-				auto transformed = std::make_shared<TransformedOntology>(URI(ontology->uri()), ontology->format());
-				transformation->apply(*ontology, [&transformed](const TripleContainerPtr &triples) {
-					transformed->storage()->insertAll(triples);
-				});
-				has_error = !loadDataSource(transformed);
-			} else {
-				has_error = !loadDataSource(dataSource);
-			}
-			if (has_error) {
-				KB_ERROR("Failed to load data source from \"{}\".", dataSource->uri());
-			}
-		}
-	}
-}
-
 void KnowledgeBase::loadCommon() {
 	for (auto &ontoPath: {"owl/rdf-schema.xml", "owl/owl.rdf"}) {
 		loadDataSource(std::make_shared<OntologyFile>(vocabulary_, URI(ontoPath), "rdf-xml"));
@@ -268,52 +226,6 @@ void KnowledgeBase::stopReasoner() {
 		KB_LOGGED_TRY_CATCH(pair.first.data(), "stop", {
 			pair.second->stop();
 		});
-	}
-}
-
-static bool isOntologySourceType(
-		const std::string &format,
-		const boost::optional<std::string> &language,
-		const boost::optional<std::string> &type) {
-	if (type && (type.value() == "ontology" || type.value() == "sparql")) return true;
-	if (language && semweb::isOntologyLanguageString(language.value())) return true;
-	if (semweb::isTripleFormatString(format)) return true;
-	return false;
-}
-
-DataSourcePtr KnowledgeBase::createDataSource(const boost::property_tree::ptree &subtree) {
-	static const std::string formatDefault = {};
-
-	// read data source settings
-	URI dataSourceURI(subtree);
-	auto dataSourceFormat = subtree.get("format", formatDefault);
-	auto o_dataSourceLanguage = subtree.get_optional<std::string>("language");
-	auto o_type = subtree.get_optional<std::string>("type");
-	auto isOntology = isOntologySourceType(dataSourceFormat, o_dataSourceLanguage, o_type);
-	// TODO: support graph selector specification in settings?
-	//          then a data transformer could be created based on the setting.
-	//          an idea would be e.g. to have a reasoner running for other perspectives.
-	//auto tripleFrame_ptree = subtree.get_child_optional("frame");
-	//auto tripleFrame = tripleFrame_ptree ?
-	//		std::make_shared<GraphSelector>(tripleFrame_ptree.value()) : nullptr;
-
-	if (isOntology && o_type && o_type.value() == "sparql") {
-		auto sparqlService = std::make_shared<SPARQLService>(dataSourceURI, dataSourceFormat);
-		//if (tripleFrame) {
-		//	ontoFile->setFrame(tripleFrame);
-		//}
-		return sparqlService;
-	} else if (isOntology) {
-		auto ontoFile = std::make_shared<OntologyFile>(vocabulary_, dataSourceURI, dataSourceFormat);
-		if (o_dataSourceLanguage.has_value()) {
-			ontoFile->setOntologyLanguage(semweb::ontologyLanguageFromString(o_dataSourceLanguage.value()));
-		}
-		//if (tripleFrame) {
-		//	ontoFile->setFrame(tripleFrame);
-		//}
-		return ontoFile;
-	} else {
-		return std::make_shared<DataSource>(dataSourceURI, dataSourceFormat, DataSourceType::UNSPECIFIED);
 	}
 }
 
@@ -713,7 +625,8 @@ TokenBufferPtr KnowledgeBase::submitQuery(const FormulaPtr &phi, const QueryCont
 		//       this is effectively what is done in submitQuery(pathQuery)
 		// --------------------------------------
 		for (auto &posModal: posModals) {
-			// FIXME: use of this pointer below. only ok if destructor makes sure to destroy all pipelines.
+			// TODO: improve interaction between kb and modal stage.
+			//        use of this pointer not nice.
 			//        maybe a better way would be having another class generating pipelines with the ability
 			//        to create reference pointer on a KnowledgeBase, or use a weak ptr here
 			auto modalStage = std::make_shared<ModalStage>(this, posModal, ctx);
@@ -854,6 +767,88 @@ std::shared_ptr<NamedBackend> KnowledgeBase::findSourceBackend(const FramedTripl
 /*************** DATA SOURCES *********************/
 /**************************************************/
 
+static bool isOntologySourceType(
+		const std::string &format,
+		const boost::optional<std::string> &language,
+		const boost::optional<std::string> &type) {
+	if (type && (type.value() == "ontology" || type.value() == "sparql")) return true;
+	if (language && semweb::isOntologyLanguageString(language.value())) return true;
+	if (semweb::isTripleFormatString(format)) return true;
+	return false;
+}
+
+void KnowledgeBase::configureDataSources(const boost::property_tree::ptree &config) {
+	auto dataSourcesList = config.get_child_optional("data-sources");
+	if (dataSourcesList) {
+		for (const auto &pair: dataSourcesList.value()) {
+			auto &subtree = pair.second;
+			auto dataSource = createDataSource(subtree);
+			if (!dataSource) {
+				KB_ERROR("Failed to create data source \"{}\".", pair.first);
+				continue;
+			}
+			bool has_error;
+			auto transformationConfig = config.get_child_optional("transformation");
+			if (transformationConfig) {
+				if (dataSource->dataSourceType() != DataSourceType::ONTOLOGY) {
+					KB_ERROR("Transformations can only be applied on ontology data sources.");
+					continue;
+				}
+				auto ontology = std::static_pointer_cast<OntologySource>(dataSource);
+				// apply a transformation to the data source if "transformation" key is present
+				auto transformation = GraphTransformation::create(transformationConfig.value());
+				auto transformed = std::make_shared<TransformedOntology>(URI(ontology->uri()), ontology->format());
+				transformation->apply(*ontology, [&transformed](const TripleContainerPtr &triples) {
+					transformed->storage()->insertAll(triples);
+				});
+				has_error = !loadDataSource(transformed);
+			} else {
+				has_error = !loadDataSource(dataSource);
+			}
+			if (has_error) {
+				KB_ERROR("Failed to load data source from \"{}\".", dataSource->uri());
+			}
+		}
+	}
+}
+
+DataSourcePtr KnowledgeBase::createDataSource(const boost::property_tree::ptree &subtree) {
+	static const std::string formatDefault = {};
+
+	// read data source settings
+	URI dataSourceURI(subtree);
+	auto dataSourceFormat = subtree.get("format", formatDefault);
+	auto o_dataSourceLanguage = subtree.get_optional<std::string>("language");
+	auto o_type = subtree.get_optional<std::string>("type");
+	auto isOntology = isOntologySourceType(dataSourceFormat, o_dataSourceLanguage, o_type);
+	// an optional frame can be applied to all triples in a data source
+	auto o_tripleFrame = subtree.get_child_optional("frame");
+	std::shared_ptr<GraphSelector> tripleFrame;
+	if (o_tripleFrame) {
+		tripleFrame = std::make_shared<GraphSelector>();
+		tripleFrame->set(*o_tripleFrame);
+	}
+
+	if (isOntology && o_type && o_type.value() == "sparql") {
+		auto sparqlService = std::make_shared<SPARQLService>(dataSourceURI, dataSourceFormat);
+		if (tripleFrame) {
+			sparqlService->setFrame(tripleFrame);
+		}
+		return sparqlService;
+	} else if (isOntology) {
+		auto ontoFile = std::make_shared<OntologyFile>(vocabulary_, dataSourceURI, dataSourceFormat);
+		if (o_dataSourceLanguage.has_value()) {
+			ontoFile->setOntologyLanguage(semweb::ontologyLanguageFromString(o_dataSourceLanguage.value()));
+		}
+		if (tripleFrame) {
+			ontoFile->setFrame(tripleFrame);
+		}
+		return ontoFile;
+	} else {
+		return std::make_shared<DataSource>(dataSourceURI, dataSourceFormat, DataSourceType::UNSPECIFIED);
+	}
+}
+
 bool KnowledgeBase::loadDataSource(const DataSourcePtr &source) {
 	switch (source->dataSourceType()) {
 		case DataSourceType::ONTOLOGY:
@@ -917,7 +912,7 @@ void KnowledgeBase::finishLoad(const std::shared_ptr<OntologySource> &source, st
 	}
 }
 
-bool KnowledgeBase::loadOntologySource(const std::shared_ptr<OntologySource> &source) {
+bool KnowledgeBase::loadOntologySource(const std::shared_ptr<OntologySource> &source) { // NOLINT(misc-no-recursion)
 	auto uri = URI::resolve(source->uri());
 	// SPARQL does not have versioning. Some endpoints may store the version as a triple,
 	// but this is not standardized. Some may encode version in the URI which we try to extract

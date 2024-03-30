@@ -108,8 +108,8 @@ void OntologyParser::applyFrame(FramedTriple *triple) {
 			triple->setConfidence(frame_->confidence.value());
 			triple->setIsUncertain(true);
 		}
-		if (frame_->perspective.has_value()) {
-			triple->setPerspective(frame_->perspective.value()->iri());
+		if (frame_->perspective) {
+			triple->setPerspective(frame_->perspective->iri());
 		}
 		if (frame_->uncertain){
 			triple->setIsUncertain(true);

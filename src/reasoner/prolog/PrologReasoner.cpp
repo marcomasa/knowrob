@@ -282,7 +282,7 @@ bool PrologReasoner::putQueryFrame(PrologTerm &frameTerm, const GraphSelector &f
 	//   [until: $time] }
 
 	int numFrameKeys = 2;
-	if (frame.perspective.has_value()) numFrameKeys += 1;
+	if (frame.perspective) numFrameKeys += 1;
 	if (frame.begin.has_value()) numFrameKeys += 1;
 	if (frame.end.has_value()) numFrameKeys += 1;
 
@@ -310,10 +310,10 @@ bool PrologReasoner::putQueryFrame(PrologTerm &frameTerm, const GraphSelector &f
 	if (!PL_put_atom(scopeValues + keyIndex, isAboutSomePast ? sometimes_a : always_a)) return false;
 
 	// agent: $name
-	if (frame.perspective.has_value()) {
+	if (frame.perspective) {
 		static const auto agent_a = PL_new_atom("agent");
 		scopeKeys[++keyIndex] = agent_a;
-		auto agent_iri = frame.perspective.value()->iri();
+		auto agent_iri = frame.perspective->iri();
 		if (!PL_put_atom_chars(scopeValues + keyIndex, agent_iri.data())) return false;
 	}
 

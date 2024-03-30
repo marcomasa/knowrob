@@ -15,21 +15,21 @@ bool GraphSelector::mergeWith(const GraphSelector &other) {
 	occasional = occasional || other.occasional;
 
 	// graph selector changes to wildcard if graph of the other selector is different
-	if (!graph || !other.graph || std::string_view(graph) != std::string_view(other.graph)) {
+	if (!graph || !other.graph || *graph != *other.graph) {
 		graph = nullptr;
 	}
 
 	// agent cannot be changed in merge operation.
 	// So GraphSelector can only be merged within a modal in which both are embedded.
-	if (perspective.has_value()) {
-		if (other.perspective.has_value()) {
-			if (perspective.value()->iri() != other.perspective.value()->iri()) {
+	if (perspective) {
+		if (other.perspective) {
+			if (perspective->iri() != other.perspective->iri()) {
 				return false;
 			}
 		} else {
 			return false;
 		}
-	} else if (other.perspective.has_value()) {
+	} else if (other.perspective) {
 		return false;
 	}
 
@@ -54,12 +54,12 @@ bool GraphSelector::mergeWith(const GraphSelector &other) {
 size_t GraphSelector::hash() const {
 	size_t val = 0;
 	if (graph) {
-		hashCombine(val, std::hash<std::string>{}(graph));
+		hashCombine(val, graph->hash());
 	} else {
 		hashCombine(val, 0);
 	}
-	if (perspective.has_value()) {
-		hashCombine(val, std::hash<std::string_view>{}(perspective.value()->iri()));
+	if (perspective) {
+		hashCombine(val, std::hash<std::string_view>{}(perspective->iri()));
 	} else {
 		hashCombine(val, 0);
 	}
@@ -86,11 +86,11 @@ std::ostream &GraphSelector::write(std::ostream &os) const {
 		hasEpistemicOperator = true;
 		os << 'B';
 	}
-	if (perspective.has_value() && !Perspective::isEgoPerspective(perspective.value()->iri())) {
+	if (perspective && !Perspective::isEgoPerspective(perspective->iri())) {
 		if (!hasEpistemicOperator) {
 			os << 'K';
 		}
-		os << '[' << perspective.value()->iri() << ']';
+		os << '[' << perspective->iri() << ']';
 	}
 
 	bool hasTemporalOperator = false;
@@ -114,6 +114,26 @@ std::ostream &GraphSelector::write(std::ostream &os) const {
 	}
 
 	return os;
+}
+
+void GraphSelector::set(const boost::property_tree::ptree &config) {
+	uncertain = config.get<bool>("uncertain", false);
+	occasional = config.get<bool>("occasional", false);
+	if (config.count("graph")) {
+		graph = Atom::Tabled(config.get<std::string>("graph"));
+	}
+	if (config.count("perspective")) {
+		perspective = std::make_shared<Perspective>(config.get<std::string>("perspective"));
+	}
+	if (config.count("begin")) {
+		begin = config.get<double>("begin");
+	}
+	if (config.count("end")) {
+		end = config.get<double>("end");
+	}
+	if (config.count("confidence")) {
+		confidence = config.get<double>("confidence");
+	}
 }
 
 std::ostream &std::operator<<(std::ostream &os, const knowrob::GraphSelector &gs) {

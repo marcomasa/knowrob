@@ -37,8 +37,7 @@ ModalStage::ModalStage(
 			// epistemic states of different agents are stored in a single KG where triples are labeled by the agent.
 			// These states are assumed to be generated from the perspective of a "self", i.e. the agent
 			// that runs the knowledge base and its information about the other agents.
-			if (ctx->selector.perspective.has_value() &&
-				ctx->selector.perspective.value() != Perspective::getEgoPerspective()) {
+			if (ctx->selector.perspective && ctx->selector.perspective != Perspective::getEgoPerspective()) {
 				// For now higher-level epistemic states are not allowed in queries,
 				// e.g. `B_a1(B_a2(x))` where `a1` is not the agent that runs the knowledge base is an example
 				// of such a higher-order query which is not allowed.
@@ -46,7 +45,11 @@ ModalStage::ModalStage(
 				throw QueryError("epistemic formula {} is embedded within epistemic context of another agent.",
 								 *modalFormula_);
 			}
-			modalContext->selector.perspective = modalOperator->perspective();
+			if (modalOperator->perspective()) {
+				modalContext->selector.perspective = *modalOperator->perspective();
+			} else {
+				modalContext->selector.perspective = nullptr;
+			}
 			modalContext->selector.uncertain = !modalOperator->isModalNecessity();
 			if (modalContext->selector.uncertain) {
 				modalContext->selector.confidence = modalOperator->confidence();

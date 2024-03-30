@@ -8,6 +8,7 @@
 
 #include "optional"
 #include "Perspective.h"
+#include <boost/property_tree/ptree.hpp>
 
 namespace knowrob {
 	/**
@@ -17,26 +18,24 @@ namespace knowrob {
 	 * a query may only address a specific point in time, or time interval.
 	 */
 	struct GraphSelector {
-		GraphSelector() : graph(nullptr),
-						  uncertain(false),
-						  occasional(false) {}
+		GraphSelector() = default;
 
 		/**
 		 * The name of the graph, usually reflects the name of an ontology.
 		 */
-		const char *graph;
+		AtomPtr graph;
 		/**
 		 * The perspective of statement.
 		 */
-		std::optional<PerspectivePtr> perspective;
+		PerspectivePtr perspective;
 		/**
 		 * True if occasional triples are considered.
 		 */
-		bool occasional;
+		bool occasional = false;
 		/**
 		 * True if uncertain triples are considered.
 		 */
-		bool uncertain;
+		bool uncertain = false;
 		/**
 		 * The begin of the time interval of consideration.
 		 */
@@ -69,6 +68,12 @@ namespace knowrob {
 		 * @return the stream
 		 */
 		std::ostream &write(std::ostream &os) const;
+
+		/**
+		 * Set the selector from a property tree.
+		 * @param config the property tree
+		 */
+		void set(const boost::property_tree::ptree &config);
 	};
 
 	// alias
