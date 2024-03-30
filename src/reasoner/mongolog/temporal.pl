@@ -26,8 +26,6 @@
 % Note that it is currently not allowed to call this predicate
 % with one of the boundaries grounded and the other not.
 % Either both boundaries must be ground or both variables.
-% If used in *project* expressions, during/2 will scope all
-% assertions in Statement with the interval provided.
 %
 % @param Statement A language term.
 % @param Interval A 2-element list.
@@ -63,15 +61,11 @@ during(Statement, [Since,Until]) ?>
 % since/2 is defined as an operator such that
 % queries can be written as `Statement since Instant`.
 % Instant is a unix timestamp represented as floating point number.
-% If used in *project* expressions, since/2 will scope all
-% assertions in Statement with an interval that begins
-% at given time instant, and whose end is not known.
 %
 % @param Statement A language term.
 % @param Instant A time instant.
 %
 since(Statement, Instant) ?>
-	% TODO: better handling of unknown until of interval
 	number(Instant),
 	% get current time
 	pragma(get_time(Now)),
@@ -97,16 +91,11 @@ since(Statement, Instant) ?>
 % until/2 is defined as an operator such that
 % queries can be written as `Statement until Instant`.
 % Instant is a unix timestamp represented as floating point number.
-% If used in *project* expressions, until/2 updates the existing record of
-% Statement known to hold at time instant if any, else it
-% will create a record whose begin time is not known.
 %
 % @param Statement A language term.
 % @param Interval A time interval, instant, or event.
 %
 until(Statement, Instant) ?>
-	% TODO project until has unclear semantic
-	% TODO better handling of unknown since of interval
 	number(Instant),
 	% only include records that hold at instant
 	pragma(time_scope(=<(Instant), >=(Instant), Scope)),

@@ -40,7 +40,6 @@ mongolog:step_compile(
 	% note that the vars should not be added to the "outer_vars"
 	% array as variables in template are _not_ exposed to the outside.
 	mongolog:step_vars(Template, Ctx, TemplateVars),
-	% TODO: redundant, make an interface in query compiler
 	once((select(disj_vars(DisjVars), Ctx, Ctx0);(DisjVars=[],Ctx0=Ctx))),
 	append(DisjVars, TemplateVars, DisjVars0),
 	list_to_set(DisjVars0,DisjVars1),

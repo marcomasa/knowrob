@@ -522,7 +522,7 @@ mng_strip_type(Term, term, Term) :-
 mng_strip_type(X, double, X) :-
 	number(X),
 	!.
-% FIXME: below makes it impossible to ask for string values true/false
+
 mng_strip_type(X, bool, X) :-
 	ground(X),
 	(	X=true
@@ -530,7 +530,6 @@ mng_strip_type(X, bool, X) :-
 	),
 	!.
 
-% FIXME var(X) always ends in string, better do not require type in query!
 mng_strip_type(X, string, X).
 
 %%

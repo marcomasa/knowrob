@@ -21,11 +21,6 @@ The following predicates are supported:
 %% query commands
 :- mongolog:add_command(annotation).
 
-%%
-mongolog:step_expand(
-	project(annotation(S,P,O)),
-	assert(annotation(S,P,O))) :- !.
-
 %% annotation(+Entity, +Property, -Annotation)
 %
 mongolog:step_compile(

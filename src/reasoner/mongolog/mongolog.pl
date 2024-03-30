@@ -3,7 +3,6 @@
 	  mongolog_call(t,+),
 	  mongolog_assert(t),
 	  mongolog_assert(t,t),			% +Statement, +Scope
-	  mongolog_project(t),
 	  mongolog_retract(t),        % +Statement
 	  mongolog_retract(t,t),      % +Statement, +Scope
 	  mongolog_retract(t,t,t),    % +Statement, +Scope, +Options
@@ -270,10 +269,6 @@ mongolog_consult3((:- Goal), _) :-
 mongolog_consult3((Head :- Body), Options) :-
 	!, mongolog_consult3('?>'(Head,Body), Options).
 
-%mongolog_consult3('?+>'(Head,Body), Options) :-
-%    !, mongolog_consult3('?>'(Head,Body), Options),
-%       mongolog_consult3('+>'(Head,Body), Options).
-
 mongolog_consult3('?>'(Head,Body), _Options) :-
     !, % "ask" rule
 	% expand rdf terms Prefix:Local to IRI atom
@@ -282,19 +277,6 @@ mongolog_consult3('?>'(Head,Body), _Options) :-
 	strip_module_(HeadGlobal,_Module,Term),
 	% add the rule to the DB backend
 	mongolog_add_rule(Term, BodyGlobal).
-
-%mongolog_consult3('+>'(Head,Body), _Options) :-
-%    !, % "tell" rule
-%	% expand rdf terms Prefix:Local to IRI atom
-%	rdf_global_term(Head, HeadGlobal),
-%	rdf_global_term(Body, BodyGlobal),
-%	strip_module_(HeadGlobal,_Module,Term),
-%	% rewrite functor
-%	Term =.. [Functor|Args],
-%	atom_concat('project_',Functor,Functor0),
-%	Head0 =.. [Functor0|Args],
-%	% add the rule to the DB backend
-%	mongolog_add_rule(Head0, project(BodyGlobal)).
 
 % consult a fact
 mongolog_consult3(Fact, Options) :-
@@ -514,8 +496,6 @@ assert_documents1(array(Docs), Coll) :-
 	current_reasoner_manager(ReasonerManager),
 	current_reasoner_module(ReasonerModule),
 
-	% TODO: rather provide array of triples to cpp instead of
-	%       calling pl_assert_triple_cpp9 for each.
 	forall(member(StatementData, Docs), (
 		dict_pairs(TripleDict,_,StatementData),
 		get_dict(s, TripleDict, string(Subject)),
@@ -709,11 +689,6 @@ triple_value(Value,BaseUnitValue) :-
 	% convert to base unit
 	BaseUnitValue is ((Stripped * Multiplier) + Offset), !.
 triple_value(Value,Value).
-
-%%
-mongolog_project(Fact) :-
-	mongolog_universal_scope(QScope),
-	mongolog_call(project(Fact),[query_scope(QScope)]).
 
 %% mongolog_retract(+Statement) is nondet.
 %

@@ -32,9 +32,6 @@ The following predicates are supported:
 :- mongolog:add_command(triple).
 
 %%
-mongolog:step_expand(project(triple(S,P,O)), assert(triple(S,P,O))) :- !.
-
-%%
 mongolog:step_compile(assert(triple(S,P,term(O))), Ctx, Pipeline, StepVars) :-
 	% HACK: convert term(A) argument to string.
 	%       it would be better to store lists/terms directly without conversion.

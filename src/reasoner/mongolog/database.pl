@@ -220,10 +220,6 @@ mongolog_drop_predicate(Functor) :-
 	mng_drop(DB, Collection).
 
 %%
-mongolog:step_expand(project(Term), assert(Term)) :-
-	mongolog_predicate(Term, _, _, _, _, _),!.
-
-%%
 mongolog:step_compile(assert(Term), Ctx, Pipeline, StepVars) :-
 	mongolog_predicate(Term, _, _, _, _, _),!,
 	mongolog_predicate_assert(Term, Ctx, Pipeline, StepVars).

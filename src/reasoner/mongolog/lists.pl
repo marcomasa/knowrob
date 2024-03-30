@@ -153,9 +153,6 @@ mongolog:step_compile(
 mongolog:step_compile(
 		nth0(Index, List, Elem),
 		Ctx, Pipeline) :-
-	% TODO: below is a redundant with unification.pl
-	%		- it also does not handle var-var bindings!
-	%
 	mongolog:var_key_or_val(Index,Ctx,Index0),
 	mongolog:var_key_or_val(List,Ctx,List0),
 	mongolog:var_key_or_val(Elem,Ctx,Elem0),

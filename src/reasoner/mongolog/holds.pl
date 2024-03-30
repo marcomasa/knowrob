@@ -96,11 +96,6 @@ test('holds/1 with ns', [ blocked('holds/1 cannot handle namespaces') ]) :-
 test('holds(+S,+P,+O)') :-
 	assert_true(holds(test:'Ernest', test:'hasSibling', test:'Fred')).
 
-test('project(holds(+S,+P,+O))') :-
-	assert_false(holds(test:'Lea', test:'hasNumber', '+493564754647')),
-	assert_true(mongolog_assert(triple(test:'Lea', test:'hasNumber', '+493564754647'))),
-	assert_true(holds(test:'Lea', test:'hasNumber', '+493564754647')).
-
 test('holds(+S,+P,+Unit(+O))') :-
 	assert_false(holds(test:'Lea',test:'hasHeightInMeters', _)),
 	assert_true(mongolog_assert(triple(test:'Lea',test:'hasHeightInMeters', m(6.5)))),
