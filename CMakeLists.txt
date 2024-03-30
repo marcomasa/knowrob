@@ -225,7 +225,6 @@ add_library(knowrob SHARED
         src/sources/DataSourceHandler.cpp
         src/sources/OntologyFile.cpp
         src/sources/OntologyParser.cpp
-        src/sources/DataFile.cpp
         src/backend/BackendTransaction.cpp
         src/backend/mongo/MongoInterface.cpp
         src/backend/mongo/Database.cpp
@@ -254,7 +253,6 @@ add_library(knowrob SHARED
         src/triples/FramedTriple.cpp
         src/triples/TripleFormat.cpp
         src/semweb/OntologyLanguage.cpp
-        src/sources/DataService.cpp
         src/reasoner/prolog/semweb.cpp
         src/reasoner/prolog/PrologBackend.cpp
         src/reasoner/prolog/PrologTerm.cpp
@@ -298,7 +296,8 @@ add_library(knowrob SHARED
         src/queries/parsers/formula.cpp
         src/reasoner/GoalDrivenReasoner.cpp
         src/reasoner/DataDrivenReasoner.cpp
-        src/reasoner/ReasonerEvent.cpp)
+        src/reasoner/ReasonerEvent.cpp
+        src/alignment/TransformedOntology.cpp)
 set(KNOWROB_LIBRARIES
         ${SWIPL_LIBRARIES}
         ${MONGOC_LIBRARIES}

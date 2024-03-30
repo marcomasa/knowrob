@@ -53,6 +53,11 @@ namespace knowrob {
 		// override GraphTransformation
 		bool configure(const boost::property_tree::ptree &opts) override;
 
+	protected:
+		GraphRenamingMap renaming_;
+
+		bool readFromFile(const std::string &filename);
+
 		// override GraphTransformation
 		void initializeTransformation() override;
 
@@ -61,11 +66,6 @@ namespace knowrob {
 
 		// override GraphTransformation
 		void pushInputTriples(const TripleContainerPtr &triples) override;
-
-	protected:
-		GraphRenamingMap renaming_;
-
-		bool readFromFile(const std::string& filename);
 	};
 
 } // knowrob

@@ -7,7 +7,6 @@
 #define KNOWROB_SPARQL_SERVICE_H
 
 #include <redland.h>
-#include "knowrob/sources/DataService.h"
 #include "knowrob/triples/TripleFormat.h"
 #include "knowrob/triples/TripleContainer.h"
 #include "OntologySource.h"
@@ -17,7 +16,7 @@ namespace knowrob {
 	/**
 	 * A SPARQL service is a data service that can be queried for triples.
 	 */
-	class SPARQLService : public DataService, public OntologySource {
+	class SPARQLService : public OntologySource {
 	public:
 		/**
 		 * @param uri the URI of the SPARQL endpoint.
@@ -31,19 +30,11 @@ namespace knowrob {
 		 */
 		SPARQLService(const URI &uri, std::string_view format);
 
-		/**
-		 * Load triples from the SPARQL endpoint.
-		 * @param callback the callback to handle the triples.
-		 * @return true if the triples were loaded successfully.
-		 */
-		bool load(const TripleHandler &callback);
-
 		// Override OntologySource
-		std::string_view origin() const override { return origin_; }
+		bool load(const TripleHandler &callback) override;
 
 	protected:
 		RedlandModel model_;
-		std::string origin_;
 	};
 
 } // knowrob

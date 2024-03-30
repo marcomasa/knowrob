@@ -31,7 +31,7 @@ PropertyTree::PropertyTree(const boost::property_tree::ptree *ptree)
 			auto &subtree = pair.second;
 			URI dataSourceURI(subtree);
 			auto dataFormat = subtree.get("format", formatDefault);
-			auto source = std::make_shared<DataSource>(dataSourceURI, dataFormat);
+			auto source = std::make_shared<DataSource>(dataSourceURI, dataFormat, DataSourceType::UNSPECIFIED);
 			dataSources_.push_back(source);
 		}
 	}

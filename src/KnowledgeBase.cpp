@@ -35,6 +35,8 @@
 #include "knowrob/backend/BackendInterface.h"
 #include "knowrob/KnowRobError.h"
 #include "knowrob/py/PythonError.h"
+#include "knowrob/alignment/GraphTransformation.h"
+#include "knowrob/alignment/TransformedOntology.h"
 
 using namespace std::chrono_literals;
 using namespace knowrob;
@@ -217,16 +219,30 @@ void KnowledgeBase::configureDataSources(const boost::property_tree::ptree &conf
 		for (const auto &pair: dataSourcesList.value()) {
 			auto &subtree = pair.second;
 			auto dataSource = createDataSource(subtree);
-
-			// TODO: read data source transformation setting here.
-			//       add key "transformation", with sub-keys "path", "language", "format", ...
-			//       create semweb::Transformation object based on "transformation" setting
-			//       and apply it to the data source loaded into a raptor world.
-
 			if (!dataSource) {
-				KB_ERROR("failed to create a data source");
-			} else if (!loadDataSource(dataSource)) {
-				KB_ERROR("failed to load a data source: {}", dataSource->uri());
+				KB_ERROR("Failed to create data source \"{}\".", pair.first);
+				continue;
+			}
+			bool has_error = false;
+			auto transformationConfig = config.get_child_optional("transformation");
+			if (transformationConfig) {
+				if (dataSource->dataSourceType() != DataSourceType::ONTOLOGY) {
+					KB_ERROR("Transformations can only be applied on ontology data sources.");
+					continue;
+				}
+				auto ontology = std::static_pointer_cast<OntologySource>(dataSource);
+				// apply a transformation to the data source if "transformation" key is present
+				auto transformation = GraphTransformation::create(transformationConfig.value());
+				auto transformed = std::make_shared<TransformedOntology>(URI(ontology->uri()), ontology->format());
+				transformation->apply(*ontology, [&transformed](const TripleContainerPtr &triples) {
+					transformed->storage()->insertAll(triples);
+				});
+				has_error = !loadDataSource(transformed);
+			} else {
+				has_error = !loadDataSource(dataSource);
+			}
+			if (has_error) {
+				KB_ERROR("Failed to load data source from \"{}\".", dataSource->uri());
 			}
 		}
 	}
@@ -234,7 +250,7 @@ void KnowledgeBase::configureDataSources(const boost::property_tree::ptree &conf
 
 void KnowledgeBase::loadCommon() {
 	for (auto &ontoPath: {"owl/rdf-schema.xml", "owl/owl.rdf"}) {
-		loadDataSource(std::make_shared<OntologyFile>(URI(ontoPath), "rdf-xml"));
+		loadDataSource(std::make_shared<OntologyFile>(vocabulary_, URI(ontoPath), "rdf-xml"));
 	}
 }
 
@@ -257,6 +273,16 @@ void KnowledgeBase::stopReasoner() {
 	}
 }
 
+static bool isOntologySourceType(
+		const std::string &format,
+		const boost::optional<std::string> &language,
+		const boost::optional<std::string> &type) {
+	if (type && (type.value() == "ontology" || type.value() == "sparql")) return true;
+	if (language && semweb::isOntologyLanguageString(language.value())) return true;
+	if (semweb::isTripleFormatString(format)) return true;
+	return false;
+}
+
 DataSourcePtr KnowledgeBase::createDataSource(const boost::property_tree::ptree &subtree) {
 	static const std::string formatDefault = {};
 
@@ -264,8 +290,8 @@ DataSourcePtr KnowledgeBase::createDataSource(const boost::property_tree::ptree 
 	URI dataSourceURI(subtree);
 	auto dataSourceFormat = subtree.get("format", formatDefault);
 	auto o_dataSourceLanguage = subtree.get_optional<std::string>("language");
-	auto dataSourceType = getDataSourceType(dataSourceFormat, o_dataSourceLanguage,
-											subtree.get_optional<std::string>("type"));
+	auto o_type = subtree.get_optional<std::string>("type");
+	auto isOntology = isOntologySourceType(dataSourceFormat, o_dataSourceLanguage, o_type);
 	// TODO: support graph selector specification in settings?
 	//          then a data transformer could be created based on the setting.
 	//          an idea would be e.g. to have a reasoner running for other perspectives.
@@ -273,29 +299,24 @@ DataSourcePtr KnowledgeBase::createDataSource(const boost::property_tree::ptree 
 	//auto tripleFrame = tripleFrame_ptree ?
 	//		std::make_shared<GraphSelector>(tripleFrame_ptree.value()) : nullptr;
 
-	switch (dataSourceType) {
-		case DataSourceType::ONTOLOGY: {
-			auto ontoFile = std::make_shared<OntologyFile>(dataSourceURI, dataSourceFormat);
-			if (o_dataSourceLanguage.has_value()) {
-				ontoFile->setOntologyLanguage(semweb::ontologyLanguageFromString(o_dataSourceLanguage.value()));
-			}
-			//if (tripleFrame) {
-			//	ontoFile->setFrame(tripleFrame);
-			//}
-			return ontoFile;
+	if (isOntology && o_type && o_type.value() == "sparql") {
+		auto sparqlService = std::make_shared<SPARQLService>(dataSourceURI, dataSourceFormat);
+		//if (tripleFrame) {
+		//	ontoFile->setFrame(tripleFrame);
+		//}
+		return sparqlService;
+	} else if (isOntology) {
+		auto ontoFile = std::make_shared<OntologyFile>(vocabulary_, dataSourceURI, dataSourceFormat);
+		if (o_dataSourceLanguage.has_value()) {
+			ontoFile->setOntologyLanguage(semweb::ontologyLanguageFromString(o_dataSourceLanguage.value()));
 		}
-		case DataSourceType::SPARQL: {
-			auto sparqlService = std::make_shared<SPARQLService>(dataSourceURI, dataSourceFormat);
-			//if (tripleFrame) {
-			//	ontoFile->setFrame(tripleFrame);
-			//}
-			return sparqlService;
-		}
-		case DataSourceType::UNSPECIFIED:
-			return std::make_shared<DataFile>(dataSourceURI, dataSourceFormat);
+		//if (tripleFrame) {
+		//	ontoFile->setFrame(tripleFrame);
+		//}
+		return ontoFile;
+	} else {
+		return std::make_shared<DataSource>(dataSourceURI, dataSourceFormat, DataSourceType::UNSPECIFIED);
 	}
-
-	return nullptr;
 }
 
 bool KnowledgeBase::isMaterializedInEDB(std::string_view property) const {
@@ -835,25 +856,10 @@ std::shared_ptr<NamedBackend> KnowledgeBase::findSourceBackend(const FramedTripl
 /*************** DATA SOURCES *********************/
 /**************************************************/
 
-DataSourceType KnowledgeBase::getDataSourceType(const std::string &format, const boost::optional<std::string> &language,
-												const boost::optional<std::string> &type) {
-	if (type) {
-		if (type.value() == "ontology") return DataSourceType::ONTOLOGY;
-		if (type.value() == "sparql") return DataSourceType::SPARQL;
-	}
-	if (language) {
-		if (semweb::isOntologyLanguageString(language.value())) return DataSourceType::ONTOLOGY;
-	}
-	if (semweb::isTripleFormatString(format)) return DataSourceType::ONTOLOGY;
-	return DataSourceType::UNSPECIFIED;
-}
-
 bool KnowledgeBase::loadDataSource(const DataSourcePtr &source) {
-	switch (source->type()) {
+	switch (source->dataSourceType()) {
 		case DataSourceType::ONTOLOGY:
-			return loadOntologyFile(std::static_pointer_cast<OntologyFile>(source));
-		case DataSourceType::SPARQL:
-			return loadSPARQLDataSource(source);
+			return loadOntologySource(std::static_pointer_cast<OntologySource>(source));
 		case DataSourceType::UNSPECIFIED:
 			return loadNonOntologySource(source);
 	}
@@ -913,83 +919,21 @@ void KnowledgeBase::finishLoad(const std::shared_ptr<OntologySource> &source, st
 	}
 }
 
-bool KnowledgeBase::loadOntologyFile(const std::shared_ptr<OntologyFile> &source, bool followImports) {
-	std::queue<std::string> ontologyURIs;
-	ontologyURIs.push(URI::resolve(source->uri()));
-
-	while (!ontologyURIs.empty()) {
-		auto resolved = ontologyURIs.front();
-		ontologyURIs.pop();
-		auto origin = DataSource::getNameFromURI(resolved);
-		auto newVersion = DataSource::getVersionFromURI(resolved);
-
-		// check which backends need to load the ontology.
-		auto backendsToLoad = prepareLoad(origin, newVersion);
-		if (backendsToLoad.empty()) continue;
-
-		// some OWL files are downloaded compile-time via CMake,
-		// they are downloaded into owl/external e.g. there are SOMA.owl and DUL.owl.
-		// TODO: rework handling of cmake-downloaded ontologies, e.g. should also work when installed
-		auto p = std::filesystem::path(KNOWROB_SOURCE_DIR) / "owl" / "external" /
-				 std::filesystem::path(resolved).filename();
-		const std::string *importURI = (exists(p) ? &p.native() : &resolved);
-
-		KB_INFO("Loading ontology at '{}' with version "
-				"\"{}\" and origin \"{}\".", *importURI, newVersion, origin);
-
-		OntologyParser parser(*importURI, source->tripleFormat());
-		parser.setOrigin(origin);
-		parser.setFrame(source->frame());
-		// filter is called for each triple, if it returns false, the triple is skipped
-		parser.setFilter([this](const FramedTriple &triple) {
-			return !vocabulary_->isAnnotationProperty(triple.predicate());
-		});
-		// define a prefix for naming blank nodes
-		parser.setBlankPrefix(std::string("_") + origin);
-		auto result = parser.run([this, &backendsToLoad](const TripleContainerPtr &triples) {
-			auto transaction = edb_->createTransaction(
-					getBackendForQuery(),
-					BackendInterface::Insert,
-					BackendInterface::Including,
-					backendsToLoad);
-			transaction->commit(triples);
-		});
-		if (!result) {
-			KB_WARN("Failed to parse ontology {} ({})", *importURI, source->uri());
-			return false;
-		}
-		finishLoad(source, origin, newVersion);
-
-		// load imported ontologies
-		if (followImports) {
-			for (auto &imported: parser.imports()) {
-				ontologyURIs.push(URI::resolve(imported));
-			}
-		}
-	}
-
-	return true;
-}
-
-bool KnowledgeBase::loadSPARQLDataSource(const std::shared_ptr<DataSource> &source) {
-	auto service = std::static_pointer_cast<SPARQLService>(source);
-	auto serviceURI = URI::resolve(source->uri());
-	auto origin = service->origin();
+bool KnowledgeBase::loadOntologySource(const std::shared_ptr<OntologySource> &source) {
+	auto uri = URI::resolve(source->uri());
 	// SPARQL does not have versioning. Some endpoints may store the version as a triple,
 	// but this is not standardized. Some may encode version in the URI which we try to extract
 	// below. Otherwise, we just use the current day as version causing a re-load every day.
-	auto newVersion = DataSource::getVersionFromURI(serviceURI);
+	auto newVersion = DataSource::getVersionFromURI(uri);
 
 	// get all backends that do not have the data loaded yet
-	auto backendsToLoad = prepareLoad(origin, newVersion);
+	auto backendsToLoad = prepareLoad(source->origin(), newVersion);
 	if (backendsToLoad.empty()) {
 		// data is already loaded
 		return true;
 	}
-	KB_INFO("Loading data from SPARQL endpoint at '{}' with version "
-			"\"{}\" and origin \"{}\".", serviceURI, newVersion, origin);
 
-	auto result = service->load([this, &backendsToLoad](const TripleContainerPtr &triples) {
+	auto result = source->load([this, &backendsToLoad](const TripleContainerPtr &triples) {
 		auto transaction = edb_->createTransaction(
 				getBackendForQuery(),
 				BackendInterface::Insert,
@@ -998,10 +942,18 @@ bool KnowledgeBase::loadSPARQLDataSource(const std::shared_ptr<DataSource> &sour
 		transaction->commit(triples);
 	});
 	if (!result) {
-		KB_WARN("Failed to load data from SPARQL service at {}.", serviceURI);
+		KB_WARN("Failed to load ontology \"{}\".", uri);
 		return false;
 	}
-	finishLoad(service, origin, newVersion);
+	finishLoad(source, source->origin(), newVersion);
+
+	for (auto &imported : source->imports()) {
+		auto importedSource = std::make_shared<OntologyFile>(vocabulary_, URI(imported), source->format());
+		if (!loadOntologySource(importedSource)) {
+			KB_WARN("Failed to load imported ontology \"{}\".", imported);
+			return false;
+		}
+	}
 
 	return true;
 }

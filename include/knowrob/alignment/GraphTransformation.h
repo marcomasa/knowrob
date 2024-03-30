@@ -9,6 +9,7 @@
 #include <functional>
 #include <boost/property_tree/ptree.hpp>
 #include "knowrob/triples/TripleContainer.h"
+#include "knowrob/sources/OntologySource.h"
 
 namespace knowrob {
 	/**
@@ -20,18 +21,6 @@ namespace knowrob {
 	 */
 	class GraphTransformation {
 	public:
-		/**
-		 * Set the next transformation to be called after this one.
-		 * @param next the next transformation
-		 */
-		void setNext(const std::shared_ptr<GraphTransformation> &next) { nextTransformation_ = next; }
-
-		/**
-		 * Set the next handler to be called after this transformation.
-		 * @param next the next handler
-		 */
-		void setNext(const TripleHandler &next) { next_ = next; }
-
 		/**
 		 * Set the origin of the triples.
 		 * Transformations maybe do not preserve context of input triples, so the origin of the input triples
@@ -47,6 +36,48 @@ namespace knowrob {
 		auto origin() const { return origin_; }
 
 		/**
+		 * Apply the transformation to the given ontology source.
+		 * @param ontologySource the ontology source to apply the transformation to
+		 * @param callback the callback to handle the output triples
+		 */
+		void apply(OntologySource &ontologySource, const TripleHandler &callback);
+
+		/**
+		 * Configure the transformation with the given options.
+		 * @param opts the options
+		 * @return true if the configuration was successful
+		 */
+		virtual bool configure(const boost::property_tree::ptree &config) = 0;
+
+		/**
+		 * Create a new transformation from the given configuration.
+		 * @param config the configuration
+		 * @return the new transformation
+		 */
+		static std::shared_ptr<GraphTransformation> create(const boost::property_tree::ptree &config);
+
+	protected:
+		TripleHandler next_;
+		std::shared_ptr<GraphTransformation> nextTransformation_;
+		std::string origin_;
+
+		void initializeNext();
+
+		void finalizeNext();
+
+		/**
+		 * Set the next transformation to be called after this one.
+		 * @param next the next transformation
+		 */
+		void setNext(const std::shared_ptr<GraphTransformation> &next) { nextTransformation_ = next; }
+
+		/**
+		 * Set the next handler to be called after this transformation.
+		 * @param next the next handler
+		 */
+		void setNext(const TripleHandler &next) { next_ = next; }
+
+		/**
 		 * Push output triples to the next transformation or handler.
 		 * @param triples the output triples
 		 */
@@ -59,13 +90,6 @@ namespace knowrob {
 		virtual void pushInputTriples(const TripleContainerPtr &triples) = 0;
 
 		/**
-		 * Configure the transformation with the given options.
-		 * @param opts the options
-		 * @return true if the configuration was successful
-		 */
-		virtual bool configure(const boost::property_tree::ptree &opts) = 0;
-
-		/**
 		 * Initialize the transformation.
 		 */
 		virtual void initializeTransformation() = 0;
@@ -74,15 +98,6 @@ namespace knowrob {
 		 * Finalize the transformation.
 		 */
 		virtual void finalizeTransformation() = 0;
-
-	protected:
-		TripleHandler next_;
-		std::shared_ptr<GraphTransformation> nextTransformation_;
-		std::string origin_;
-
-		void initializeNext();
-
-		void finalizeNext();
 	};
 
 } // knowrob

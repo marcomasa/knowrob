@@ -173,7 +173,7 @@ namespace knowrob {
 
 		std::shared_ptr<NamedBackend> findSourceBackend(const FramedTriple &triple);
 
-		static DataSourcePtr createDataSource(const boost::property_tree::ptree &subtree);
+		DataSourcePtr createDataSource(const boost::property_tree::ptree &subtree);
 
 		void startReasoner();
 
@@ -187,12 +187,7 @@ namespace knowrob {
 
 		bool loadNonOntologySource(const DataSourcePtr &source) const;
 
-		bool loadOntologyFile(const std::shared_ptr<OntologyFile> &source, bool followImports = true);
-
-		bool loadSPARQLDataSource(const std::shared_ptr<DataSource> &source);
-
-		static DataSourceType getDataSourceType(const std::string &format, const boost::optional<std::string> &language,
-												const boost::optional<std::string> &type);
+		bool loadOntologySource(const std::shared_ptr<OntologySource> &source);
 
 		std::optional<std::string> getVersionOfOrigin(const std::shared_ptr<NamedBackend> &definedBackend,
 													  std::string_view origin) const;

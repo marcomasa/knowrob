@@ -13,9 +13,7 @@ SPARQLService::SPARQLService(const URI &uri, semweb::TripleFormat format)
 }
 
 SPARQLService::SPARQLService(const URI &uri, std::string_view format)
-		: DataService(uri, format),
-		  OntologySource(),
-		  origin_(DataSource::getNameFromURI(uri())) {
+		: OntologySource(uri, format) {
 	// create a Redland model for the SPARQL endpoint
 	// Note that the model has interfaces for insert and remove triples, these won't
 	// interact with the SPARQL endpoint, but with the local storage of the model.

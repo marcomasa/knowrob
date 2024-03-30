@@ -29,6 +29,16 @@ namespace knowrob {
 		// override GraphTransformation
 		bool configure(const boost::property_tree::ptree &opts) override;
 
+	protected:
+		std::unique_ptr<RedlandModel> model_;
+		std::vector<std::shared_ptr<GraphTransformationRule>> rules_;
+
+		void doTransformation(GraphTransformationRule &rule);
+
+		bool readFromFile(const std::string &filename);
+
+		static FramedTriplePatternPtr readTriplePattern(const std::string &filename);
+
 		// override GraphTransformation
 		void initializeTransformation() override;
 
@@ -37,16 +47,6 @@ namespace knowrob {
 
 		// override GraphTransformation
 		void pushInputTriples(const TripleContainerPtr &triples) override;
-
-	protected:
-		std::unique_ptr<RedlandModel> model_;
-		std::vector<std::shared_ptr<GraphTransformationRule>> rules_;
-
-		void doTransformation(GraphTransformationRule &rule);
-
-		bool readFromFile(const std::string& filename);
-
-		static FramedTriplePatternPtr readTriplePattern(const std::string& filename);
 	};
 
 } // knowrob

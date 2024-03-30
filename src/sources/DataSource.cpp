@@ -17,8 +17,10 @@ namespace fs = std::filesystem;
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
 
-DataSource::DataSource(URI uri, std::string_view format)
-		: uri_(std::move(uri)), format_(format) {
+DataSource::DataSource(URI uri, std::string_view format, DataSourceType dataSourceType)
+		: dataSourceType_(dataSourceType),
+		  uri_(std::move(uri)),
+		  format_(format) {
 }
 
 std::string DataSource::getNameFromURI(const std::string &uriString) {

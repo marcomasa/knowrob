@@ -15,7 +15,6 @@ namespace knowrob {
 	 */
 	enum class DataSourceType {
 		ONTOLOGY,
-		SPARQL,
 		UNSPECIFIED
 	};
 
@@ -29,7 +28,7 @@ namespace knowrob {
 		 * @param uri URI of the data source.
 		 * @param format string identifier of the data format.
 		 */
-		DataSource(URI uri, std::string_view format);
+		DataSource(URI uri, std::string_view format, DataSourceType dataSourceType);
 
 		/**
 		 * @return URI of this data source.
@@ -49,7 +48,7 @@ namespace knowrob {
 		/**
 		 * @return the type of the data source.
 		 */
-		virtual DataSourceType type() const { return DataSourceType::UNSPECIFIED; }
+		DataSourceType dataSourceType() const { return dataSourceType_; }
 
 		/**
 		 * @return the name of the data source.
@@ -87,6 +86,7 @@ namespace knowrob {
 		static bool isVersionString(const std::string &versionString);
 
 	protected:
+		DataSourceType dataSourceType_;
 		std::string format_;
 		URI uri_;
 	};

@@ -157,7 +157,7 @@ foreign_t sw_load_rdf_xml4(term_t t_manager, term_t t_reasoner, term_t t_url, te
 	char *url, *parentGraph;
 	if (kb && PL_get_atom_chars(t_url, &url) && PL_get_atom_chars(t_parentGraph, &parentGraph)) {
 		URI ontologyURI(url);
-		auto ontologyFile = std::make_shared<OntologyFile>(ontologyURI, "rdf-xml");
+		auto ontologyFile = std::make_shared<OntologyFile>(kb->vocabulary(), ontologyURI, "rdf-xml");
 		ontologyFile->setParentOrigin(parentGraph);
 		if (kb->loadDataSource(ontologyFile)) {
 			return true;
