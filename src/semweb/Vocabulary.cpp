@@ -123,7 +123,7 @@ std::vector<std::string_view> Vocabulary::getDefinedPropertyNamesWithPrefix(cons
 PropertyPtr Vocabulary::defineProperty(const std::string_view &iri) {
 	auto it = definedProperties_.find(iri);
 	if (it == definedProperties_.end()) {
-		return defineProperty(std::make_shared<Property>(iri));
+		return defineProperty_(std::make_shared<Property>(iri));
 	} else {
 		return it->second;
 	}
@@ -132,13 +132,13 @@ PropertyPtr Vocabulary::defineProperty(const std::string_view &iri) {
 PropertyPtr Vocabulary::defineProperty(const IRIAtomPtr &iri) {
 	auto it = definedProperties_.find(iri->stringForm());
 	if (it == definedProperties_.end()) {
-		return defineProperty(std::make_shared<Property>(iri));
+		return defineProperty_(std::make_shared<Property>(iri));
 	} else {
 		return it->second;
 	}
 }
 
-PropertyPtr Vocabulary::defineProperty(const std::shared_ptr<Property> &p) {
+semweb::PropertyPtr Vocabulary::defineProperty_(const std::shared_ptr<Property> &p) {
 	definedProperties_[p->iri()] = p;
 	definedReifications_[p->reification()->iri()] = p;
 	// define the reification of the property as a concept which inherits knowrob:ReifiedRelation

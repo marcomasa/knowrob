@@ -24,7 +24,6 @@ namespace knowrob {
 		/**
 		 * @param fileURI the URI of the file to parse.
 		 * @param format the format of the file.
-		 * @param batchSize the max size of each batch to use for parsing.
 		 */
 		OntologyParser(const std::string_view &fileURI, semweb::TripleFormat format);
 

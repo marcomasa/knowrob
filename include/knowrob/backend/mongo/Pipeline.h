@@ -58,6 +58,7 @@ namespace knowrob::mongo {
 		/**
 		 * Append a $unwind stage.
 		 * @param field an array value
+		 * @param preserveNullAndEmptyArrays if true, if the field is null or empty, $unwind outputs the document.
 		 */
 		void unwind(std::string_view field, bool preserveNullAndEmptyArrays = false);
 
@@ -75,7 +76,7 @@ namespace knowrob::mongo {
 
 		/**
 		 * Append a $project stage.
-		 * @param field document fields to include in output documents
+		 * @param fields a list of document fields to include in output documents
 		 */
 		void project(const std::vector<std::string_view> &fields);
 
@@ -93,13 +94,13 @@ namespace knowrob::mongo {
 
 		/**
 		 * Append a $sort stage with ascending sort order.
-		 * @param newRootField a document field
+		 * @param field a document field
 		 */
 		void sortAscending(std::string_view field);
 
 		/**
 		 * Append a $sort stage with descending sort order.
-		 * @param newRootField a document field
+		 * @param field a document field
 		 */
 		void sortDescending(std::string_view field);
 

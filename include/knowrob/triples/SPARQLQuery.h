@@ -47,11 +47,13 @@ namespace knowrob {
 		/**
 		 * Create a SPARQL query that selects all triples matching the given pattern.
 		 * @param triplePattern the pattern to match.
+		 * @param flags the flags that indicate which features are supported.
 		 */
 		explicit SPARQLQuery(const FramedTriplePattern &triplePattern, SPARQLFlags flags = SPARQLFlag::NOTHING);
 
 		/**
-		 * @param triplePatterns the patterns to match.
+		 * @param query the query to execute.
+		 * @param flags the flags that indicate which features are supported.
 		 */
 		explicit SPARQLQuery(const std::shared_ptr<GraphQuery> &query, SPARQLFlags flags = SPARQLFlag::NOTHING);
 

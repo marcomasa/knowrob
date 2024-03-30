@@ -19,15 +19,15 @@ namespace knowrob {
 	class PredicateIndicator {
 	public:
 		/**
-		 * @functor the functor name.
-		 * @arity thr arity of this predicate.
+		 * @param functor the functor name.
+		 * @param arity thr arity of this predicate.
 		 */
 		PredicateIndicator(std::string_view functor, uint32_t arity)
 				: functor_(Atom::Tabled(functor)), arity_(arity) {}
 
 		/**
-		 * @functor the functor name.
-		 * @arity thr arity of this predicate.
+		 * @param functor the functor name.
+		 * @param arity thr arity of this predicate.
 		 */
 		PredicateIndicator(AtomPtr functor, uint32_t arity)
 				: functor_(std::move(functor)), arity_(arity) {}

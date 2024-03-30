@@ -17,7 +17,7 @@ namespace knowrob {
 	class Disjunction : public CompoundFormula {
 	public:
 		/**
-		 * @formulae list of sub-formulas.
+		 * @param formulae list of sub-formulas.
 		 */
 		explicit Disjunction(const std::vector<FormulaPtr> &formulae);
 

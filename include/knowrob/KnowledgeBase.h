@@ -75,8 +75,7 @@ namespace knowrob {
 		/**
 		 * Evaluate a query represented as a vector of literals.
 		 * The call is non-blocking and returns a stream of answers.
-		 * @param literals a vector of literals
-		 * @param label an optional modalFrame label
+		 * @param graphQuery a graph path query
 		 * @return a stream of query results
 		 */
 		TokenBufferPtr submitQuery(const GraphPathQueryPtr &graphQuery);
@@ -85,6 +84,7 @@ namespace knowrob {
 		 * Evaluate a query represented as a Literal.
 		 * The call is non-blocking and returns a stream of answers.
 		 * @param query a literal
+		 * @param ctx a query context
 		 * @return a stream of query results
 		 */
 		TokenBufferPtr submitQuery(const FirstOrderLiteralPtr &query, const QueryContextPtr &ctx);
@@ -93,6 +93,7 @@ namespace knowrob {
 		 * Evaluate a query represented as a Formula.
 		 * The call is non-blocking and returns a stream of answers.
 		 * @param query a formula
+		 * @param ctx a query context
 		 * @return a stream of query results
 		 */
 		TokenBufferPtr submitQuery(const FormulaPtr &query, const QueryContextPtr &ctx);

@@ -91,7 +91,6 @@ namespace knowrob {
 		/**
 		 * Add a typed plugin factory to the manager.
 		 * @param typeName the name of the plugin type
-		 * @param factory a plugin factory
 		 */
 		template<class U>
 		static bool addFactory(std::string_view typeName) {
@@ -111,7 +110,8 @@ namespace knowrob {
 
 		/**
 		 * Add a plugin to this manager.
-		 * @reasoner a plugin.
+		 * @param reasonerID the name of the reasoner
+		 * @param reasoner the reasoner instance
 		 */
 		virtual std::shared_ptr<NamedPlugin<T>>
 		addPlugin(std::string_view reasonerID, const std::shared_ptr<T> &reasoner) = 0;

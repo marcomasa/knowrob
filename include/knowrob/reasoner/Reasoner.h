@@ -76,8 +76,8 @@ namespace knowrob {
 /**
  * Define a reasoner plugin.
  * The macro generates two functions that are used as entry points for loading the plugin.
- * First, a factory function is defined that creates instances of @classType.
- * This will only work when @classType has a single argument constructor that
+ * First, a factory function is defined that creates instances of classType.
+ * This will only work when classType has a single argument constructor that
  * accepts a string as argument (the reasoner instance ID).
  * Second, a function is generated that exposes the plugin name.
  * @param classType the type of the reasoner, must be a subclass of IReasoner

@@ -41,7 +41,7 @@ namespace knowrob::py {
 
 	/**
 	 * Make sure that a Python file at path can be imported.
-	 * @param path the path to add.
+	 * @param modulePath the path to add.
 	 * @return the import string needed to import the module.
 	 */
 	std::string addToSysPath(const std::filesystem::path& modulePath);

@@ -19,6 +19,7 @@ namespace knowrob {
 	class OntologyFile : public OntologySource {
 	public:
 		/**
+		 * @param vocabulary the vocabulary of the ontology.
 		 * @param uri URI of the data source.
 		 * @param format string identifier of the data format.
 		 */

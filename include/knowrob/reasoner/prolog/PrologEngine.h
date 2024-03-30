@@ -26,7 +26,7 @@ namespace knowrob {
 		using Solution = std::map<std::string_view, TermPtr>;
 
 		/**
-		 * @maxNumThreads maximum number of worker threads.
+		 * @param maxNumThreads maximum number of worker threads.
 		 */
 		explicit PrologEngine(uint32_t maxNumThreads = 0);
 
@@ -37,28 +37,28 @@ namespace knowrob {
 
 		/**
 		 * Evaluate a goal in a thread with a Prolog engine.
-		 * @param goal the work goal
+		 * @param goalFactory a goal factory
 		 * @return true if the goal succeeded
 		 */
 		static bool eval(const GoalFactory &goalFactory);
 
 		/**
 		 * Evaluate a goal in a thread with a Prolog engine.
-		 * @param goal the work goal
+		 * @param goalFactory a goal factory
 		 * @return the first solution found or an empty optional
 		 */
 		static std::optional<Solution> oneSolution(const GoalFactory &goalFactory);
 
 		/**
 		 * Evaluate a goal in a thread with a Prolog engine.
-		 * @param goal the work goal
+		 * @param goalFactory a goal factory
 		 * @return all solutions found
 		 */
 		static std::vector<Solution> allSolutions(const GoalFactory &goalFactory);
 
 		/**
 		 * Evaluate a goal in a thread with a Prolog engine.
-		 * @param goal the work goal
+		 * @param goalFactory a goal factory
 		 * @param callback a function that handles the solutions
 		 */
 		static void query(const GoalFactory &goalFactory, const BindingsHandler &callback);
@@ -67,7 +67,9 @@ namespace knowrob {
 		 * Consults a Prolog file, i.e. loads facts and rules and executed
 		 * directives in the file.
 		 * May throw an exception if there is no valid Prolog file at the given path.
-		 * @prologFile the local path to the file.
+		 * @param uri the local path to the file.
+		 * @param module the module to consult the file into
+		 * @param doTransformQuery if true, then the file is transformed into a query
 		 * @return true on success
 		 */
 		static bool consult(const std::filesystem::path &uri, const char *module = {}, bool doTransformQuery = true);
@@ -75,7 +77,7 @@ namespace knowrob {
 		/**
 		 * Run a goal in a worker thread with a Prolog engine.
 		 * @param goal the work goal
-		 * @param exceptionHandler a function that handles exceptions thrown by the goal
+		 * @param errHandler a function that handles exceptions thrown by the goal
 		 */
 		static void pushGoal(const std::shared_ptr<ThreadPool::Runner> &goal, const ErrorHandler &errHandler);
 

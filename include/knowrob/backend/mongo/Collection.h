@@ -115,6 +115,7 @@ namespace knowrob::mongo {
 		 * Update all existing documents matching the document pattern.
 		 * @param query a document pattern.
 		 * @param update the update document.
+		 * @param upsert if true, create a new document if no match is found.
 		 */
 		void update(const Document &query, const Document &update, bool upsert = false);
 

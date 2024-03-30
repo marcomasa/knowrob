@@ -74,7 +74,7 @@ namespace knowrob {
 
 		/**
 		 * Lookup up all matching triples.
-		 * @param tripleExpression a triple expression
+		 * @param query a triple pattern
 		 * @return a getAnswerCursor over matching triples
 		 */
 		mongo::BindingsCursorPtr lookup(const FramedTriplePattern &query);
@@ -83,7 +83,7 @@ namespace knowrob {
 		 * Lookup up a path of matching triples.
 		 * The lookup pipeline includes a step for each expression in the vector
 		 * in the same order as the expressions are ordered in the vector.
-		 * @param tripleExpressions a vector of triple expressions
+		 * @param query a path query
 		 * @return a getAnswerCursor over matching triples
 		 */
 		mongo::BindingsCursorPtr lookup(const GraphTerm &query);
@@ -107,7 +107,7 @@ namespace knowrob {
 		bool isPersistent() const override { return true; }
 
 		// Override QueryableBackend
-		void foreach(const TripleVisitor &visitor) const override;
+		void foreach(const TripleVisitor &callback) const override;
 
 		// Override QueryableBackend
 		void batch(const TripleHandler &callback) const override;

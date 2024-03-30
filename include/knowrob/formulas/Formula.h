@@ -33,7 +33,7 @@ namespace knowrob {
 	class Formula {
 	public:
 		/**
-		 * @type the type of the formula.
+		 * @param type the type of the formula.
 		 */
 		explicit Formula(const FormulaType &type);
 

@@ -51,7 +51,8 @@ namespace knowrob {
 		/**
 		 * Pushes a goal for a worker.
 		 * The goal is assigned to a worker thread when one is available.
-		 * @goal the work goal
+		 * @param goal the work goal
+		 * @param exceptionHandler an exception handler
 		 */
 		void pushWork(const std::shared_ptr<ThreadPool::Runner> &goal, ThreadPool::ExceptionHandler exceptionHandler);
 
@@ -108,7 +109,7 @@ namespace knowrob {
 
 			/**
 			 * Stop the runner.
-			 * @wait call blocks until runner exited if true.
+			 * @param wait call blocks until runner exited if true.
 			 */
 			void stop(bool wait);
 

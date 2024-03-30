@@ -68,7 +68,7 @@ namespace knowrob {
 
 			/**
 			 * Push a QueryResult into this channel.
-			 * @msg a QueryResult pointer.
+			 * @param tok a QueryResult pointer.
 			 */
 			void push(const TokenPtr &tok);
 

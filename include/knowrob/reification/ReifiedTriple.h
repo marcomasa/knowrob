@@ -22,6 +22,7 @@ namespace knowrob {
 		 * Create a reified view on a triple.
 		 * @param triple the triple to reify.
 		 * @param vocabulary the vocabulary to use for reification.
+		 * @param reifiedName the name of the reified triple.
 		 */
 		explicit ReifiedTriple(const FramedTriple &triple, const VocabularyPtr &vocabulary,
 							   const IRIAtomPtr &reifiedName = nullptr);
@@ -49,7 +50,6 @@ namespace knowrob {
 		/**
 		 * Check if a triple belongs to the reified representation of another triple.
 		 * @param triple the triple to check.
-		 * @param vocabulary a vocabulary.
 		 * @return true if the triple is part of a reification.
 		 */
 		static bool isPartOfReification(const FramedTriple &triple);

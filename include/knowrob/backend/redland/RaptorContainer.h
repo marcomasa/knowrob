@@ -35,6 +35,7 @@ namespace knowrob {
 		 * @param s a raptor term.
 		 * @param p a raptor term.
 		 * @param o a raptor term.
+		 * @param context the context of the statement.
 		 * @return the added statement.
 		 */
 		FramedTriple *add(raptor_term *s, raptor_term *p, raptor_term *o, librdf_node *context = nullptr);
@@ -42,6 +43,7 @@ namespace knowrob {
 		/**
 		 * Add a triple to the batch.
 		 * @param statement a raptor statement.
+		 * @param context the context of the statement.
 		 * @return the added statement.
 		 */
 		FramedTriple *add(raptor_statement *statement, librdf_node *context = nullptr);

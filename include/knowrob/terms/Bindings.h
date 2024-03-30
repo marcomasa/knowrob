@@ -73,8 +73,8 @@ namespace knowrob {
 
 		/**
 		 * Map a variable to a term.
-		 * @var a variable.
-		 * @term a term.
+		 * @param var a variable.
+		 * @param term a term.
 		 */
 		void set(const std::shared_ptr<Variable> &var, const TermPtr &term);
 
@@ -83,7 +83,7 @@ namespace knowrob {
 		 * A null pointer reference is returned if the given variable
 		 * is not included in the mapping.
 		 *
-		 * @var a variable.
+		 * @param varName a variable.
 		 * @return a term reference.
 		 */
 		const TermPtr &get(std::string_view varName) const;
@@ -93,14 +93,14 @@ namespace knowrob {
 		 * A null pointer reference is returned if the given variable
 		 * is not included in the mapping.
 		 *
-		 * @var a variable.
+		 * @param varName a variable.
 		 * @return a term reference.
 		 */
 		std::shared_ptr<Atomic> getAtomic(std::string_view varName) const;
 
 		/**
 		 * Returns true if the given var is mapped to a term by this substitution.
-		 * @var a variable.
+		 * @param varName a variable.
 		 * @return true if this substitution isMoreGeneralThan the variable.
 		 */
 		bool contains(std::string_view varName) const;
@@ -109,7 +109,7 @@ namespace knowrob {
 		 * Combine with another substitution.
 		 * If both substitute the same variable to some term, then
 		 * the combination maps to the unification of these terms, if one exists.
-		 * @other another substitution
+		 * @param other another substitution
 		 * @return true if the operation succeeded.
 		 */
 		bool unifyWith(const Bindings &other);

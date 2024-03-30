@@ -33,6 +33,11 @@ namespace knowrob {
 		auto kb() const { return kb_; }
 
 		/**
+		 * @return the backend manager associated with this manager.
+		 */
+		auto backendManager() const { return backendManager_; }
+
+		/**
 		 * @return the goal-driven reasoners defined by this manager.
 		 */
 		auto &goalDriven() const { return goalDriven_; }
@@ -43,7 +48,7 @@ namespace knowrob {
 		auto &dataDriven() const { return dataDriven_; }
 
 		/**
-		 * @param relationIRI the IRI of a relation.
+		 * @param indicator a predicate indicator.
 		 * @return the reasoners that define the given relation.
 		 */
 		std::vector<GoalDrivenReasonerPtr> getReasonerForRelation(const PredicateIndicator &indicator) const;

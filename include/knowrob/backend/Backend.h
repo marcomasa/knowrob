@@ -113,7 +113,7 @@ namespace knowrob {
 		 * @param config a property tree.
 		 * @return true on success
 		 */
-		virtual bool initializeBackend(const PropertyTree &ptree) = 0;
+		virtual bool initializeBackend(const PropertyTree &config) = 0;
 
 		std::optional<std::string> getVersionOfOrigin(std::string_view origin) const {
 			auto it = originVersions_.find(origin.data());
@@ -149,8 +149,8 @@ namespace knowrob {
  * Define a data backend plugin.
  * The macro generates two functions that are used as entry points for
  * loading the plugin.
- * First, a factory function is defined that creates instances of @classType.
- * This will only work when @classType has a single argument constructor that
+ * First, a factory function is defined that creates instances of classType.
+ * This will only work when classType has a single argument constructor that
  * accepts a string as argument (the KG instance ID).
  * Second, a function is generated that exposes the plugin name.
  * @param classType the type of the backend, must be a subclass of DataBackend

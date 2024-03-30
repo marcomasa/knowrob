@@ -79,8 +79,8 @@ namespace knowrob {
 		PrologTerm();
 
 		/**
-		 * Generates a Prolog term holding a graph term.
-		 * @param kbTerm a graph term
+		 * Generates a Prolog term holding a graph query.
+		 * @param query a graph query
 		 */
 		explicit PrologTerm(const GraphQueryPtr &query);
 
@@ -104,6 +104,7 @@ namespace knowrob {
 
 		/**
 		 * @param literal an RDF literal
+		 * @param triple_functor the functor of the term
 		 */
 		explicit PrologTerm(const FramedTriplePattern &literal, const char *triple_functor);
 
@@ -189,7 +190,7 @@ namespace knowrob {
 		bool putTerm(const std::shared_ptr<GraphTerm> &kbTerm);
 
 		/**
-		 * @param kbFormula a KnowRob formula
+		 * @param phi a KnowRob formula
 		 * @return true if the term was assigned to the KnowRob formula
 		 */
 		bool putFormula(const FormulaPtr &phi);
@@ -253,6 +254,7 @@ namespace knowrob {
 		/**
 		 * @param os an output stream
 		 * @param t a Prolog term
+		 * @param indent an indentation string
 		 * @return true if the term was displayed
 		 */
 		static bool display(std::ostream &os, term_t t, const std::string &indent = "");

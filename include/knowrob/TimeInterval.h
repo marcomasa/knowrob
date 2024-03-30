@@ -18,8 +18,8 @@ namespace knowrob {
 	class TimeInterval {
 	public:
 		/**
-		 * @param sinceRange the time range where the interval starts
-		 * @param untilRange the time range where the interval ends
+		 * @param since the time point where the interval starts
+		 * @param until the time point where the interval ends
 		 */
 		TimeInterval(const std::optional<TimePoint> &since, const std::optional<TimePoint> &until);
 

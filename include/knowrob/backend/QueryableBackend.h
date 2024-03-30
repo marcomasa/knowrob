@@ -34,7 +34,7 @@ namespace knowrob {
 
 		/**
 		 * Iterate over all triples in the model.
-		 * @param callback the callback to handle the triples.
+		 * @param visitor the callback to handle the triples.
 		 * @return true if the iteration was successful.
 		 */
 		virtual void foreach(const TripleVisitor &visitor) const;
@@ -54,7 +54,7 @@ namespace knowrob {
 
 		/**
 		 * @param query a framed triple pattern.
-		 * @param handler a function that is called for each matching framed triple.
+		 * @param visitor a function that is called for each matching framed triple.
 		 */
 		virtual void match(const FramedTriplePattern &query, const TripleVisitor &visitor);
 
@@ -102,6 +102,7 @@ namespace knowrob {
 
 		/**
 		 * Generates a positive answer to a query.
+		 * @param original a graph path query.
 		 * @param expansion a graph query expansion.
 		 * @param bindings a set of bindings.
 		 * @return a positive answer to the query.

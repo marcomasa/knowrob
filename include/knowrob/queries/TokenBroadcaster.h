@@ -23,13 +23,13 @@ namespace knowrob {
 		/**
 		 * Add a subscriber to this broadcast.
 		 * The subscriber will receive input from the broadcast after this call.
-		 * @subscriber a query result stream.
+		 * @param subscriber a query result stream.
 		 */
 		void addSubscriber(const std::shared_ptr<Channel> &subscriber);
 
 		/**
 		 * Remove a previously added subscriber.
-		 * @subscriber a query result stream.
+		 * @param subscriber a query result stream.
 		 */
 		void removeSubscriber(const std::shared_ptr<Channel> &subscriber);
 

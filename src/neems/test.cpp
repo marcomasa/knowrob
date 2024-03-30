@@ -71,10 +71,6 @@ namespace knowrob::testing {
 			return reasoner;
 		}
 
-		static KnowledgeBase *kb() {
-			return reasoner()->reasonerManager().kb();
-		}
-
 		static std::string getPath(const std::string &filename) {
 			return std::filesystem::path("neems") / filename;
 		}

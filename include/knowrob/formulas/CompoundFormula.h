@@ -18,8 +18,8 @@ namespace knowrob {
 	class CompoundFormula : public Formula {
 	public:
 		/**
-		 * @type the type of the formula.
-		 * @formulae list of connected formulae.
+		 * @param type the type of the formula.
+		 * @param formulae list of connected formulae.
 		 */
 		CompoundFormula(FormulaType type, const std::vector<FormulaPtr> &formulae);
 

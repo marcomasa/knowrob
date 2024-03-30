@@ -15,8 +15,8 @@ namespace knowrob {
 	class GraphTransformationRule {
 	public:
 		/**
-		 * @from the statements to match in the input graph.
-		 * @to the statements to replace in the input graph.
+		 * @param from the statements to match in the input graph.
+		 * @param to the statements to replace in the input graph.
 		 */
 		GraphTransformationRule(const std::vector<FramedTriplePatternPtr> &from, const std::vector<FramedTriplePatternPtr> &to)
 				: from_(from), to_(to) {}

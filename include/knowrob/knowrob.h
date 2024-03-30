@@ -73,13 +73,13 @@ namespace knowrob {
 		static void setBatchSize(uint32_t batchSize) { batchSize_ = batchSize; }
 
 		/**
-		 * @return the egoIRI atom.
+		 * @return the ego IRI atom.
 		 */
 		static IRIAtomPtr egoIRI() { return egoIRI_; }
 
 		/**
 		 * Set the egoIRI atom.
-		 * @param ego the egoIRI atom.
+		 * @param egoIRI the ego IRI atom.
 		 */
 		static void setEgoIRI(const IRIAtomPtr &egoIRI) { egoIRI_ = egoIRI; }
 

@@ -212,7 +212,7 @@ namespace knowrob {
 		std::map<std::string_view, uint64_t> frequency_;
 		std::shared_ptr<ImportHierarchy> importHierarchy_;
 
-		semweb::PropertyPtr defineProperty(const std::shared_ptr<semweb::Property> &p);
+		semweb::PropertyPtr defineProperty_(const std::shared_ptr<semweb::Property> &p);
 	};
 
 	using VocabularyPtr = std::shared_ptr<Vocabulary>;

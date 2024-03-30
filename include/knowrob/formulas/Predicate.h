@@ -22,14 +22,14 @@ namespace knowrob {
 	class Predicate : public Formula {
 	public:
 		/**
-		 * @functor the functor name.
-		 * @arguments vector of predicate arguments.
+		 * @param functor the functor name.
+		 * @param arguments vector of predicate arguments.
 		 */
 		explicit Predicate(std::string_view functor, const std::vector<TermPtr> &arguments = {});
 
 		/**
-		 * @functor the functor name.
-		 * @arguments vector of predicate arguments.
+		 * @param functor the functor name.
+		 * @param arguments vector of predicate arguments.
 		 */
 		explicit Predicate(AtomPtr functor, const std::vector<TermPtr> &arguments = {});
 

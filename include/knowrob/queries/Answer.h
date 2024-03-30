@@ -69,7 +69,8 @@ namespace knowrob {
 
 		/**
 		 * Mark this answer as uncertain by modification of the associated frame.
-		 * @param confidence an optional confidence value.
+		 * @param val true if the answer is uncertain.
+		 * @param confidence the confidence value.
 		 */
 		void setIsUncertain(bool val, std::optional<double> confidence);
 
@@ -84,8 +85,8 @@ namespace knowrob {
 		bool isAllwaysTrue() const { return !isOccasionallyTrue(); }
 
 		/**
-		 * Mark this answer as uncertain by modification of the associated frame.
-		 * @param confidence an optional confidence value.
+		 * Mark this answer as occasionally true.
+		 * @param val true if the answer is occasionally true.
 		 */
 		void setIsOccasionallyTrue(bool val);
 

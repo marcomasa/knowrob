@@ -18,6 +18,7 @@ namespace knowrob {
 		 * Create a framed predicate.
 		 * @param predicate the predicate.
 		 * @param graphSelector the graph selector.
+		 * @param reasonerTerm the reasoner term.
 		 */
 		FramedPredicate(PredicatePtr predicate, GraphSelectorPtr graphSelector, AtomPtr reasonerTerm)
 				: predicate_(std::move(predicate)),

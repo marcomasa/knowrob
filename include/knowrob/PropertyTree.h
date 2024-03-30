@@ -37,6 +37,7 @@ namespace knowrob {
 		/**
 		 * key-value pairs of settings where the key uses "." as separator of levels in the tree.
 		 * @param key a key.
+		 * @param defaultValue a default value.
 		 * @return the value associated with the key.
 		 */
 		TermPtr get(std::string_view key, const TermPtr &defaultValue) const;

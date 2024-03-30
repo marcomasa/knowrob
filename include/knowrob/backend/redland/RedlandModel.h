@@ -96,7 +96,7 @@ namespace knowrob {
 
 		/**
 		 * Set the storage type to "hashes".
-		 * @param storageType the storage type.
+		 * @param hashType the hash type.
 		 * @param dir the directory for the hashes storage.
 		 * @see https://librdf.org/docs/api/redland-storage-module-hashes.html
 		 */

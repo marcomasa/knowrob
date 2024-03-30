@@ -18,7 +18,7 @@ namespace knowrob {
 	class BackendManager : public PluginManager<DataBackend> {
 	public:
 		/**
-		 * @param kb the knowledge base this manager is associated with.
+		 * @param vocabulary the vocabulary associated with this manager.
 		 */
 		explicit BackendManager(const std::shared_ptr<Vocabulary> &vocabulary);
 

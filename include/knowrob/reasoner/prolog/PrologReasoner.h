@@ -50,7 +50,9 @@ namespace knowrob {
 		 * Consults a Prolog file, i.e. loads facts and rules and executed
 		 * directives in the file.
 		 * May throw an exception if there is no valid Prolog file at the given path.
-		 * @prologFile the local path to the file.
+		 * @param uri the local path to the file.
+		 * @param module the module to consult the file into.
+		 * @param doTransformQuery if true, then the file is transformed into a query.
 		 * @return true on success
 		 */
 		bool consult(const std::filesystem::path &uri, const char *module = {}, bool doTransformQuery = true);

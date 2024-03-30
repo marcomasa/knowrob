@@ -67,7 +67,7 @@ bool MongologReasoner::initializeReasoner(const PropertyTree &reasonerConfigurat
 				MongoKnowledgeGraph::DB_NAME_KNOWROB,
 				MongoKnowledgeGraph::COLL_NAME_TRIPLES
 		);
-		reasonerManager().kb()->backendManager()->addPlugin("mongo", knowledgeGraph_);
+		reasonerManager().backendManager()->addPlugin("mongo", knowledgeGraph_);
 		KB_WARN("Falling back to default configuration for MongoDB!");
 	}
 
@@ -182,7 +182,7 @@ foreign_t pl_assert_triple_cpp9(term_t t_reasonerManager,
 			if (graphTerm->termType() != TermType::ATOMIC) throw QueryError("invalid property term {}", *graphTerm);
 			tripleData.setGraph(((Atomic *) graphTerm.get())->stringForm());
 		} else {
-			tripleData.setGraph(mongolog->reasonerManager().kb()->vocabulary()->importHierarchy()->defaultGraph());
+			tripleData.setGraph(mongolog->reasonerManager().backendManager()->vocabulary()->importHierarchy()->defaultGraph());
 		}
 
 		// "c" field
@@ -290,10 +290,6 @@ namespace knowrob::testing {
 				kb->init();
 			}
 			return reasoner;
-		}
-
-		static KnowledgeBase *kb() {
-			return reasoner()->reasonerManager().kb();
 		}
 
 		static std::string getPath(const std::string &filename) {

@@ -59,6 +59,7 @@ namespace knowrob {
 		 * Add a grounded literal to the answer.
 		 * Positive literals may not contain variables.t
 		 * @param predicate a predicate.
+		 * @param frame a graph selector.
 		 * @param isNegated true if the negation of the predicate is grounded.
 		 */
 		bool addGrounding(const std::shared_ptr<Predicate> &predicate,

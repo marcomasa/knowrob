@@ -44,7 +44,7 @@ namespace knowrob {
 
 		/**
 		 * Configure the transformation with the given options.
-		 * @param opts the options
+		 * @param config the options
 		 * @return true if the configuration was successful
 		 */
 		virtual bool configure(const boost::property_tree::ptree &config) = 0;

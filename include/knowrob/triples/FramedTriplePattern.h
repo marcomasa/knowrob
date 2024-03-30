@@ -44,7 +44,7 @@ namespace knowrob {
 	public:
 		/**
 		 * Copy char data of StatementData object into Term data structures.
-		 * @param tripleData input data, can be deleted afterwards.
+		 * @param triple a triple.
 		 * @param isNegated a value of true refers to the statement being false.
 		 */
 		explicit FramedTriplePattern(const FramedTriple &triple, bool isNegated = false);
@@ -52,9 +52,8 @@ namespace knowrob {
 		/**
 		 * @param predicate a predicate with two arguments.
 		 * @param isNegated a value of true refers to the statement being false.
-		 * @param selector a selector for the graph, agent, begin, end and confidence.
 		 */
-		explicit FramedTriplePattern(const PredicatePtr &pred, bool isNegated = false);
+		explicit FramedTriplePattern(const PredicatePtr &predicate, bool isNegated = false);
 
 		/**
 		 * @param s the subject term.
@@ -138,7 +137,7 @@ namespace knowrob {
 
 		/**
 		 * Set the agent term of this expression.
-		 * @param agentTerm the agent term.
+		 * @param perspectiveTerm the perspective term.
 		 */
 		void setPerspectiveTerm(const groundable<Atom> &perspectiveTerm) { perspectiveTerm_ = perspectiveTerm; }
 
@@ -295,7 +294,7 @@ namespace knowrob {
 		TriplePatternContainer(const TriplePatternContainer &other) = delete;
 
 		/**
-		 * @param triple a triple query.
+		 * @param q a triple query.
 		 */
 		void push_back(const FramedTriplePatternPtr &q);
 

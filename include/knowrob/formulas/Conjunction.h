@@ -17,7 +17,7 @@ namespace knowrob {
 	class Conjunction : public CompoundFormula {
 	public:
 		/**
-		 * @formulae list of sub-formulas.
+		 * @param formulae list of sub-formulas.
 		 */
 		explicit Conjunction(const std::vector<FormulaPtr> &formulae);
 

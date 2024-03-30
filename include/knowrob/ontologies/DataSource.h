@@ -25,8 +25,10 @@ namespace knowrob {
 	class DataSource {
 	public:
 		/**
+		 * Create a data source.
 		 * @param uri URI of the data source.
 		 * @param format string identifier of the data format.
+		 * @param dataSourceType the type of the data source.
 		 */
 		DataSource(URI uri, std::string_view format, DataSourceType dataSourceType);
 

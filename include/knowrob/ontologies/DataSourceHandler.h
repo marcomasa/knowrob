@@ -35,8 +35,8 @@ namespace knowrob {
 		bool loadDataSource(const DataSourcePtr &dataSource);
 
 		/**
-		 * Check if a handler for a data source format is available.
-		 * @param format the format name.
+		 * Check if a handler for a data source is available.
+		 * @param dataSource a data source.
 		 * @return true if a handler is available.
 		 */
 		bool hasDataHandler(const DataSourcePtr &dataSource) const;

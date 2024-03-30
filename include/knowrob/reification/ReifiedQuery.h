@@ -27,13 +27,14 @@ namespace knowrob {
 		/**
 		 * @param nonReified a query that is not reified.
 		 * @param vocabulary the vocabulary to use for reification.
+		 * @param withFullFrame if true, the reified query will contain a full frame for each reified triple.
 		 */
 		explicit ReifiedQuery(const std::shared_ptr<GraphQuery> &nonReified, VocabularyPtr vocabulary, bool withFullFrame = false);
 
 		/**
 		 * @param nonReified a query that is not reified.
-		 * @param ctx the query context.
 		 * @param vocabulary the vocabulary to use for reification.
+		 * @param withFullFrame if true, the reified query will contain a full frame for each reified triple.
 		 */
 		explicit ReifiedQuery(const FramedTriplePattern &nonReified, VocabularyPtr vocabulary, bool withFullFrame = false);
 

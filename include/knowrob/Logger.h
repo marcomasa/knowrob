@@ -105,11 +105,13 @@ namespace knowrob {
 								  uint32_t max_files=4);
 
 		/**
+		 * @param sinkType the type of the sink to configure.
 		 * @param log_level the logging level for the console sink.
 		 */
 		static void setSinkLevel(SinkType sinkType, spdlog::level::level_enum log_level);
 
 		/**
+		 * @param sinkType the type of the sink to configure.
 		 * @param pattern the logging pattern for the console sink.
 		 */
 		static void setSinkPattern(SinkType sinkType, const std::string &pattern);

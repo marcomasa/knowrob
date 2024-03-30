@@ -77,6 +77,7 @@ namespace knowrob {
         /**
 		 * @return the belief operator `B`
 		 * @param perspective a perspective IRI.
+         * @param confidence a confidence value.
 		 */
 		ModalOperatorPtr B(std::string_view perspective, double confidence);
 

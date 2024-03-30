@@ -78,10 +78,6 @@ namespace knowrob {
 			}
 			return reasoner;
 		}
-
-		static KnowledgeBase* kb() {
-			return reasoner()->reasonerManager().kb();
-		}
 	};
 }
 

@@ -16,7 +16,7 @@ namespace knowrob {
 	class Negation : public CompoundFormula {
 	public:
 		/**
-		 * @formula the negated formula.
+		 * @param formula the negated formula.
 		 */
 		explicit Negation(const FormulaPtr &formula);
 

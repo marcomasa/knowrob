@@ -19,8 +19,8 @@ namespace knowrob {
 	public:
 		/**
 		 * Compute a unifier of two terms.
-		 * @t0 a term.
-		 * @t1 a term.
+		 * @param t0 a term.
+		 * @param t1 a term.
 		 */
 		Unifier(const TermPtr &t0, const TermPtr &t1);
 		

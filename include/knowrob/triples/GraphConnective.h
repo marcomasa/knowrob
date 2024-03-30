@@ -25,7 +25,7 @@ namespace knowrob {
 
 		/**
 		 * Add a term to the graph connective.
-		 * @param term the term to add.
+		 * @param member the term to add.
 		 */
 		void addMember(const std::shared_ptr<GraphTerm> &member) {
 			if (member) terms_.push_back(member);
