@@ -44,8 +44,6 @@
 
 %% operators for tell/ask rules
 :- op(1100, xfx, user:(?>)).
-:- op(1100, xfx, user:(+>)).
-:- op(1100, xfx, user:(?+>)).
 
 :- rdf_meta(step_compile(t,t,t)).
 :- rdf_meta(step_compile(t,t,t,-)).
@@ -191,9 +189,6 @@ mongolog_consult(URL) :-
 
 mongolog_consult(URL, _Options) :-
     % skip consultation if the file was consulted already for the current reasoner.
-    % TODO: handle the case that only a subset of predicates was imported before,
-    %  i.e. via use_module(FileSpec, ImportList). Currently ImportList is ignored and
-    %  all predicates are loaded in any case.
 	current_reasoner_module(Module),
 	mongolog_source_file(URL, RealModule),
 	(RealModule==user ; RealModule==Module),
@@ -275,9 +270,9 @@ mongolog_consult3((:- Goal), _) :-
 mongolog_consult3((Head :- Body), Options) :-
 	!, mongolog_consult3('?>'(Head,Body), Options).
 
-mongolog_consult3('?+>'(Head,Body), Options) :-
-    !, mongolog_consult3('?>'(Head,Body), Options),
-       mongolog_consult3('+>'(Head,Body), Options).
+%mongolog_consult3('?+>'(Head,Body), Options) :-
+%    !, mongolog_consult3('?>'(Head,Body), Options),
+%       mongolog_consult3('+>'(Head,Body), Options).
 
 mongolog_consult3('?>'(Head,Body), _Options) :-
     !, % "ask" rule
@@ -288,18 +283,18 @@ mongolog_consult3('?>'(Head,Body), _Options) :-
 	% add the rule to the DB backend
 	mongolog_add_rule(Term, BodyGlobal).
 
-mongolog_consult3('+>'(Head,Body), _Options) :-
-    !, % "tell" rule
-	% expand rdf terms Prefix:Local to IRI atom
-	rdf_global_term(Head, HeadGlobal),
-	rdf_global_term(Body, BodyGlobal),
-	strip_module_(HeadGlobal,_Module,Term),
-	% rewrite functor
-	Term =.. [Functor|Args],
-	atom_concat('project_',Functor,Functor0),
-	Head0 =.. [Functor0|Args],
-	% add the rule to the DB backend
-	mongolog_add_rule(Head0, project(BodyGlobal)).
+%mongolog_consult3('+>'(Head,Body), _Options) :-
+%    !, % "tell" rule
+%	% expand rdf terms Prefix:Local to IRI atom
+%	rdf_global_term(Head, HeadGlobal),
+%	rdf_global_term(Body, BodyGlobal),
+%	strip_module_(HeadGlobal,_Module,Term),
+%	% rewrite functor
+%	Term =.. [Functor|Args],
+%	atom_concat('project_',Functor,Functor0),
+%	Head0 =.. [Functor0|Args],
+%	% add the rule to the DB backend
+%	mongolog_add_rule(Head0, project(BodyGlobal)).
 
 % consult a fact
 mongolog_consult3(Fact, Options) :-
@@ -681,7 +676,8 @@ mongolog_assert(triple(S,P,O)) :-
 	current_reasoner_manager(ReasonerManager),
 	current_reasoner_module(ReasonerModule),
 	sw_default_graph(G),
-	mng_assert_triple_cpp(ReasonerManager, ReasonerModule, S, P, O, G, _, _, _).
+	triple_value(O, OValue),
+	mng_assert_triple_cpp(ReasonerManager, ReasonerModule, S, P, OValue, G, _, _, _).
 
 mongolog_assert(Term) :-
 	throw(error(mongolog_error, assert(Term))).
@@ -691,17 +687,28 @@ mongolog_assert(Fact) :-
 	mongolog_call(assert(Fact),[query_scope(QScope)]).
 
 mongolog_assert(triple(S,P,O), Scope) :-
+	is_list(Scope),!,
 	option(query_scope(QS), Scope),
-	mongolog_time_scope(QS, SinceValue0, UntilValue0),
+	mongolog_assert(triple(S,P,O), QS).
+
+mongolog_assert(triple(S,P,O), Scope) :-
+	is_dict(Scope),
+	mongolog_time_scope(Scope, SinceValue0, UntilValue0),
 	mng_strip_type(SinceValue0, _, SinceValue),
 	mng_strip_type(UntilValue0, _, UntilValue),
 	current_reasoner_manager(ReasonerManager),
 	current_reasoner_module(ReasonerModule),
 	sw_default_graph(G),
-	% TODO: include other context parameter
+	triple_value(O, OValue),
 	mng_assert_triple_cpp(ReasonerManager, ReasonerModule,
-			S, P, O, G,
+			S, P, OValue, G,
 			SinceValue, UntilValue, _).
+
+triple_value(Value,BaseUnitValue) :-
+	mongolog_holds:strip_unit(Value, 'is', Multiplier, Offset, Stripped),
+	% convert to base unit
+	BaseUnitValue is ((Stripped * Multiplier) + Offset), !.
+triple_value(Value,Value).
 
 %%
 mongolog_project(Fact) :-
@@ -754,7 +761,6 @@ mongolog_retract(Statements, Scope, Options) :-
 	       mongolog_retract(Statement, Scope, Options)).
 
 mongolog_retract(triple(S,P,O), Scope, Options) :-
-	% TODO: support retraction of other predicates
 	% ensure there is a graph option
 	set_graph_option(Options, Options0),
 	% append scope to options
@@ -1130,9 +1136,6 @@ get_var(Term, Ctx, [Key,Var]) :-
 %
 var_key(Var, Ctx, Key) :-
 	var(Var),
-	% TODO: can this be done better than iterating over all variables?
-	%		- i.e. by testing if some variable is element of a list
-	%		- member/2 cannot be used as it would unify each array element
 	(	option(global_vars(Vars), Ctx)
 	;	option(outer_vars(Vars), Ctx)
 	;	option(step_vars(Vars), Ctx)
@@ -1260,32 +1263,6 @@ user:term_expansion((?>(Head,Body)), Export) :-
 	expand_ask_rule_(SourceURL, ReasonerModule, Head, Body, Export).
 
 %%
-% Term expansion for *project* rules using the (+>) operator.
-% The rules are only asserted into mongo DB and expanded into
-% empty list.
-%
-user:term_expansion((+>(Head,Body)), Export) :-
-    prolog_load_context(source, SourceURL),
-	current_reasoner_module(ReasonerModule),
-	expand_tell_rule_(SourceURL, ReasonerModule, Head, Body, Export).
-
-%%
-% Term expansion for *query+project* rules using the (?+>) operator.
-% These are basically clauses that can be used in both contexts.
-%
-% Consider for example following rule:
-%
-%     is_event(Entity) ?+>
-%       has_type(Entity, dul:'Event').
-%
-% This is valid because, in this case, has_type/2 has
-% clauses for querying and projection.
-%
-user:term_expansion((?+>(Head,Goal)), X1) :-
-	user:term_expansion((?>(Head,Goal)),X1),
-	user:term_expansion((+>(Head,Goal)),_X2).
-
-%%
 expand_ask_rule_(SourceFile, ReasonerModule, _Head, _Body, []) :-
     is_expanded_(SourceFile, ReasonerModule), !.
 expand_ask_rule_(SourceFile, ReasonerModule, Head, Body, Export) :-
@@ -1305,13 +1282,6 @@ expand_ask_rule_(SourceFile, ReasonerModule, Head, Body, Export) :-
 		    Export=[(:-(Term1, mongolog:mongolog_call(Term1, [query_scope(QScope)])))]
 	    )
 	).
-
-%%
-expand_tell_rule_(SourceFile, ReasonerModule, _Head, _Body, []) :-
-    is_expanded_(SourceFile, ReasonerModule), !.
-expand_tell_rule_(SourceFile, ReasonerModule, Head, Body, []) :-
-    expand_assert_source_(SourceFile, ReasonerModule),
-    mongolog:mongolog_consult3((+>(Head,Body)), []).
 
 %%
 expand_assert_source_(SourceFile, ReasonerModule) :-
@@ -1416,7 +1386,6 @@ expand_term_0([X|Xs], [X_expanded|Xs_expanded]) :-
 	).
 
 expand_term_1(Goal, Expanded) :-
-	% TODO: seems nested terms sometimes not properly flattened, how does it happen?
 	is_list(Goal),!,
 	expand_term_0(Goal, Expanded).
 

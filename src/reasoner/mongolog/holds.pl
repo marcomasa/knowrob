@@ -70,18 +70,6 @@ holds(Subject, Property, Value) ?>
 	pragma(\+ mongolog_holds:strip_unit(Value,_,_,_,_)),
 	triple(Subject, Property, Value).
 
-holds(Subject, Property, Value) +>
-	pragma(mongolog_holds:strip_unit(Value, 'is',
-		Multiplier, Offset, Stripped)),
-	% convert to base unit
-	BaseUnitValue is ((Stripped * Multiplier) + Offset),
-	% store in base unit
-	triple(Subject, Property, BaseUnitValue).
-
-holds(Subject, Property, Value) +>
-	pragma(\+ mongolog_holds:strip_unit(Value,_,_,_,_)),
-	triple(Subject, Property, Value).
-
 %% holds(+Query) is nondet.
 %
 % Same as holds/3 with arguments wrapped into a single
@@ -89,73 +77,9 @@ holds(Subject, Property, Value) +>
 %
 % @param Query the query term.
 %
-holds(Query) ?+>
+holds(Query) ?>
 	pragma(Query =.. [P,S,O]),
 	holds(S,P,O).
-
-
-/*
-%%
-holds_description(S,P,Descr) ?>
-	pragma(compound(Descr)),
-	pragma(Descr=only(O)),
-	instance_of_expr(S,only(P,O)).
-
-holds_description(S,P,Descr) ?>
-	pragma(compound(Descr)),
-	pragma(Descr=some(O)),
-	instance_of_expr(S,some(P,O)).
-
-holds_description(S,P,Descr) ?>
-	pragma(compound(Descr)),
-	pragma(Descr=value(O)),
-	instance_of_expr(S,value(P,O)).
-
-holds_description(S,P,Descr) ?>
-	pragma(compound(Descr)),
-	pragma(Descr=min(M,O)),
-	instance_of_expr(S,min(P,M,O)).
-
-holds_description(S,P,Descr) ?>
-	pragma(compound(Descr)),
-	pragma(Descr=max(M,O)),
-	instance_of_expr(S,max(P,M,O)).
-
-holds_description(S,P,Descr) ?>
-	pragma(compound(Descr)),
-	pragma(Descr=exactly(M,O)),
-	instance_of_expr(S,exactly(P,M,O)).
-
-holds_description(S,P,Descr) ?>
-	pragma(compound(Descr)),
-	pragma(Descr=value(O)),
-	instance_of_expr(S,value(P,O)).
-
-%%
-% Allow OWL descriptions in instance_of expressions.
-%
-model_RDFS:instance_of(S,Descr) ?>
-	pragma(is_owl_term(Descr)),
-	instance_of_expr(S,Descr).
-
-%%
-% Allow OWL descriptions in subclass_of expressions.
-%
-model_RDFS:subclass_of(Class, Descr) ?>
-	pragma(is_owl_term(Descr)),
-	subclass_of_expr(Class, Descr).
-
-%%
-% Allow OWL descriptions in holds expressions.
-%
-%lang_holds:holds(S,P,O) ?>
-%	pragma(\+ is_owl_term(O)),
-%	instance_of_expr(S, value(P,O)).
-
-lang_holds:holds(S,P,Descr) ?>
-	pragma(is_owl_term(Descr)),
-	holds_description(S,P,Descr).
-*/
 
      /*******************************
      *	    UNIT TESTS	     		    *
@@ -174,12 +98,12 @@ test('holds(+S,+P,+O)') :-
 
 test('project(holds(+S,+P,+O))') :-
 	assert_false(holds(test:'Lea', test:'hasNumber', '+493564754647')),
-	assert_true(mongolog_project(holds(test:'Lea', test:'hasNumber', '+493564754647'))),
+	assert_true(mongolog_assert(triple(test:'Lea', test:'hasNumber', '+493564754647'))),
 	assert_true(holds(test:'Lea', test:'hasNumber', '+493564754647')).
 
 test('holds(+S,+P,+Unit(+O))') :-
 	assert_false(holds(test:'Lea',test:'hasHeightInMeters', _)),
-	assert_true(mongolog_project(holds(test:'Lea',test:'hasHeightInMeters', m(6.5)))),
+	assert_true(mongolog_assert(triple(test:'Lea',test:'hasHeightInMeters', m(6.5)))),
 	assert_true(holds(test:'Lea',test:'hasHeightInMeters', cm(650))),
 	assert_true(holds(test:'Lea',test:'hasHeightInMeters', cm(650.0))),
 	assert_false(holds(test:'Lea',test:'hasHeightInMeters', cm(750.0))),

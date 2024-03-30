@@ -10,7 +10,6 @@
 #include "knowrob/reasoner/ReasonerManager.h"
 #include "knowrob/reasoner/mongolog/MongologReasoner.h"
 #include "knowrob/queries/QueryError.h"
-#include "knowrob/URI.h"
 #include "knowrob/reasoner/ReasonerError.h"
 #include "knowrob/terms/Numeric.h"
 

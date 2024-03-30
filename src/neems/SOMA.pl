@@ -86,7 +86,7 @@
 %
 % @param Entity An entity IRI.
 %
-is_manipulation_action(Entity) ?+> has_type(Entity, soma:'ManipulationAction').
+is_manipulation_action(Entity) ?> has_type(Entity, soma:'ManipulationAction').
 
 %% is_mental_action(?Entity) is nondet.
 %
@@ -94,7 +94,7 @@ is_manipulation_action(Entity) ?+> has_type(Entity, soma:'ManipulationAction').
 %
 % @param Entity An entity IRI.
 %
-is_mental_action(Entity) ?+> has_type(Entity, soma:'MentalAction').
+is_mental_action(Entity) ?> has_type(Entity, soma:'MentalAction').
 
 %% is_physical_task(?Entity) is nondet.
 %
@@ -102,7 +102,7 @@ is_mental_action(Entity) ?+> has_type(Entity, soma:'MentalAction').
 %
 % @param Entity An entity IRI.
 %
-is_physical_task(Entity) ?+> has_type(Entity, soma:'PhysicalTask').
+is_physical_task(Entity) ?> has_type(Entity, soma:'PhysicalTask').
 
 %% is_mental_task(?Entity) is nondet.
 %
@@ -110,11 +110,11 @@ is_physical_task(Entity) ?+> has_type(Entity, soma:'PhysicalTask').
 %
 % @param Entity An entity IRI.
 %
-is_mental_task(Entity) ?+> has_type(Entity, soma:'MentalTask').
+is_mental_task(Entity) ?> has_type(Entity, soma:'MentalTask').
 
 %% is_episode(?Entity) is nondet.
 %
-is_episode(Entity) ?+> has_type(Entity, soma:'Episode').
+is_episode(Entity) ?> has_type(Entity, soma:'Episode').
 
 %% is_performed_by(?Act,?Agent) is nondet.
 %
@@ -123,7 +123,7 @@ is_episode(Entity) ?+> has_type(Entity, soma:'Episode').
 % @param Act An individual of type dul:'Action'.
 % @param Agent An individual of type dul:'Agent'.
 %
-is_performed_by(Act,Agent) ?+> triple(Act, soma:isPerformedBy, Agent).
+is_performed_by(Act,Agent) ?> triple(Act, soma:isPerformedBy, Agent).
 
 %% action_status(?Act,?Status) is semidet.
 %
@@ -132,7 +132,7 @@ is_performed_by(Act,Agent) ?+> triple(Act, soma:isPerformedBy, Agent).
 % @param Act An individual of type dul:'Action'.
 % @param Status The execution status of Act.
 %
-action_status(Act,Status) ?+> triple(Act, soma:hasExecutionState, Status).
+action_status(Act,Status) ?> triple(Act, soma:hasExecutionState, Status).
 
 %% action_succeeded(?Act) is det.
 %
@@ -140,7 +140,7 @@ action_status(Act,Status) ?+> triple(Act, soma:hasExecutionState, Status).
 %
 % @param Act An individual of type dul:'Action'.
 %
-action_succeeded(Act) ?+> action_status(Act, soma:'ExecutionState_Succeeded').
+action_succeeded(Act) ?> action_status(Act, soma:'ExecutionState_Succeeded').
 
 %% action_failed(?Act) is det.
 %
@@ -148,7 +148,7 @@ action_succeeded(Act) ?+> action_status(Act, soma:'ExecutionState_Succeeded').
 %
 % @param Act An individual of type dul:'Action'.
 %
-action_failed(Act) ?+> action_status(Act, soma:'ExecutionState_Failed').
+action_failed(Act) ?> action_status(Act, soma:'ExecutionState_Failed').
 
 %% action_active(?Act) is det.
 %
@@ -156,7 +156,7 @@ action_failed(Act) ?+> action_status(Act, soma:'ExecutionState_Failed').
 %
 % @param Act An individual of type dul:'Action'.
 %
-action_active(Act) ?+> action_status(Act, soma:'ExecutionState_Active').
+action_active(Act) ?> action_status(Act, soma:'ExecutionState_Active').
 
 %% action_paused(?Act) is det.
 %
@@ -164,7 +164,7 @@ action_active(Act) ?+> action_status(Act, soma:'ExecutionState_Active').
 %
 % @param Act An individual of type dul:'Action'.
 %
-action_paused(Act) ?+> action_status(Act, soma:'ExecutionState_Paused').
+action_paused(Act) ?> action_status(Act, soma:'ExecutionState_Paused').
 
 %% action_pending(?Act) is det.
 %
@@ -172,7 +172,7 @@ action_paused(Act) ?+> action_status(Act, soma:'ExecutionState_Paused').
 %
 % @param Act An individual of type dul:'Action'.
 %
-action_pending(Act) ?+> action_status(Act, soma:'ExecutionState_Pending').
+action_pending(Act) ?> action_status(Act, soma:'ExecutionState_Pending').
 
 %% action_cancelled(?Act) is det.
 %
@@ -180,7 +180,7 @@ action_pending(Act) ?+> action_status(Act, soma:'ExecutionState_Pending').
 %
 % @param Act An individual of type dul:'Action'.
 %
-action_cancelled(Act) ?+> action_status(Act, soma:'ExecutionState_Cancelled').
+action_cancelled(Act) ?> action_status(Act, soma:'ExecutionState_Cancelled').
 
 %% event_interval(?Event,?Since,?Until) is nondet.
 %
@@ -195,13 +195,6 @@ event_interval(EV, Since, Until) ?>
 	triple(TI, soma:hasIntervalBegin, Since),
 	triple(TI, soma:hasIntervalEnd, Until).
 
-event_interval(EV, Since, Until) +>
-	new_iri(TI, dul:'TimeInterval'),
-	has_type(TI, dul:'TimeInterval'),
-	triple(EV, dul:hasTimeInterval, TI),
-	triple(TI, soma:hasIntervalBegin, Since),
-	triple(TI, soma:hasIntervalEnd, Until).
-
 		 /*******************************
 		 *	    IO		*
 		 *******************************/
@@ -212,7 +205,7 @@ event_interval(EV, Since, Until) +>
 %
 % @param Entity An entity IRI.
 %
-is_computational_agent(Entity) ?+> has_type(Entity, soma:'ComputationalAgent').
+is_computational_agent(Entity) ?> has_type(Entity, soma:'ComputationalAgent').
 
 %% is_digital_object(?Entity) is semidet.
 %
@@ -220,11 +213,11 @@ is_computational_agent(Entity) ?+> has_type(Entity, soma:'ComputationalAgent').
 %
 % @param Entity An entity IRI.
 %
-is_digital_object(Entity) ?+> has_type(Entity, soma:'DigitalObject').
+is_digital_object(Entity) ?> has_type(Entity, soma:'DigitalObject').
 
 %% has_kinematics_file(?OBJ,?DOI,?Format) is semidet.
 %
-is_kino_dynamic_data(IO) ?+> has_type(IO, soma:'KinoDynamicData').
+is_kino_dynamic_data(IO) ?> has_type(IO, soma:'KinoDynamicData').
 
 %% has_kinematics_file(?OBJ,?DOI,?Format) is semidet.
 %
@@ -234,16 +227,6 @@ is_kino_dynamic_data(IO) ?+> has_type(IO, soma:'KinoDynamicData').
 % @param Identifier The DOI of a data file.
 % @param Format File format identifier string (i.e. the file extension).
 %
-has_kinematics_file(Obj,Identifier,Format) +>
-	new_iri(IO,soma:'KinoDynamicData'),
-	new_iri(IR,soma:'DigitalResource'),
-	has_type(IO,soma:'KinoDynamicData'),
-	has_type(IR,soma:'DigitalResource'),
-	triple(IO, dul:isAbout, Obj),
-	triple(IR, dul:realizes, IO),
-	triple(IR, soma:hasPersistentIdentifier, Identifier),
-	triple(IR, soma:hasDataFormat, Format).
-
 has_kinematics_file(Obj,Identifier,Format) ?>
 	triple(IO, dul:isAbout, Obj),
 	has_type(IO,soma:'KinoDynamicData'),
@@ -261,7 +244,7 @@ has_kinematics_file(Obj,Identifier,Format) ?>
 %
 % @param Entity An entity IRI.
 %
-is_chemical_process(Entity) ?+> has_type(Entity, soma:'ChemicalProcess').
+is_chemical_process(Entity) ?> has_type(Entity, soma:'ChemicalProcess').
 
 %% is_physical_process(?Entity) is nondet.
 %
@@ -269,7 +252,7 @@ is_chemical_process(Entity) ?+> has_type(Entity, soma:'ChemicalProcess').
 %
 % @param Entity An entity IRI.
 %
-is_physical_process(Entity) ?+> has_type(Entity, soma:'PhysicalProcess').
+is_physical_process(Entity) ?> has_type(Entity, soma:'PhysicalProcess').
 
 %% is_process_flow(?Entity) is nondet.
 %
@@ -277,7 +260,7 @@ is_physical_process(Entity) ?+> has_type(Entity, soma:'PhysicalProcess').
 %
 % @param Entity An entity IRI.
 %
-is_process_flow(Entity) ?+> has_type(Entity, soma:'ProcessFlow').
+is_process_flow(Entity) ?> has_type(Entity, soma:'ProcessFlow').
 
 %% is_process_type(?Entity) is nondet.
 %
@@ -285,7 +268,7 @@ is_process_flow(Entity) ?+> has_type(Entity, soma:'ProcessFlow').
 %
 % @param Entity An entity IRI.
 %
-is_process_type(Entity) ?+> has_type(Entity, soma:'ProcessType').
+is_process_type(Entity) ?> has_type(Entity, soma:'ProcessType').
 
 %% is_motion(?Entity) is nondet.
 %
@@ -293,7 +276,7 @@ is_process_type(Entity) ?+> has_type(Entity, soma:'ProcessType').
 %
 % @param Entity An entity IRI.
 %
-is_motion(Entity) ?+> has_type(Entity, soma:'Motion').
+is_motion(Entity) ?> has_type(Entity, soma:'Motion').
 
 %% is_force_interaction(?Entity) is nondet.
 %
@@ -301,7 +284,7 @@ is_motion(Entity) ?+> has_type(Entity, soma:'Motion').
 %
 % @param Entity An entity IRI.
 %
-is_force_interaction(Entity) ?+> has_type(Entity, soma:'ForceInteraction').
+is_force_interaction(Entity) ?> has_type(Entity, soma:'ForceInteraction').
 
 %% is_progression(?Entity) is nondet.
 %
@@ -309,7 +292,7 @@ is_force_interaction(Entity) ?+> has_type(Entity, soma:'ForceInteraction').
 %
 % @param Entity An entity IRI.
 %
-is_progression(Entity) ?+> has_type(Entity, soma:'Progression').
+is_progression(Entity) ?> has_type(Entity, soma:'Progression').
 
 %% has_process_role(?ProcType,?Role) is nondet.
 %
@@ -318,7 +301,7 @@ is_progression(Entity) ?+> has_type(Entity, soma:'Progression').
 % @param ProcType An individual of type soma:'ProcessType'.
 % @param Role An individual of type dul:'Role'.
 %
-has_process_role(Tsk,Role) ?+> triple(Tsk, soma:isProcessTypeOf ,Role).
+has_process_role(Tsk,Role) ?> triple(Tsk, soma:isProcessTypeOf ,Role).
 
 %% is_state(?Entity) is nondet.
 %
@@ -326,7 +309,7 @@ has_process_role(Tsk,Role) ?+> triple(Tsk, soma:isProcessTypeOf ,Role).
 %
 % @param Entity An entity IRI.
 %
-is_state(Entity) ?+> has_type(Entity, soma:'State').
+is_state(Entity) ?> has_type(Entity, soma:'State').
 
 %% is_physical_state(?Entity) is nondet.
 %
@@ -334,7 +317,7 @@ is_state(Entity) ?+> has_type(Entity, soma:'State').
 %
 % @param Entity An entity IRI.
 %
-is_physical_state(Entity) ?+> has_type(Entity, soma:'PhysicalState').
+is_physical_state(Entity) ?> has_type(Entity, soma:'PhysicalState').
 
 %% is_social_state(?Entity) is nondet.
 %
@@ -342,7 +325,7 @@ is_physical_state(Entity) ?+> has_type(Entity, soma:'PhysicalState').
 %
 % @param Entity An entity IRI.
 %
-is_social_state(Entity) ?+> has_type(Entity, soma:'SocialState').
+is_social_state(Entity) ?> has_type(Entity, soma:'SocialState').
 
 %% is_configuration(?Entity) is nondet.
 %
@@ -350,7 +333,7 @@ is_social_state(Entity) ?+> has_type(Entity, soma:'SocialState').
 %
 % @param Entity An entity IRI.
 %
-is_configuration(Entity) ?+> has_type(Entity, soma:'Configuration').
+is_configuration(Entity) ?> has_type(Entity, soma:'Configuration').
 
 %% is_state_type(?Entity) is nondet.
 %
@@ -358,20 +341,13 @@ is_configuration(Entity) ?+> has_type(Entity, soma:'Configuration').
 %
 % @param Entity An entity IRI.
 %
-is_state_type(Entity) ?+> has_type(Entity, soma:'StateType').
+is_state_type(Entity) ?> has_type(Entity, soma:'StateType').
 
 %% has_subevent(+Event,?Sub) is nondet.
 %
 %
 has_subevent(Event,Sub) ?> triple(Event,dul:hasConstituent,Sub).
 has_subevent(Event,Sub) ?> triple(Event,soma:hasPhase,Sub).
-
-has_subevent(Event,Sub) +>
-	(	is_action(Sub)  -> triple(Event,dul:hasConstituent,Sub)
-	;	is_process(Sub) -> triple(Event,soma:hasPhase,Sub)
-	;	is_state(Sub)   -> triple(Event,soma:hasPhase,Sub)
-	;	fail
-	).
 
 
 		 /*******************************
@@ -384,7 +360,7 @@ has_subevent(Event,Sub) +>
 %
 % @param Entity An entity IRI.
 %
-is_binding(Entity) ?+> has_type(Entity, soma:'Binding').
+is_binding(Entity) ?> has_type(Entity, soma:'Binding').
 
 %% is_succeedence(?Entity) is nondet.
 %
@@ -392,7 +368,7 @@ is_binding(Entity) ?+> has_type(Entity, soma:'Binding').
 %
 % @param Entity An entity IRI.
 %
-is_succeedence(Entity) ?+> has_type(Entity, soma:'Succeedence').
+is_succeedence(Entity) ?> has_type(Entity, soma:'Succeedence').
 
 %% plan_defines_task(?Plan,?Tsk) is semidet.
 %
@@ -401,7 +377,7 @@ is_succeedence(Entity) ?+> has_type(Entity, soma:'Succeedence').
 % @param Plan An individual of type dul:'Plan'.
 % @param Tsk An individual of type dul:'Task'.
 %
-plan_defines_task(Plan,Tsk) ?+> triple(Plan,soma:isPlanFor,Tsk).
+plan_defines_task(Plan,Tsk) ?> triple(Plan,soma:isPlanFor,Tsk).
 
 %% plan_has_goal(?WF,?Step) is semidet.
 %
@@ -410,7 +386,7 @@ plan_defines_task(Plan,Tsk) ?+> triple(Plan,soma:isPlanFor,Tsk).
 % @param WF An individual of type dul:'Workflow'.
 % @param Step An individual of type dul:'Task'.
 %
-workflow_step(WF,Step) ?+> triple(WF,soma:hasStep,Step).
+workflow_step(WF,Step) ?> triple(WF,soma:hasStep,Step).
 
 %% workflow_first_step(?WF,?Step) is semidet.
 %
@@ -419,7 +395,7 @@ workflow_step(WF,Step) ?+> triple(WF,soma:hasStep,Step).
 % @param WF An individual of type dul:'Workflow'.
 % @param Step An individual of type dul:'Task'.
 %
-workflow_first_step(WF,Step) ?+> triple(WF,soma:hasFirstStep,Step).
+workflow_first_step(WF,Step) ?> triple(WF,soma:hasFirstStep,Step).
 
 %% workflow_constituent(+WF, ?Constituent) is semidet.
 %
@@ -456,7 +432,7 @@ workflow_role_range(WF,Role,ObjectType) ?>
 %
 % @param Entity An entity IRI.
 %
-is_feature(Entity) ?+> has_type(Entity,soma:'Feature').
+is_feature(Entity) ?> has_type(Entity,soma:'Feature').
 
 %% object_feature(+Obj, ?Feature) is nondet.
 %
@@ -465,7 +441,7 @@ is_feature(Entity) ?+> has_type(Entity,soma:'Feature').
 % @param Obj      Object resource
 % @param Feature  Feature resource
 %
-object_feature(Obj, Feature) ?+> triple(Obj,soma:hasFeature,Feature).
+object_feature(Obj, Feature) ?> triple(Obj,soma:hasFeature,Feature).
 
 %% object_feature(?Obj, ?Feature, ?FeatureType) is nondet.
 %
@@ -490,7 +466,7 @@ object_feature_type(Obj, Feature, FeatureType) ?>
 %
 % @param Entity An entity IRI.
 %
-is_affordance(Entity) ?+> has_type(Entity,soma:'Affordance').
+is_affordance(Entity) ?> has_type(Entity,soma:'Affordance').
 
 %% is_disposition(?Entity) is nondet.
 %
@@ -498,7 +474,7 @@ is_affordance(Entity) ?+> has_type(Entity,soma:'Affordance').
 %
 % @param Entity An entity IRI.
 %
-is_disposition(Entity) ?+> has_type(Entity,soma:'Disposition').
+is_disposition(Entity) ?> has_type(Entity,soma:'Disposition').
 
 %% has_disposition(?Obj, ?Disposition) is nondet.
 %
@@ -507,7 +483,7 @@ is_disposition(Entity) ?+> has_type(Entity,soma:'Disposition').
 % @param Obj          Object resource
 % @param Disposition  Disposition resource
 %
-has_disposition(Obj, Disposition) ?+> triple(Obj,soma:hasDisposition,Disposition).
+has_disposition(Obj, Disposition) ?> triple(Obj,soma:hasDisposition,Disposition).
 
 %% has_disposition(?Obj:iri, ?Disposition:iri, +DispositionType:iri) is nondet.
 %
@@ -598,7 +574,7 @@ is_origin(Entity) ?>
 %
 % @param Entity An entity IRI.
 %
-is_physical_quality(Entity) ?+> has_type(Entity, soma:'PhysicalQuality').
+is_physical_quality(Entity) ?> has_type(Entity, soma:'PhysicalQuality').
 
 %% is_social_quality(?Entity) is nondet.
 %
@@ -607,7 +583,7 @@ is_physical_quality(Entity) ?+> has_type(Entity, soma:'PhysicalQuality').
 
 % @param Entity An entity IRI.
 %
-is_social_quality(Entity) ?+> has_type(Entity, soma:'SocialQuality').
+is_social_quality(Entity) ?> has_type(Entity, soma:'SocialQuality').
 
 %% is_intrinsic(?Entity) is nondet.
 %
@@ -615,7 +591,7 @@ is_social_quality(Entity) ?+> has_type(Entity, soma:'SocialQuality').
 %
 % @param Entity An entity IRI.
 %
-is_intrinsic(Entity) ?+> has_type(Entity, soma:'Intrinsic').
+is_intrinsic(Entity) ?> has_type(Entity, soma:'Intrinsic').
 
 %% is_extrinsic(?Entity) is nondet.
 %
@@ -623,7 +599,7 @@ is_intrinsic(Entity) ?+> has_type(Entity, soma:'Intrinsic').
 %
 % @param Entity An entity IRI.
 %
-is_extrinsic(Entity) ?+> has_type(Entity, soma:'Extrinsic').
+is_extrinsic(Entity) ?> has_type(Entity, soma:'Extrinsic').
 
 %% has_interval_begin(I,End) is semidet.
 %
@@ -631,7 +607,7 @@ is_extrinsic(Entity) ?+> has_type(Entity, soma:'Extrinsic').
 %
 % @param I Time point, interval or temporally extended entity
 % 
-has_interval_begin(TI, Begin) ?+> triple(TI, soma:hasIntervalBegin, Begin).
+has_interval_begin(TI, Begin) ?> triple(TI, soma:hasIntervalBegin, Begin).
 
 %% has_interval_end(I,End) is semidet.
 %
@@ -639,7 +615,7 @@ has_interval_begin(TI, Begin) ?+> triple(TI, soma:hasIntervalBegin, Begin).
 %
 % @param I Time point, interval or temporally extended entity
 % 
-has_interval_end(TI, End) ?+> triple(TI, soma:hasIntervalEnd, End).
+has_interval_end(TI, End) ?> triple(TI, soma:hasIntervalEnd, End).
 
 %% has_interval_duration(Event, Duration) is nondet.
 %
@@ -673,7 +649,7 @@ is_interval_equal(TI1, TI2) ?>
 % @param Obj object resource
 % @param Loc localization quality
 %
-object_localization(Obj,Loc) ?+> triple(Obj,soma:hasLocalization,Loc).
+object_localization(Obj,Loc) ?> triple(Obj,soma:hasLocalization,Loc).
 
 %% object_shape_type(?Obj, ?ShapeType) is nondet.
 %
@@ -696,7 +672,7 @@ object_shape_type(Obj, ShapeType) ?>
 % @param Obj      Object resource
 % @param FilePath the file path
 %
-object_mesh_path(Obj, FilePath) ?+>
+object_mesh_path(Obj, FilePath) ?>
 	triple(Obj, soma:hasShape, SHA),
 	triple(SHA, dul:hasRegion, REG),
 	triple(REG, soma:hasFilePath, FilePath),
@@ -713,7 +689,7 @@ object_mesh_path(Obj, FilePath) ?>
 % @param Obj object resource
 % @param Col rgb color data
 % 
-object_color_rgb(OBJ, R, G, B) ?+>
+object_color_rgb(OBJ, R, G, B) ?>
 	triple(OBJ, soma:hasColor, COL),
 	triple(COL, dul:hasRegion, REG),
 	triple(REG, soma:hasRGBValue, term([R,G,B])),
@@ -723,7 +699,7 @@ object_color_rgb(OBJ, R, G, B) ?>
 	triple(OBJ, soma:hasRGBValue, term([R,G,B])).
 
 %%
-shape_bbox(ShapeRegion, Depth, Width, Height) ?+>
+shape_bbox(ShapeRegion, Depth, Width, Height) ?>
 	triple(ShapeRegion, soma:hasDepth, Depth),
 	triple(ShapeRegion, soma:hasWidth, Width),
 	triple(ShapeRegion, soma:hasHeight, Height),
@@ -740,7 +716,7 @@ shape_bbox(ShapeRegion, Depth, Width, Height) ?+>
 % @param Width  Width of the bounding box (y-dimension)
 % @param Height Height of the bounding box (z-dimension)
 % 
-object_dimensions(Obj, Depth, Width, Height) ?+>
+object_dimensions(Obj, Depth, Width, Height) ?>
 	triple(Obj, soma:hasShape, SHA),
 	triple(SHA, dul:hasRegion, REG),
 	shape_bbox(REG, Depth, Width, Height),

@@ -1,44 +1,35 @@
-/* 
- * Copyright (c) 2020, Daniel Beßler
- * All rights reserved.
- * 
+/*
  * This file is part of KnowRob, please consult
  * https://github.com/knowrob/knowrob for license details.
  */
 
 #include "knowrob/reasoner/mongolog/bson_pl.h"
 #include "knowrob/backend/mongo/MongoException.h"
-#include <sstream>
 #include <iostream>
 
 // NOTE: returning true would stop further iteration of the document
 #define APPEND_BSON_PL_PAIR(list,key,value,type) ((PlTail*)list)->append(PlCompound("-", \
 		PlTermv(PlTerm(key), PlCompound(type, PlTerm(value))))) && false
 
-static bool bson_visit_double(const bson_iter_t *iter, const char *key, double v_double, void *data)
-{
+static bool bson_visit_double([[maybe_unused]] const bson_iter_t *iter, const char *key, double v_double, void *data) {
 	return APPEND_BSON_PL_PAIR(data,key,v_double,"double");
 }
 
-static bool bson_visit_int32(const bson_iter_t *iter, const char *key, int32_t v_int32, void *data)
-{
+static bool bson_visit_int32([[maybe_unused]] const bson_iter_t *iter, const char *key, int32_t v_int32, void *data) {
 	return APPEND_BSON_PL_PAIR(data,key,(long)v_int32,"int");
 }
 
-static bool bson_visit_int64(const bson_iter_t *iter, const char *key, int64_t v_int64, void *data)
-{
+static bool bson_visit_int64([[maybe_unused]] const bson_iter_t *iter, const char *key, int64_t v_int64, void *data) {
 	return APPEND_BSON_PL_PAIR(data,key,(long)v_int64,"int");
 }
 
-static bool bson_visit_oid(const bson_iter_t *iter, const char *key, const bson_oid_t *v_oid, void *data)
-{
+static bool bson_visit_oid([[maybe_unused]] const bson_iter_t *iter, const char *key, const bson_oid_t *v_oid, void *data) {
 	char str[25];
 	bson_oid_to_string(v_oid, str);
 	return APPEND_BSON_PL_PAIR(data,key,str,"id");
 }
 
-static bool bson_visit_bool(const bson_iter_t *iter, const char *key, bool v_bool, void *data)
-{
+static bool bson_visit_bool([[maybe_unused]] const bson_iter_t *iter, const char *key, bool v_bool, void *data) {
     static PlAtom ATOM_true("true");
     static PlAtom ATOM_false("false");
 
@@ -50,19 +41,16 @@ static bool bson_visit_bool(const bson_iter_t *iter, const char *key, bool v_boo
 	}
 }
 
-static bool bson_visit_utf8(const bson_iter_t *iter, const char *key, size_t v_utf8_len, const char *v_utf8, void *data)
-{
+static bool bson_visit_utf8([[maybe_unused]] const bson_iter_t *iter, [[maybe_unused]] const char *key, size_t v_utf8_len, const char *v_utf8, void *data) {
 	return APPEND_BSON_PL_PAIR(data,key,v_utf8,"string");
 }
 
-static bool bson_visit_date_time(const bson_iter_t *iter, const char *key, int64_t msec_since_epoch, void *data)
-{
+static bool bson_visit_date_time([[maybe_unused]] const bson_iter_t *iter, const char *key, int64_t msec_since_epoch, void *data) {
 	double sec_since_epoch = ((double)msec_since_epoch)/1000.0;
 	return APPEND_BSON_PL_PAIR(data,key,sec_since_epoch,"time");
 }
 
-static bool bson_visit_decimal128(const bson_iter_t *iter, const bson_decimal128_t *v_decimal128, void *data)
-{
+static bool bson_visit_decimal128([[maybe_unused]] const bson_iter_t *iter, const bson_decimal128_t *v_decimal128, void *data) {
     static PlAtom ATOM_Neg_Infinity("-Infinity");
     static PlAtom ATOM_Pos_Infinity("Infinity");
 
@@ -85,8 +73,7 @@ static bool bson_visit_decimal128(const bson_iter_t *iter, const bson_decimal128
 	return false; // NOTE: returning true stops further iteration of the document
 }
 
-static bool bson_visit_decimal128(const bson_iter_t *iter, const char *key, const bson_decimal128_t *v_decimal128, void *data)
-{
+static bool bson_visit_decimal128([[maybe_unused]] const bson_iter_t *iter, const char *key, const bson_decimal128_t *v_decimal128, void *data) {
     static PlAtom ATOM_Neg_Infinity("-Infinity");
     static PlAtom ATOM_Pos_Infinity("Infinity");
 
@@ -112,8 +99,7 @@ static bool bson_visit_decimal128(const bson_iter_t *iter, const char *key, cons
 	return false; // NOTE: returning true stops further iteration of the document
 }
 
-static bool bson_iter_append_array(bson_iter_t *iter, PlTail *pl_array)
-{
+static bool bson_iter_append_array(bson_iter_t *iter, PlTail *pl_array) { // NOLINT(misc-no-recursion)
     static PlAtom ATOM_true("true");
     static PlAtom ATOM_false("false");
 
@@ -181,8 +167,7 @@ static bool bson_iter_append_array(bson_iter_t *iter, PlTail *pl_array)
 	return true;
 }
 
-static bool bson_visit_array(const bson_iter_t *iter, const char *key, const bson_t *v_array, void *data)
-{
+static bool bson_visit_array([[maybe_unused]] const bson_iter_t *iter, const char *key, const bson_t *v_array, void *data) {
 	PlTermv av(1);
 	PlTail pl_array(av[0]);
 	bson_iter_t array_iter;
@@ -195,16 +180,14 @@ static bool bson_visit_array(const bson_iter_t *iter, const char *key, const bso
 	return APPEND_BSON_PL_PAIR(data,key,av[0],"array");
 }
 
-static bool bson_visit_document(const bson_iter_t *iter, const char *key, const bson_t *v_document, void *data)
-{
+static bool bson_visit_document([[maybe_unused]] const bson_iter_t *iter, const char *key, const bson_t *v_document, void *data) {
 	auto *out_list = (PlTail*)data;
 	out_list->append(PlCompound("-",
 			PlTermv(PlTerm(key), bson_to_term(v_document))));
 	return false; // NOTE: returning true stops further iteration of the document
 }
 
-static bson_visitor_t get_bson_visitor()
-{
+static bson_visitor_t get_bson_visitor() {
 	bson_visitor_t visitor = {0};
 	visitor.visit_double     = bson_visit_double;
 	visitor.visit_decimal128 = bson_visit_decimal128;
@@ -240,8 +223,7 @@ PlTerm bson_to_term(const bson_t *doc)
 	return term;
 }
 
-static bool bsonpl_append_typed(bson_t *doc, const char *key, const PlTerm &term, bson_error_t *err)
-{
+static bool bsonpl_append_typed(bson_t *doc, const char *key, const PlTerm &term, bson_error_t *err) { // NOLINT(misc-no-recursion)
     static PlAtom ATOM_array("array");
     static PlAtom ATOM_time("time");
     static PlAtom ATOM_id("id");
@@ -322,8 +304,7 @@ static bool bsonpl_append_typed(bson_t *doc, const char *key, const PlTerm &term
 	return true;
 }
 
-bool bsonpl_append(bson_t *doc, const char *key, const PlTerm &term, bson_error_t *err)
-{
+bool bsonpl_append(bson_t *doc, const char *key, const PlTerm &term, bson_error_t *err) { // NOLINT(misc-no-recursion)
 	if(PL_is_list((term_t)term)) {
 		// append a document if term is a list
 		bson_t *nested_doc = bson_new();
@@ -370,8 +351,7 @@ bool bsonpl_append(bson_t *doc, const char *key, const PlTerm &term, bson_error_
 	}
 }
 
-bool bsonpl_concat(bson_t *doc, const PlTerm &term, bson_error_t *err)
-{
+bool bsonpl_concat(bson_t *doc, const PlTerm &term, bson_error_t *err) { // NOLINT(misc-no-recursion)
 	// the term given to bson_from_term must be a list
 	PlTail list(term);
 	PlTerm member;

@@ -17,13 +17,6 @@ test('during(occurs(+),+Interval)') :-
 	assert_false(during(occurs(test:'Short4'), [1377777012, 1377777019])),
 	assert_false(during(occurs(test:'Short4'), [1377777001, 1377777004])).
 
-test('assert(during(occurs(+),+Interval))') :-
-	assert_false(during(occurs(a), [8,12])),
-	assert_true(mongolog_project(during(occurs(a), [8,12]))),
-	assert_true(during(occurs(a), [8,12])),
-	assert_true(during(occurs(a), [10,20])),
-	assert_false(during(occurs(a), [5,7])).
-
 test('during(occurs(+),+Event)') :-
 	assert_true(during(occurs(test:'Short1'), test:'Short1')),
 	assert_true(during(occurs(test:'Long'), test:'Short1')),
@@ -31,9 +24,5 @@ test('during(occurs(+),+Event)') :-
 	assert_true(during(occurs(test:'Long'), test:'Short4')),
 	assert_false(during(occurs(test:'Short1'), test:'Short3')),
 	assert_false(during(occurs(test:'Short1'), test:'Short4')).
-
-test('assert(during(occurs(+),+Event))') :-
-	assert_true(mongolog_project(during(occurs(test:'Event6'), test:'Short1'))),
-	assert_true(during(occurs(test:'Event6'), test:'Short1')).
 
 :- end_mongolog_tests(mongolog_occurs).

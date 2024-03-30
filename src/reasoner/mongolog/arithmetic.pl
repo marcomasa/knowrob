@@ -53,8 +53,6 @@ mongolog:step_compile(
 	mongolog:var_key_or_val(High,Ctx,High0),
 	mongolog:var_key_or_val(Value,Ctx,Value0),
 	findall(Step,
-		% TODO: conditional $set to array holding only Value if Value is given
-		%       this would avoid iteration between Low and High for faster between checking.
 		(	Step=['$set', ['t_index', ['$range',
 				array([ Low0, ['$add', array([High0, integer(1)]) ]])
 			]]]

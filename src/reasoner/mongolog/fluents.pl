@@ -150,8 +150,7 @@ mongolog_fluent_call(Term, Ctx, Pipeline, StepVars) :-
 	% get since+until time
 	option(query_scope(Scope), Ctx_fluent),
 	mongolog_time_scope(Scope, Since_typed, Until_typed),
-	% FIXME: below makes it impossible to use Since variable
-	%        inferred in the query.
+	% FIXME: below makes it impossible to use Since variable inferred in the query.
 	mng_strip_type(Since_typed, _, Since),
 	mng_strip_type(Until_typed, _, Until),
 	% create aggregate pipeline
@@ -190,8 +189,7 @@ mongolog_fluent_retractall(Term, Ctx, Pipeline, StepVars) :-
 	% get since+until time
 	option(query_scope(Scope), Ctx_fluent),
 	mongolog_time_scope(Scope, Since_typed, Until_typed),
-	% FIXME: below makes it impossible to use Since variable
-	%        inferred in the query.
+	% FIXME: below makes it impossible to use Since variable inferred in the query.
 	mng_strip_type(Since_typed, _, Since),
 	mng_strip_type(Until_typed, _, Until),
 	% create aggregate pipeline
@@ -219,8 +217,7 @@ mongolog_fluent_assert(Term, Ctx, Pipeline, StepVars) :-
 	% add since time to Zipped list
 	option(query_scope(Scope), Ctx_fluent),
 	mongolog_time_scope(Scope, Since_typed, _),
-	% FIXME: below makes it impossible to use Since variable
-	%        inferred in the query.
+	% FIXME: below makes it impossible to use Since variable inferred in the query.
 	mng_strip_type(Since_typed, _, Since),
 	append([[TimeField,time(Since)]|ZippedKeyFields], ZippedValueFields, Zipped),
 	% create a document

@@ -31,7 +31,6 @@ The following predicates are supported:
 %% register query commands
 :- mongolog:add_command(triple).
 
-
 %%
 mongolog:step_expand(project(triple(S,P,O)), assert(triple(S,P,O))) :- !.
 
@@ -238,24 +237,24 @@ lookup_triple(triple(S,P,V), Ctx, Step) :-
 	mongolog_one_db(_DB, OneColl),
 	% infer lookup parameters
 	mng_query_value(P,Query_p),
-	% TODO: can query operators be supported?
 	mng_strip_variable(S, S0),
 	mng_strip_variable(V, V0),
 	mongolog:var_key_or_val(S0, Ctx, S_val),
 	mongolog:var_key_or_val(V0, Ctx, V_val),
-	
-	% FIXME: a runtime condition is needed to cover the case where S was referred to in ignore'd goal that failed.
+
+	% TODO: Improve mongolog transitive triple lookup.
+	%	- support query operators
+	%   - include context parameters
+	%   - a runtime condition is needed to cover the case where S was referred to in ignore'd goal that failed.
+
 	(	has_value(S0,Ctx)
 	->	( Start=S_val, To='s', From='o', StartValue='$start.s' )
 	;	( Start=V_val, To='o', From='s', StartValue='$start.o' )
 	),
 	
-	% match doc for restring the search
+	% match doc by restricting search
 	findall(Restriction,
 		(	Restriction=['p*',Query_p]
-		% TODO: see how scope can be included in transitive lookups
-		%;	graph_doc(Graph,Restriction)
-		%;	scope_doc(Scope,Restriction)
 		),
 		MatchDoc
 	),

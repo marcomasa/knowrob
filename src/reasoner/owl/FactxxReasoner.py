@@ -56,8 +56,6 @@ class FactxxBackend(DataBackend):
 		return True
 
 	def insertAll(self, triples: TripleContainer) -> bool:
-		# TODO: use addN instead of add
-		# self.edb().addN(FactxxReasoner.triples_to_python(triples))
 		all_true = True
 		for triple in triples:
 			all_true = self.insertOne(triple.get()) and all_true
@@ -126,9 +124,9 @@ class FactxxReasoner(DataDrivenReasoner):
 		if type(row[2]) is BNode:
 			# require object to be a URI or Literal
 			return False
-		# TODO: there are a lot of useless assertions in the inferred triples.
+		# Note: there are a lot of useless assertions in the inferred triples.
 		#       actually all RDFS inferences could be ignored here in general.
-		#       best to query the knowrob vocabulary if type/subclass relation is known already.
+		#       better to query the knowrob vocabulary if type/subclass relation is known already.
 		#       for now we skip some particular frequent cases:
 		# - `_ rdfs:subClassOf [owl:Thing,owl:NamedIndividual]`
 		# - `_ rdf:type [owl:Thing,owl:NamedIndividual,rdf:Property]`

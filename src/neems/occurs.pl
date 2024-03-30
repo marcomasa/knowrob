@@ -29,39 +29,21 @@ occurs(Evt) ?>
 	% only succeed if time intervals intersect each other
 	max(EventBegin,Since1) =< min(EventEnd,Until1).
 
-occurs(Evt) +>
-	% read time scope provided by e.g. during/2 as in `occurs(Evt) during [Since,Until]`
-	% from compile context.
-	context(query_scope(QScope)),
-	pragma(mongolog_time_scope(QScope, Since0, Until0)),
-	pragma(mng_strip_operator(Since0,_,Since1)),
-	pragma(mng_strip_operator(Until0,_,Until1)),
-	% call with universal scope
-	call_with_context(
-		[ is_event(Evt),
-		  event_interval(Evt, Since1, Until1)
-		],
-		[query_scope(dict{ time: dict{
-			min: dict{ min: double(0),          max: double(0) },
-			max: dict{ min: double('Infinity'), max: double('Infinity') }
-		}})]
-	).
-
 %%
-during(Query, Event) ?+>
+during(Query, Event) ?>
 	atom(Event),
 	pragma(time_scope(=<(Since), >=(Until), Scope)),
 	ask(event_interval(Event, Since, Until)),
 	call_with_context(Query, [query_scope(Scope)]).
 
-since(Query, Event) ?+>
+since(Query, Event) ?>
 	atom(Event),
 	ask(event_interval(Event, Time, _)),
 	call_with_context(Query, [query_scope(dict{
 		time: dict{ min: dict{ max: Time } }
 	})]).
 
-until(Query, Event) ?+>
+until(Query, Event) ?>
 	atom(Event),
 	ask(event_interval(Event, Time, _)),
 	call_with_context(Query, [query_scope(dict{

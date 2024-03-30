@@ -153,6 +153,7 @@ mongolog_time_scope(Scope, SinceValue, UntilValue) :-
 	time_scope_value1(Since, SinceValue),
 	time_scope_value1(Until, UntilValue).
 
+time_scope_value1(V, V) :- var(V),!.
 time_scope_value1(V0, Value) :-
 	mng_strip_operator(V0, _, V1),
 	once(time_scope_value2(V1, Value)).
@@ -168,8 +169,8 @@ time_scope_value2(Val, Typed) :- mng_typed_value(Val, Typed).
 % not known.
 %
 time_scope_data(Scope,[Since,Until]) :-
-	get_dict(since,Scope,Since),
-	get_dict(until,Scope,Until).
+	ignore(get_dict(since,Scope,Since)),
+	ignore(get_dict(until,Scope,Until)).
 
 %%
 % variables maybe used in the scope.

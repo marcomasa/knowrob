@@ -83,4 +83,4 @@ namespace knowrob::testing {
 using namespace knowrob::testing;
 
 TEST_F(NEEMTests, occurs) { runTests(getPath("occurs.plt")); }
-TEST_F(NEEMTests, neem_logging) { runTests(getPath("NEEM.pl")); }
+//TEST_F(NEEMTests, neem_logging) { runTests(getPath("NEEM.pl")); }

@@ -61,7 +61,7 @@
 % @param Resource a RDF resource
 % @param Type a rdf:type of the resource
 %
-has_type(Resource,Type) ?+> triple(Resource, rdf:type, Type).
+has_type(Resource,Type) ?> triple(Resource, rdf:type, Type).
 
 %% instance_of(?Entity,?Type) is nondet.
 %
@@ -70,7 +70,7 @@ has_type(Resource,Type) ?+> triple(Resource, rdf:type, Type).
 % @param Entity a named individual
 % @param Type the type of the entity
 %
-instance_of(Resource,Type) ?+> triple(Resource, rdf:type, Type).
+instance_of(Resource,Type) ?> triple(Resource, rdf:type, Type).
 
 %% is_resource(+Entity) is semidet.
 %
@@ -82,7 +82,7 @@ instance_of(Resource,Type) ?+> triple(Resource, rdf:type, Type).
 %
 % @param Entity An entity IRI.
 %
-is_resource(Entity) ?+> has_type(Entity, rdfs:'Resource').
+is_resource(Entity) ?> has_type(Entity, rdfs:'Resource').
 
 %% is_property(+Entity) is semidet.
 %
@@ -91,7 +91,7 @@ is_resource(Entity) ?+> has_type(Entity, rdfs:'Resource').
 %
 % @param Entity An entity IRI.
 %
-is_property(Entity) ?+> has_type(Entity, rdf:'Property').
+is_property(Entity) ?> has_type(Entity, rdf:'Property').
 
 %% is_literal(+Entity) is semidet.
 %
@@ -104,7 +104,7 @@ is_property(Entity) ?+> has_type(Entity, rdf:'Property').
 %
 % @param Entity An entity IRI.
 %
-is_literal(Entity) ?+> has_type(Entity, rdfs:'Literal').
+is_literal(Entity) ?> has_type(Entity, rdfs:'Literal').
 
 %% is_datatype(+Entity) is semidet.
 %
@@ -116,7 +116,7 @@ is_literal(Entity) ?+> has_type(Entity, rdfs:'Literal').
 %
 % @param Entity An entity IRI.
 %
-is_datatype(Entity) ?+> has_type(Entity, rdfs:'Datatype').
+is_datatype(Entity) ?> has_type(Entity, rdfs:'Datatype').
 
 %% has_range(?Property,?Range) is nondet.
 %
@@ -126,7 +126,7 @@ is_datatype(Entity) ?+> has_type(Entity, rdfs:'Datatype').
 % @param Property a property
 % @param Range the range of the property
 %
-has_range(Property,Range) ?+> triple(Property, rdfs:range, Range).
+has_range(Property,Range) ?> triple(Property, rdfs:range, Range).
 
 %% has_domain(?Property,?Domain) is nondet.
 %
@@ -136,7 +136,7 @@ has_range(Property,Range) ?+> triple(Property, rdfs:range, Range).
 % @param Property a property
 % @param Domain the range of the property
 %
-has_domain(Property,Domain) ?+> triple(Property, rdfs:domain, Domain).
+has_domain(Property,Domain) ?> triple(Property, rdfs:domain, Domain).
 
 %% has_label(+Resource,?Comment) is semidet.
 %
@@ -146,7 +146,7 @@ has_domain(Property,Domain) ?+> triple(Property, rdfs:domain, Domain).
 % @param Resource a RDF resource
 % @param Label a label atom
 %
-has_label(Resource,Label) ?+> annotation(Resource, rdfs:label, Label).
+has_label(Resource,Label) ?> annotation(Resource, rdfs:label, Label).
 
 %% has_comment(+Resource,?Comment) is semidet.
 %
@@ -166,7 +166,7 @@ has_comment(Resource,Comment) ?> annotation(Resource, rdfs:comment, Comment).
 % @param Class a class IRI
 % @param SuperClass a class IRI
 %
-subclass_of(A,B) ?+> triple(A, rdfs:subClassOf, B).
+subclass_of(A,B) ?> triple(A, rdfs:subClassOf, B).
 
 %% subproperty_of(?Property,?SuperProperty) is nondet.
 %
@@ -175,7 +175,7 @@ subclass_of(A,B) ?+> triple(A, rdfs:subClassOf, B).
 % @param Property a property IRI
 % @param SuperProperty a property IRI
 %
-subproperty_of(A,B) ?+> triple(A, rdfs:subPropertyOf, B).
+subproperty_of(A,B) ?> triple(A, rdfs:subPropertyOf, B).
 
 %% rdf_list(+RDF_list, -Pl_List) is semidet.
 %
@@ -187,11 +187,6 @@ rdf_list(RDF_list, Pl_List) ?>
 		(	triple(RDF_list, reflexive(transitive(rdf:rest)), Ys),
 			triple(Ys, rdf:first, X)
 		), Pl_List).
-
-rdf_list(RDF_list, Pl_List) +>
-	pragma((ground(Pl_List),
-		    model_RDFS:rdf_list_expand(RDF_list, Pl_List, Expanded))),
-	call([ has_type(RDF_list, rdf:'List') | Expanded ]).
 
 % expand list into series of triple/3 predicates
 :- rdf_meta(rdf_list_expand(r,t,t)).
@@ -224,7 +219,7 @@ rdf_list_head(SubList, ListHead) ?>
 %
 % @param Entity An entity IRI.
 %
-is_class(Entity) ?+> has_type(Entity, owl:'Class').
+is_class(Entity) ?> has_type(Entity, owl:'Class').
 
 %% is_restriction(+Entity) is semidet.
 %
@@ -232,7 +227,7 @@ is_class(Entity) ?+> has_type(Entity, owl:'Class').
 %
 % @param Entity An entity IRI.
 %
-is_restriction(Entity) ?+> has_type(Entity, owl:'Restriction').
+is_restriction(Entity) ?> has_type(Entity, owl:'Restriction').
 
 %% is_individual(+Entity) is semidet.
 %
@@ -240,7 +235,7 @@ is_restriction(Entity) ?+> has_type(Entity, owl:'Restriction').
 %
 % @param Entity An entity IRI.
 %
-is_individual(Entity) ?+> has_type(Entity, owl:'NamedIndividual').
+is_individual(Entity) ?> has_type(Entity, owl:'NamedIndividual').
 
 %% is_object_property(+Entity) is semidet.
 %
@@ -248,7 +243,7 @@ is_individual(Entity) ?+> has_type(Entity, owl:'NamedIndividual').
 %
 % @param Entity An entity IRI.
 %
-is_object_property(Entity) ?+> has_type(Entity, owl:'ObjectProperty').
+is_object_property(Entity) ?> has_type(Entity, owl:'ObjectProperty').
 
 %% is_functional_property(+Entity) is semidet.
 %
@@ -256,7 +251,7 @@ is_object_property(Entity) ?+> has_type(Entity, owl:'ObjectProperty').
 %
 % @param Entity An entity IRI.
 %
-is_functional_property(Entity) ?+> has_type(Entity, owl:'FunctionalProperty').
+is_functional_property(Entity) ?> has_type(Entity, owl:'FunctionalProperty').
 
 %% is_transitive_property(+Entity) is semidet.
 %
@@ -264,7 +259,7 @@ is_functional_property(Entity) ?+> has_type(Entity, owl:'FunctionalProperty').
 %
 % @param Entity An entity IRI.
 %
-is_transitive_property(Entity) ?+> has_type(Entity, owl:'TransitiveProperty').
+is_transitive_property(Entity) ?> has_type(Entity, owl:'TransitiveProperty').
 
 %% is_symmetric_property(+Entity) is semidet.
 %
@@ -272,7 +267,7 @@ is_transitive_property(Entity) ?+> has_type(Entity, owl:'TransitiveProperty').
 %
 % @param Entity An entity IRI.
 %
-is_symmetric_property(Entity) ?+> has_type(Entity, owl:'SymmetricProperty').
+is_symmetric_property(Entity) ?> has_type(Entity, owl:'SymmetricProperty').
 
 %% is_data_property(+Entity) is semidet.
 %
@@ -280,7 +275,7 @@ is_symmetric_property(Entity) ?+> has_type(Entity, owl:'SymmetricProperty').
 %
 % @param Entity An entity IRI.
 %
-is_data_property(Entity) ?+> has_type(Entity, owl:'DatatypeProperty').
+is_data_property(Entity) ?> has_type(Entity, owl:'DatatypeProperty').
 
 %% is_all_disjoint_classes(?AllDisjointClasses) is nondet.
 %
@@ -288,7 +283,7 @@ is_data_property(Entity) ?+> has_type(Entity, owl:'DatatypeProperty').
 %
 % @param Entity An entity IRI.
 %
-is_all_disjoint_classes(Entity) ?+> has_type(Entity, owl:'AllDisjointClasses').
+is_all_disjoint_classes(Entity) ?> has_type(Entity, owl:'AllDisjointClasses').
 
 %% has_inverse_property(?Property, ?Inverse) is nondet.
 %
@@ -297,7 +292,7 @@ is_all_disjoint_classes(Entity) ?+> has_type(Entity, owl:'AllDisjointClasses').
 % @param Property property resource
 % @param Inverse inverse of the property
 %
-has_inverse_property(P, P_inv) ?+> triple(P, owl:inverseOf, P_inv).
+has_inverse_property(P, P_inv) ?> triple(P, owl:inverseOf, P_inv).
 has_inverse_property(P, P_inv) ?> triple(P_inv, owl:inverseOf, P).
 
 %% has_property_chain(?Property, -Chain) is nondet.
@@ -307,10 +302,6 @@ has_inverse_property(P, P_inv) ?> triple(P_inv, owl:inverseOf, P).
 % @param Property property resource
 % @param Chain list of property resources
 %
-has_property_chain(P, Chain) +>
-	rdf_list(RDFList, Chain),
-	triple(P, owl:propertyChainAxiom, RDFList).
-
 has_property_chain(P, Chain) ?>
 	triple(P, owl:propertyChainAxiom, RDFList),
 	findall(X,
@@ -336,7 +327,6 @@ has_equivalent_class(X,Y) ?>
 
 has_equivalent_class(X,Y) ?> triple(X, transitive(owl:equivalentClass), Y).
 has_equivalent_class(X,Y) ?> triple(Y, transitive(owl:equivalentClass), X).
-has_equivalent_class(X,Y) +> triple(X, owl:equivalentClass, Y).
 
 %% same_as(?X, ?Y) is nondet.
 %
@@ -346,7 +336,6 @@ has_equivalent_class(X,Y) +> triple(X, owl:equivalentClass, Y).
 same_as(X,Y) ?> X = Y.
 same_as(X,Y) ?> triple(X, owl:sameAs, Y).
 same_as(X,Y) ?> triple(Y, owl:sameAs, X).
-same_as(X,Y) +> triple(X, owl:sameAs, Y).
 
 %% disjoint_with_direct(+Cls, ?Disjoint) is semidet.
 %
@@ -487,7 +476,7 @@ class_expr(IntersectionClass, intersection_of(List_pl)) ?>
 			triple(Ys, rdf:first, X)
 		), List_pl).
 
-class_expr(ComplementClass, complement_of(Class)) ?+>
+class_expr(ComplementClass, complement_of(Class)) ?>
 	triple(ComplementClass, owl:complementOf, Class).
 
 
