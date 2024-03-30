@@ -1,7 +1,7 @@
 :- module(mongolog_scope,
 	[ mongolog_universal_scope/1,
 	  mongolog_scope_doc/2,
-	  mongolog_scope_intersect/5,
+	  mongolog_scope_intersect/6,
 	  mongolog_scope_is_valid/1,
 	  mongolog_scope_match/2,
 	  mongolog_time_scope/3,
@@ -110,21 +110,22 @@ mongolog_scope_match(Ctx, ['$expr', ['$and', array(List)]]) :-
 	),
 	List \== [].
 
-%% mongolog_scope_intersect(+VarKey, +Since1, +Until1, +Options, -Step) is nondet.
+%% mongolog_scope_intersect(+VarKey, +Since1, +Until1, +Uncertain1, +Options, -Step) is nondet.
 %
 % The step expects input documents with VarKey field, and another field Since1/Until1.
 % The step uses these field to compute an intersection beteween both scopes.
 % It will fail in case the intersection is empty.
 %
-mongolog_scope_intersect(VarKey, Since1, Until1, Options, Step) :-
-	% TODO: remember if the solution is uncertain
+mongolog_scope_intersect(VarKey, Since1, Until1, Uncertain1, Options, Step) :-
 	atomic_list_concat(['$',VarKey,'.time.since'], '', Since0),
 	atomic_list_concat(['$',VarKey,'.time.until'], '', Until0),
+	atomic_list_concat(['$',VarKey,'.uncertain'], '', Uncertain0),
 	atomic_list_concat(['$',VarKey], '', VarKey0),
 	%
 	Intersect = ['time', [
 		['since', ['$max', array([string(Since0), Since1])]],
-		['until', ['$min', array([string(Until0), Until1])]]
+		['until', ['$min', array([string(Until0), Until1])]],
+		['uncertain', ['$or', array([string(Uncertain0), Uncertain1])]]
 	]],
 	% check if ignore flag if set, if so use a conditional step
 	(	memberchk(ignore, Options)

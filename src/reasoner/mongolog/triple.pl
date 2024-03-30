@@ -133,6 +133,7 @@ compile_ask(triple(S,P,O), Ctx, Pipeline) :-
 		;	mongolog_scope_intersect('v_scope',
 				string('$next.scope.time.since'),
 				string('$next.scope.time.until'),
+				string('$next.scope.uncertain'),
 				Ctx0, Step)
 		% update "uncertain" flag
 		;	Step=['$set', [['v_scope.uncertain', [['$or', array([
@@ -396,7 +397,6 @@ mng_triple_doc(triple(S,P,V), Doc, Context) :-
 	mng_strip_variable(P, P1),
 	mng_strip_variable(V, V1),
 	% get the query pattern
-	% FIXME: mng_query_value may silently fail on invalid input and this rule still succeeds
 	findall(X,
 		(	( mng_query_value(S1,Query_s), X=['s',Query_s] )
 		;	( mng_query_value(P1,Query_p), X=[Key_p,Query_p] )

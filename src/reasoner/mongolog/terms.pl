@@ -58,11 +58,8 @@ mongolog:step_compile(functor(Term,Functor,Arity), Ctx, Pipeline) :-
 % argument number. Backtracking yields alternative solutions.
 %
 mongolog:step_compile(arg(Arg,Term,Value), Ctx, Pipeline) :-
-	% FIXME: arg also need to handle var unification as in:
-	%         arg(0,foo(X),Y) would imply X=Y
-	%		- can be handled with conditional $set, add [X,Y] to
-	%         var array if both of them are vars
-	%
+	% Note: Variable unification as in `arg(0,foo(X),Y)` would imply X=Y but is not supported here.
+	% Could be handled with conditional $set, add [X,Y] to var array if both of them are vars.
 	mongolog:var_key_or_val(Arg,Ctx,Arg0),
 	mongolog:var_key_or_val(Term,Ctx,Term0),
 	mongolog:var_key_or_val(Value,Ctx,Value0),
@@ -124,11 +121,9 @@ mongolog:step_compile(copy_term(In,Out), Ctx, Pipeline) :-
 % This predicate is called "Univ". 
 %
 mongolog:step_compile(=..(Term,List), Ctx, Pipeline) :-
-	% FIXME: it won't work to unify two variables with univ yet, as in:
-	%			foo(X,a) =.. [foo,Z,a] would imply X=Z which is not handled here yet!
-	%          - needs additional map/filter operation
-	%				- get args that are different vars in list and term, then add to var array
-	%
+	% Note: It won't work to unify two variables with univ yet, as in `foo(X,a) =.. [foo,Z,a]`.
+	% It would imply X=Z which is not handled here yet! needs additional map/filter operation.
+	% e.g. get args that are different vars in list and term, then add to var array
 	mongolog:var_key_or_val(Term,Ctx,Term0),
 	mongolog:var_key_or_val(List,Ctx,List0),
 	findall(Step,
