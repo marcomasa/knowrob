@@ -169,7 +169,7 @@ test('during(+Triple,-Interval)', [ blocked('variables in second argument of dur
 	;	true
 	).
 
-test('since(+Triple,+Instant)', [ blocked('proect causes dedalock') ]) :-
+test('since(+Triple,+Instant)') :-
 	assert_false(mongolog_call(
 		triple(test:'Lea', test:hasNumber, '+499955247') since 800)),
 	assert_true(mongolog_assert(

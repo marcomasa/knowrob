@@ -33,19 +33,19 @@ occurs(Evt) ?>
 during(Query, Event) ?>
 	atom(Event),
 	pragma(time_scope(=<(Since), >=(Until), Scope)),
-	ask(event_interval(Event, Since, Until)),
+	event_interval(Event, Since, Until),
 	call_with_context(Query, [query_scope(Scope)]).
 
 since(Query, Event) ?>
 	atom(Event),
-	ask(event_interval(Event, Time, _)),
+	event_interval(Event, Time, _),
 	call_with_context(Query, [query_scope(dict{
 		time: dict{ min: dict{ max: Time } }
 	})]).
 
 until(Query, Event) ?>
 	atom(Event),
-	ask(event_interval(Event, Time, _)),
+	event_interval(Event, Time, _),
 	call_with_context(Query, [query_scope(dict{
 		time: dict{ max: dict{ min: Time } }
 	})]).

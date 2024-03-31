@@ -444,7 +444,6 @@ endif ()
 # flag for the linker.
 add_executable(all_gtests
         tests/gtests.cpp
-        src/neems/test.cpp
         tests/QueryParserTest.cpp
         tests/KnowledgeBaseTest.cpp
         tests/DataBackendTest.cpp
