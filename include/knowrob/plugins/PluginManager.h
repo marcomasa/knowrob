@@ -116,6 +116,18 @@ namespace knowrob {
 		virtual std::shared_ptr<NamedPlugin<T>>
 		addPlugin(std::string_view reasonerID, const std::shared_ptr<T> &reasoner) = 0;
 
+		/**
+		 * Remove a plugin from this manager.
+		 * @param namedPlugin the plugin to remove
+		 */
+		void removePlugin(const std::shared_ptr<NamedPlugin<T>> &namedPlugin) { pluginPool_.erase(namedPlugin->name()); }
+
+		/**
+		 * Remove a plugin from this manager.
+		 * @param pluginID the ID of the plugin to remove
+		 */
+		void removePlugin(std::string_view pluginID) { pluginPool_.erase(pluginID); }
+
 	protected:
 		std::shared_ptr<std::map<uint32_t, PluginManager *>> pluginManagers_;
 		// mutex used to interact with static variables
@@ -218,10 +230,6 @@ namespace knowrob {
 			} else {
 				return std::string(factory->name()) + std::to_string(pluginIndex_++);
 			}
-		}
-
-		void removePlugin(const std::shared_ptr<NamedPlugin<T>> &namedPlugin) {
-			pluginPool_.erase(namedPlugin->name());
 		}
 	};
 }

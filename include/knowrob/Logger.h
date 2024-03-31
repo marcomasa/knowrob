@@ -151,4 +151,19 @@ namespace knowrob {
 	{ KB_ERROR("{}: unknown failure.", Logger::formatGenericFailure(name,type)); }  \
 } while(0)
 
+/**
+ * Catch any exception that `goal` may throw and log it as an error.
+ */
+#define KB_LOGGED_TRY_EXCEPT(name, type, goal, except) do { \
+	try { goal } \
+	catch (const boost::python::error_already_set&) \
+	{ LOG_KNOWROB_ERROR(PythonError(), Logger::formatGenericFailure(name,type)); except } \
+	catch (KnowRobError &e) \
+	{ LOG_KNOWROB_ERROR(e, Logger::formatGenericFailure(name,type)); except } \
+	catch (std::exception &e) \
+	{ KB_ERROR("{}: {}", Logger::formatGenericFailure(name,type), e.what()); except } \
+	catch (...) \
+	{ KB_ERROR("{}: unknown failure.", Logger::formatGenericFailure(name,type)); except }  \
+} while(0)
+
 #endif //KNOWROB_LOGGING_H_

@@ -164,9 +164,7 @@ void KnowledgeBase::configureBackends(const boost::property_tree::ptree &config)
 	auto backendList = config.get_child_optional(KB_SETTING_DATA_BACKENDS);
 	if (backendList) {
 		for (const auto &pair: backendList.value()) {
-			KB_LOGGED_TRY_CATCH(pair.first, "load", {
-				backendManager_->loadPlugin(pair.second);
-			});
+			KB_LOGGED_TRY_CATCH(pair.first, "load", { backendManager_->loadPlugin(pair.second); });
 		}
 	} else {
 		KB_ERROR("configuration has no 'backends' key.");
@@ -198,21 +196,21 @@ void KnowledgeBase::loadCommon() {
 }
 
 void KnowledgeBase::startReasoner() {
+	std::vector<std::string_view> failedToStartReasoner;
 	for (auto &pair: reasonerManager_->dataDriven()) {
-		// TODO: it would be better to remove reasoner and backends if they throw an exception.
-		//       but doing this for e.g. query evaluation is more difficult where exception occur in a worker thread
-		//       as part of a complex query evaluation pipeline.
-		KB_LOGGED_TRY_CATCH(pair.first.data(), "start", {
-			pair.second->start();
-		});
+		KB_LOGGED_TRY_EXCEPT(pair.first.data(), "start",
+							 { pair.second->start(); },
+							 { failedToStartReasoner.push_back(pair.first); });
+	}
+	// remove reasoner that failed to start
+	for (auto &reasonerName: failedToStartReasoner) {
+		reasonerManager_->removePlugin(reasonerName);
 	}
 }
 
 void KnowledgeBase::stopReasoner() {
 	for (auto &pair: reasonerManager_->dataDriven()) {
-		KB_LOGGED_TRY_CATCH(pair.first.data(), "stop", {
-			pair.second->stop();
-		});
+		KB_LOGGED_TRY_CATCH(pair.first.data(), "stop", { pair.second->stop(); });
 	}
 }
 
