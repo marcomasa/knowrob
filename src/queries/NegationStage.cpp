@@ -8,7 +8,7 @@
 #include "knowrob/queries/NegationStage.h"
 #include "knowrob/KnowledgeBase.h"
 #include "knowrob/formulas/ModalFormula.h"
-#include "knowrob/backend/BackendInterface.h"
+#include "knowrob/storage/StorageInterface.h"
 
 using namespace knowrob;
 

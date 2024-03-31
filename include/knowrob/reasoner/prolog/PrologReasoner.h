@@ -77,7 +77,7 @@ namespace knowrob {
 		bool initializeReasoner(const PropertyTree &cfg) override;
 
 		// Override Reasoner
-		void setDataBackend(const DataBackendPtr &backend) override;
+		void setDataBackend(const StoragePtr &backend) override;
 
 		// Override Reasoner
 		TokenBufferPtr submitQuery(const FramedTriplePatternPtr &literal, const QueryContextPtr &ctx) override;

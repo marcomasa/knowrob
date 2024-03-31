@@ -10,7 +10,7 @@
 #include "string"
 #include "GraphTransformation.h"
 #include "GraphTransformationRule.h"
-#include "knowrob/backend/redland/RedlandModel.h"
+#include "knowrob/storage/redland/RedlandModel.h"
 
 namespace knowrob {
 	/**

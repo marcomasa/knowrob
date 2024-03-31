@@ -7,7 +7,7 @@
 #define KNOWROB_REASONER_MANAGER_H_
 
 #include "knowrob/plugins/PluginManager.h"
-#include "knowrob/backend/BackendManager.h"
+#include "knowrob/storage/StorageManager.h"
 #include "knowrob/KnowledgeBase.h"
 #include "knowrob/reasoner/GoalDrivenReasoner.h"
 #include "knowrob/reasoner/DataDrivenReasoner.h"
@@ -23,7 +23,7 @@ namespace knowrob {
 		 * @param kb the knowledge base associated with this manager.
 		 * @param backendManager the backend manager associated with this manager.
 		 */
-		ReasonerManager(KnowledgeBase *kb, const std::shared_ptr<BackendManager> &backendManager);
+		ReasonerManager(KnowledgeBase *kb, const std::shared_ptr<StorageManager> &backendManager);
 
 		~ReasonerManager();
 
@@ -58,7 +58,7 @@ namespace knowrob {
 		 * @param reasoner a defined reasoner.
 		 * @return a backend or a null reference.
 		 */
-		std::shared_ptr<DataBackend> getReasonerBackend(const std::shared_ptr<NamedReasoner> &reasoner);
+		std::shared_ptr<Storage> getReasonerBackend(const std::shared_ptr<NamedReasoner> &reasoner);
 
 		// override PluginManager
 		std::shared_ptr<NamedReasoner> loadPlugin(const boost::property_tree::ptree &config) override;
@@ -69,13 +69,13 @@ namespace knowrob {
 
 	private:
 		KnowledgeBase *kb_;
-		std::shared_ptr<BackendManager> backendManager_;
+		std::shared_ptr<StorageManager> backendManager_;
 		// maps reasoner to their backends
-		std::map<std::string_view, DataBackendPtr, std::less<>> reasonerBackends_;
+		std::map<std::string_view, StoragePtr, std::less<>> reasonerBackends_;
 		std::map<std::string_view, DataDrivenReasonerPtr> dataDriven_;
 		std::map<std::string_view, GoalDrivenReasonerPtr> goalDriven_;
 
-		void setDataBackend(const ReasonerPtr &reasoner, const std::shared_ptr<DataBackend> &dataBackend);
+		void setDataBackend(const ReasonerPtr &reasoner, const std::shared_ptr<Storage> &dataBackend);
 
 		void initPlugin(const std::shared_ptr<NamedReasoner> &namedReasoner);
 	};

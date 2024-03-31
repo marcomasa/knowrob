@@ -3,7 +3,7 @@
  * https://github.com/knowrob/knowrob for license details.
  */
 
-#include "knowrob/backend/BackendManager.h"
+#include "knowrob/storage/StorageManager.h"
 #include "knowrob/reasoner/prolog/PrologBackend.h"
 #include "knowrob/reasoner/prolog/PrologEngine.h"
 #include "knowrob/reasoner/prolog/PrologTerm.h"
@@ -14,7 +14,7 @@ using namespace knowrob;
 /**
  * Register the backend with the BackendManager
  */
-KNOWROB_BUILTIN_BACKEND("Prolog:rdf_db", PrologBackend)
+KNOWROB_BUILTIN_STORAGE("Prolog:rdf_db", PrologBackend)
 
 namespace knowrob {
 	static const auto rdf_quad = "rdf";
@@ -24,7 +24,7 @@ namespace knowrob {
 }
 
 PrologBackend::PrologBackend()
-		: QueryableBackend(BackendFeature::NothingSpecial) {
+		: QueryableStorage(StorageFeature::NothingSpecial) {
 }
 
 bool PrologBackend::initializeBackend() {

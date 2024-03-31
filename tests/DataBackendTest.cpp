@@ -4,15 +4,15 @@
  */
 
 #include <gtest/gtest.h>
-#include "knowrob/backend/mongo/MongoKnowledgeGraph.h"
+#include "knowrob/storage/mongo/MongoKnowledgeGraph.h"
 #include "knowrob/queries/QueryParser.h"
 #include "knowrob/ontologies/OntologyParser.h"
 #include "knowrob/semweb/rdfs.h"
-#include "knowrob/backend/redland/RedlandModel.h"
+#include "knowrob/storage/redland/RedlandModel.h"
 #include "knowrob/semweb/PrefixRegistry.h"
-#include "knowrob/reification/ReifiedTriple.h"
+#include "knowrob/storage/ReifiedTriple.h"
 #include "knowrob/reasoner/prolog/PrologEngine.h"
-#include "knowrob/backend/BackendInterface.h"
+#include "knowrob/storage/StorageInterface.h"
 #include "knowrob/reasoner/prolog/PrologBackend.h"
 
 using namespace knowrob;
@@ -53,13 +53,13 @@ template <class BackendType>
 class DataBackendTest : public ::testing::Test {
 public:
 	static std::shared_ptr<BackendType> kg_;
-	static std::shared_ptr<QueryableBackend> queryable_;
-	static std::shared_ptr<BackendInterface> backend_;
+	static std::shared_ptr<QueryableStorage> queryable_;
+	static std::shared_ptr<StorageInterface> backend_;
 
 	static void SetUpTestSuite() {
 		auto vocabulary = std::make_shared<Vocabulary>();
-		auto backendManager = std::make_shared<BackendManager>(vocabulary);
-		backend_ = std::make_shared<BackendInterface>(backendManager);
+		auto backendManager = std::make_shared<StorageManager>(vocabulary);
+		backend_ = std::make_shared<StorageInterface>(backendManager);
 		kg_ = createBackend<BackendType>();
 		backendManager->addPlugin("test", kg_);
 		queryable_ = kg_;
@@ -93,7 +93,7 @@ public:
 	}
 
 	static bool insertOne(const FramedTriple &triple) {
-		return backend_->createTransaction(queryable_,BackendInterface::Insert)->commit(triple);
+		return backend_->createTransaction(queryable_, StorageInterface::Insert)->commit(triple);
 	}
 
 	static bool mergeOne(const FramedTriple &triple) {
@@ -125,8 +125,8 @@ public:
 };
 
 template <typename T> std::shared_ptr<T> DataBackendTest<T>::kg_;
-template <typename T> std::shared_ptr<QueryableBackend> DataBackendTest<T>::queryable_;
-template <typename T> std::shared_ptr<BackendInterface> DataBackendTest<T>::backend_;
+template <typename T> std::shared_ptr<QueryableStorage> DataBackendTest<T>::queryable_;
+template <typename T> std::shared_ptr<StorageInterface> DataBackendTest<T>::backend_;
 
 static FramedTriplePattern parse(const std::string &str) {
 	auto p = QueryParser::parsePredicate(str);

@@ -43,7 +43,7 @@ public:
 	}
 
 	bool initializeReasoner(const PropertyTree &cfg) override { return true; }
-	void setDataBackend(const DataBackendPtr &backend) override {}
+	void setDataBackend(const StoragePtr &backend) override {}
 
 	TokenBufferPtr submitQuery(const FramedTriplePatternPtr &literal, const QueryContextPtr &ctx) override {
 		auto answerBuffer = std::make_shared<TokenBuffer>();

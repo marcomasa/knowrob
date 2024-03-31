@@ -103,7 +103,7 @@ static inline void register_query_types() {
 static inline void register_db_types() {
 	py::createType<DataSource>();
 	py::createType<DataSourceHandler>();
-	py::createType<DataBackend>();
+	py::createType<Storage>();
 }
 
 static inline void register_reasoner_types() {

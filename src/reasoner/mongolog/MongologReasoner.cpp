@@ -75,7 +75,7 @@ bool MongologReasoner::initializeReasoner(const PropertyTree &reasonerConfigurat
 	return true;
 }
 
-void MongologReasoner::setDataBackend(const DataBackendPtr &backend) {
+void MongologReasoner::setDataBackend(const StoragePtr &backend) {
 	knowledgeGraph_ = std::dynamic_pointer_cast<MongoKnowledgeGraph>(backend);
 	if (!knowledgeGraph_) {
 		throw ReasonerError(

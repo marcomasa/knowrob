@@ -6,7 +6,7 @@
 #ifndef KNOWROB_PROLOG_BACKEND_H
 #define KNOWROB_PROLOG_BACKEND_H
 
-#include "knowrob/backend/QueryableBackend.h"
+#include "knowrob/storage/QueryableStorage.h"
 #include "PrologTerm.h"
 
 namespace knowrob {
@@ -16,7 +16,7 @@ namespace knowrob {
 	 * The reason is that Prolog reasoners do not support multiple EDBs due to limitations of the
 	 * underlying Prolog "semweb" library which only has a global storage.
 	 */
-	class PrologBackend : public QueryableBackend {
+	class PrologBackend : public QueryableStorage {
 	public:
 		PrologBackend();
 

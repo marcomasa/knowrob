@@ -10,9 +10,9 @@
 #include <boost/property_tree/ptree.hpp>
 #include <utility>
 #include "knowrob/queries/QueryContext.h"
-#include "knowrob/backend/QueryableBackend.h"
-#include "knowrob/backend/BackendManager.h"
-#include "knowrob/backend/BackendInterface.h"
+#include "knowrob/storage/QueryableStorage.h"
+#include "knowrob/storage/StorageManager.h"
+#include "knowrob/storage/StorageInterface.h"
 #include "knowrob/triples/GraphPathQuery.h"
 #include "knowrob/ontologies/OntologySource.h"
 
@@ -140,9 +140,9 @@ namespace knowrob {
 		bool removeAllWithOrigin(std::string_view origin);
 
 	protected:
-		std::shared_ptr<BackendInterface> edb_;
+		std::shared_ptr<StorageInterface> edb_;
 		std::shared_ptr<ReasonerManager> reasonerManager_;
-		std::shared_ptr<BackendManager> backendManager_;
+		std::shared_ptr<StorageManager> backendManager_;
 		std::shared_ptr<Vocabulary> vocabulary_;
 		bool isInitialized_;
 

@@ -11,7 +11,7 @@
 #include "knowrob/terms/Atom.h"
 #include "knowrob/ontologies/DataSource.h"
 #include "knowrob/ontologies/DataSourceHandler.h"
-#include "knowrob/backend/Backend.h"
+#include "knowrob/storage/Storage.h"
 #include "knowrob/plugins/NamedPlugin.h"
 
 namespace knowrob {
@@ -49,7 +49,7 @@ namespace knowrob {
 		/**
 		 * Set the data backend of this reasoner.
 		 */
-		virtual void setDataBackend(const DataBackendPtr &backend) = 0;
+		virtual void setDataBackend(const StoragePtr &backend) = 0;
 
 		/**
 		 * Initialize a reasoner by configuring it with a property tree.

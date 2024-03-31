@@ -109,7 +109,7 @@ an ontology, often by accessing some database, or by reading from
 a message queue, etc.
 
 For more information on database backends in KnowRob, please have a look
-[here](src/backend/README.md).
+[here](src/storage/README.md).
 
 ### Reasoning
 
@@ -135,7 +135,7 @@ More documentation can be found in the following subpages:
 
 - [Ontologies](src/ontologies/README.md)
 - [Querying](src/queries/README.md)
-- [Backends](src/backend/README.md)
+- [Backends](src/storage/README.md)
 - [Reasoner](src/reasoner/README.md)
 - [Alignment](src/alignment/README.md)
 - [ROS](src/ros/README.md)

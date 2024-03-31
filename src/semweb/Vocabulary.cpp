@@ -9,7 +9,7 @@
 #include "knowrob/semweb/rdfs.h"
 #include "knowrob/semweb/owl.h"
 #include "knowrob/semweb/PrefixProbe.h"
-#include "knowrob/reification/model.h"
+#include "knowrob/storage/reification.h"
 
 using namespace knowrob;
 using namespace knowrob::semweb;

@@ -13,7 +13,7 @@
 #include "knowrob/triples/TripleFormat.h"
 #include "knowrob/triples/FramedTriple.h"
 #include "knowrob/triples/GraphSelector.h"
-#include "knowrob/backend/redland/RaptorContainer.h"
+#include "knowrob/storage/redland/RaptorContainer.h"
 
 namespace knowrob {
 	/**

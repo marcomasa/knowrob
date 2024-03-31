@@ -118,7 +118,7 @@ bool PrologReasoner::initializeReasoner(const PropertyTree &cfg) {
 	return true;
 }
 
-void PrologReasoner::setDataBackend(const DataBackendPtr &backend) {
+void PrologReasoner::setDataBackend(const StoragePtr &backend) {
 	knowledgeGraph_ = std::dynamic_pointer_cast<PrologBackend>(backend);
 	if (!knowledgeGraph_) {
 		throw ReasonerError("Unexpected data knowledgeGraph used for Prolog reasoner. PrologBackend must be used.");

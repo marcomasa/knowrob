@@ -177,7 +177,7 @@ namespace knowrob::py {
 	struct DataDrivenReasonerWrap : public DataDrivenReasoner, boost::python::wrapper<DataDrivenReasoner> {
 		explicit DataDrivenReasonerWrap(PyObject *p) : self(p), DataDrivenReasoner() {}
 
-		void setDataBackend(const DataBackendPtr &backend) override {
+		void setDataBackend(const StoragePtr &backend) override {
 			call_method<void>(self, "setDataBackend", backend);
 		}
 

@@ -35,9 +35,9 @@ KnowledgeBase::KnowledgeBase()
 	vocabulary_ = std::make_shared<Vocabulary>();
 	// use "system" as default origin until initialization completed
 	vocabulary_->importHierarchy()->setDefaultGraph(ImportHierarchy::ORIGIN_SYSTEM);
-	backendManager_ = std::make_shared<BackendManager>(vocabulary_);
+	backendManager_ = std::make_shared<StorageManager>(vocabulary_);
 	reasonerManager_ = std::make_shared<ReasonerManager>(this, backendManager_);
-	edb_ = std::make_shared<BackendInterface>(backendManager_);
+	edb_ = std::make_shared<StorageInterface>(backendManager_);
 }
 
 KnowledgeBase::KnowledgeBase(const boost::property_tree::ptree &config) : KnowledgeBase() {
@@ -86,7 +86,7 @@ void KnowledgeBase::synchronizeBackends() {
 	// synchronize persistent backends with each other
 	if (backendManager_->persistent().size() > 1) {
 		// find versions of persisted origins
-		using BackendOriginVersion = std::pair<std::shared_ptr<QueryableBackend>, VersionedOriginPtr>;
+		using BackendOriginVersion = std::pair<std::shared_ptr<QueryableStorage>, VersionedOriginPtr>;
 		std::map<std::string_view, std::vector<BackendOriginVersion>> origins;
 		for (auto &it: backendManager_->persistent()) {
 			auto persistentBackend = it.second;
@@ -140,8 +140,8 @@ void KnowledgeBase::synchronizeBackends() {
 			auto &persistedBackend = origin_pair.second.begin()->first;
 			auto transaction = edb_->createTransaction(
 					persistedBackend,
-					BackendInterface::Insert,
-					BackendInterface::Including,
+					StorageInterface::Insert,
+					StorageInterface::Including,
 					included);
 			persistedBackend->batchOrigin(origin_pair.first, [&](const TripleContainerPtr &triples) {
 				transaction->commit(triples);
@@ -156,8 +156,8 @@ void KnowledgeBase::synchronizeBackends() {
 		auto &persistedBackend = *backendManager_->persistent().begin();
 		auto transaction = edb_->createTransaction(
 				getBackendForQuery(),
-				BackendInterface::Insert,
-				BackendInterface::Including,
+				StorageInterface::Insert,
+				StorageInterface::Including,
 				nonPersistent);
 		persistedBackend.second->batch([&](const TripleContainerPtr &triples) { transaction->commit(triples); });
 	}
@@ -263,7 +263,7 @@ void KnowledgeBase::configureReasoner(const boost::property_tree::ptree &config)
 			KB_LOGGED_TRY_CATCH(pair.first, "load", {
 				auto definedReasoner = reasonerManager_->loadPlugin(pair.second);
 				// if reasoner implements DataBackend class, add it to the backend manager
-				auto reasonerBackend = std::dynamic_pointer_cast<DataBackend>(definedReasoner->value());
+				auto reasonerBackend = std::dynamic_pointer_cast<Storage>(definedReasoner->value());
 				if (reasonerBackend) {
 					backendManager_->addPlugin(definedReasoner->name(), reasonerBackend);
 				}
@@ -340,8 +340,8 @@ bool KnowledgeBase::insertOne(const FramedTriple &triple) {
 	auto sourceBackend = findSourceBackend(triple);
 	auto transaction = edb_->createTransaction(
 			getBackendForQuery(),
-			BackendInterface::Insert,
-			BackendInterface::Excluding,
+			StorageInterface::Insert,
+			StorageInterface::Excluding,
 			{sourceBackend});
 	return transaction->commit(triple);
 }
@@ -350,8 +350,8 @@ bool KnowledgeBase::insertAll(const TripleContainerPtr &triples) {
 	auto sourceBackend = findSourceBackend(**triples->begin());
 	auto transaction = edb_->createTransaction(
 			getBackendForQuery(),
-			BackendInterface::Insert,
-			BackendInterface::Excluding,
+			StorageInterface::Insert,
+			StorageInterface::Excluding,
 			{sourceBackend});
 	return transaction->commit(triples);
 }
@@ -360,8 +360,8 @@ bool KnowledgeBase::removeOne(const FramedTriple &triple) {
 	auto sourceBackend = findSourceBackend(triple);
 	auto transaction = edb_->createTransaction(
 			getBackendForQuery(),
-			BackendInterface::Remove,
-			BackendInterface::Excluding,
+			StorageInterface::Remove,
+			StorageInterface::Excluding,
 			{sourceBackend});
 	return transaction->commit(triple);
 }
@@ -370,8 +370,8 @@ bool KnowledgeBase::removeAll(const TripleContainerPtr &triples) {
 	auto sourceBackend = findSourceBackend(**triples->begin());
 	auto transaction = edb_->createTransaction(
 			getBackendForQuery(),
-			BackendInterface::Remove,
-			BackendInterface::Excluding,
+			StorageInterface::Remove,
+			StorageInterface::Excluding,
 			{sourceBackend});
 	return transaction->commit(triples);
 }
@@ -525,8 +525,8 @@ bool KnowledgeBase::loadOntologySource(const std::shared_ptr<OntologySource> &so
 	auto result = source->load([this, &backendsToLoad](const TripleContainerPtr &triples) {
 		auto transaction = edb_->createTransaction(
 				getBackendForQuery(),
-				BackendInterface::Insert,
-				BackendInterface::Including,
+				StorageInterface::Insert,
+				StorageInterface::Including,
 				backendsToLoad);
 		transaction->commit(triples);
 	});

@@ -4,7 +4,7 @@
  */
 
 #include "knowrob/reasoner/mongolog/bson_pl.h"
-#include "knowrob/backend/mongo/MongoException.h"
+#include "knowrob/storage/mongo/MongoException.h"
 #include <iostream>
 
 // NOTE: returning true would stop further iteration of the document

@@ -220,25 +220,25 @@ add_library(knowrob SHARED
         src/reasoner/mongolog/bson_pl.cpp
         src/reasoner/swrl/SWRLReasoner.cpp
         src/reasoner/esg/ESGReasoner.cpp
-        src/backend/QueryableBackend.cpp
-        src/backend/BackendManager.cpp
+        src/storage/QueryableStorage.cpp
+        src/storage/StorageManager.cpp
         src/ontologies/DataSourceHandler.cpp
         src/ontologies/OntologyFile.cpp
         src/ontologies/OntologyParser.cpp
-        src/backend/BackendTransaction.cpp
-        src/backend/mongo/MongoInterface.cpp
-        src/backend/mongo/Database.cpp
-        src/backend/mongo/Collection.cpp
-        src/backend/mongo/ChangeStream.cpp
-        src/backend/mongo/Cursor.cpp
-        src/backend/mongo/QueryWatch.cpp
-        src/backend/mongo/MongoKnowledgeGraph.cpp
-        src/backend/mongo/BulkOperation.cpp
-        src/backend/mongo/Pipeline.cpp
-        src/backend/mongo/TripleCursor.cpp
-        src/backend/mongo/BindingsCursor.cpp
-        src/backend/mongo/Connection.cpp
-        src/backend/mongo/bson-helper.cpp
+        src/storage/Transaction.cpp
+        src/storage/mongo/MongoInterface.cpp
+        src/storage/mongo/Database.cpp
+        src/storage/mongo/Collection.cpp
+        src/storage/mongo/ChangeStream.cpp
+        src/storage/mongo/Cursor.cpp
+        src/storage/mongo/QueryWatch.cpp
+        src/storage/mongo/MongoKnowledgeGraph.cpp
+        src/storage/mongo/BulkOperation.cpp
+        src/storage/mongo/Pipeline.cpp
+        src/storage/mongo/TripleCursor.cpp
+        src/storage/mongo/BindingsCursor.cpp
+        src/storage/mongo/Connection.cpp
+        src/storage/mongo/bson-helper.cpp
         src/queries/ModalStage.cpp
         src/triples/Perspective.cpp
         src/formulas/PredicateIndicator.cpp
@@ -257,10 +257,10 @@ add_library(knowrob SHARED
         src/reasoner/prolog/PrologBackend.cpp
         src/reasoner/prolog/PrologTerm.cpp
         src/ontologies/SPARQLService.cpp
-        src/backend/redland/RaptorContainer.cpp
+        src/storage/redland/RaptorContainer.cpp
         src/ontologies/GraphRenaming.cpp
         src/ontologies/GraphRestructuring.cpp
-        src/backend/redland/RedlandModel.cpp
+        src/storage/redland/RedlandModel.cpp
         src/ontologies/GraphTransformation.cpp
         src/terms/Atom.cpp
         src/terms/Atomic.cpp
@@ -272,25 +272,25 @@ add_library(knowrob SHARED
         src/semweb/Resource.cpp
         src/terms/Numeric.cpp
         src/terms/String.cpp
-        src/backend/DataBackend.cpp
+        src/storage/Storage.cpp
         src/queries/QueryContext.cpp
         src/triples/SPARQLQuery.cpp
         src/triples/TripleContainer.cpp
         src/KnowRobError.cpp
         src/py/PythonError.cpp
-        src/reification/ReifiedTriple.cpp
-        src/reification/ReifiedQuery.cpp
-        src/reification/ReificationContainer.cpp
-        src/reification/UnReificationContainer.cpp
-        src/backend/BackendInterface.cpp
+        src/storage/ReifiedTriple.cpp
+        src/storage/ReifiedQuery.cpp
+        src/storage/ReificationContainer.cpp
+        src/storage/UnReificationContainer.cpp
+        src/storage/StorageInterface.cpp
         src/triples/GraphUnion.cpp
         src/triples/GraphSequence.cpp
         src/triples/GraphTerm.cpp
-        src/backend/mongo/MongoTriple.cpp
-        src/backend/mongo/MongoTriplePattern.cpp
-        src/backend/mongo/MongoTerm.cpp
-        src/backend/mongo/MongoTaxonomy.cpp
-        src/backend/SPARQLBackend.cpp
+        src/storage/mongo/MongoTriple.cpp
+        src/storage/mongo/MongoTriplePattern.cpp
+        src/storage/mongo/MongoTerm.cpp
+        src/storage/mongo/MongoTaxonomy.cpp
+        src/storage/SPARQLBackend.cpp
         src/queries/parsers/strings.cpp
         src/queries/parsers/terms.cpp
         src/queries/parsers/formula.cpp

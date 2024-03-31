@@ -13,7 +13,7 @@
 #include <memory>
 // KnowRob
 #include "knowrob/terms/Term.h"
-#include "knowrob/backend/mongo/MongoKnowledgeGraph.h"
+#include "knowrob/storage/mongo/MongoKnowledgeGraph.h"
 #include "knowrob/reasoner/Reasoner.h"
 #include "knowrob/reasoner/prolog/PrologReasoner.h"
 
@@ -32,7 +32,7 @@ namespace knowrob {
 
 		bool initializeReasoner(const PropertyTree &cfg) override;
 
-		void setDataBackend(const DataBackendPtr &backend) override;
+		void setDataBackend(const StoragePtr &backend) override;
 
 		const auto &knowledgeGraph() const { return knowledgeGraph_; }
 

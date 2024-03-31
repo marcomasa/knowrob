@@ -43,7 +43,7 @@ namespace knowrob::py {
 	struct ReasonerWrap : public Reasoner, boost::python::wrapper<Reasoner> {
 		explicit ReasonerWrap(PyObject *p) : self(p), Reasoner() {}
 
-		void setDataBackend(const DataBackendPtr &backend) override {
+		void setDataBackend(const StoragePtr &backend) override {
 			call_method<void>(self, "setDataBackend", backend);
 		}
 

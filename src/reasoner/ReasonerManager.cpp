@@ -9,7 +9,7 @@
 
 using namespace knowrob;
 
-ReasonerManager::ReasonerManager(KnowledgeBase *kb, const std::shared_ptr<BackendManager> &backendManager)
+ReasonerManager::ReasonerManager(KnowledgeBase *kb, const std::shared_ptr<StorageManager> &backendManager)
 		: PluginManager(),
 		  kb_(kb),
 		  backendManager_(backendManager) {
@@ -24,12 +24,12 @@ ReasonerManager::~ReasonerManager() {
 }
 
 void ReasonerManager::setDataBackend(const std::shared_ptr<Reasoner> &reasoner,
-									 const std::shared_ptr<DataBackend> &dataBackend) {
+									 const std::shared_ptr<Storage> &dataBackend) {
 	reasoner->setDataBackend(dataBackend);
 	reasonerBackends_[reasoner->reasonerName()->stringForm()] = dataBackend;
 }
 
-std::shared_ptr<DataBackend> ReasonerManager::getReasonerBackend(const std::shared_ptr<NamedReasoner> &reasoner) {
+std::shared_ptr<Storage> ReasonerManager::getReasonerBackend(const std::shared_ptr<NamedReasoner> &reasoner) {
 	auto it = reasonerBackends_.find(reasoner->name());
 	if (it != reasonerBackends_.end()) {
 		return it->second;
@@ -74,7 +74,7 @@ std::shared_ptr<NamedReasoner> ReasonerManager::loadPlugin(const boost::property
 		}
 	} else {
 		// check if reasoner implements DataBackend interface
-		auto backend = std::dynamic_pointer_cast<DataBackend>(reasoner->value());
+		auto backend = std::dynamic_pointer_cast<Storage>(reasoner->value());
 		if (backend) {
 			setDataBackend(reasoner->value(), backend);
 			backendManager_->addPlugin(reasonerID, backend);
@@ -114,7 +114,7 @@ ReasonerManager::addPlugin(std::string_view reasonerID, const std::shared_ptr<Re
 			backendManager_->vocabulary()->importHierarchy()->ORIGIN_REASONER, reasonerID);
 
 	// check if reasoner implements DataBackend interface
-	auto backend = std::dynamic_pointer_cast<DataBackend>(reasoner);
+	auto backend = std::dynamic_pointer_cast<Storage>(reasoner);
 	if (backend) {
 		setDataBackend(reasoner, backend);
 		backendManager_->addPlugin(reasonerID, backend);

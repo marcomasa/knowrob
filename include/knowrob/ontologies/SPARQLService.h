@@ -10,7 +10,7 @@
 #include "knowrob/triples/TripleFormat.h"
 #include "knowrob/triples/TripleContainer.h"
 #include "OntologySource.h"
-#include "knowrob/backend/redland/RedlandModel.h"
+#include "knowrob/storage/redland/RedlandModel.h"
 
 namespace knowrob {
 	/**
