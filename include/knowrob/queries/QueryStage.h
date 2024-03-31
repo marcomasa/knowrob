@@ -89,7 +89,7 @@ namespace knowrob {
 		void pushDeferred();
 
 		// needed for "weak ref hack"
-		friend class KnowledgeBase;
+		friend class QueryPipeline;
 	};
 
 	/**
@@ -104,8 +104,8 @@ namespace knowrob {
 		using QuerySubmitter = std::function<TokenBufferPtr(const std::shared_ptr<QueryType> &)>;
 
 		TypedQueryStage(const QueryContextPtr &ctx,
-		                std::shared_ptr<QueryType> query,
-		                const QuerySubmitter &submitter)
+						std::shared_ptr<QueryType> query,
+						const QuerySubmitter &submitter)
 				: QueryStage(ctx),
 				  query_(std::move(query)),
 				  submitter_(submitter) {}

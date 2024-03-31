@@ -9,16 +9,12 @@
 #include <memory>
 #include <boost/property_tree/ptree.hpp>
 #include <utility>
-#include "ThreadPool.h"
-#include "knowrob/formulas/DependencyGraph.h"
-#include "knowrob/queries/QueryPipeline.h"
 #include "knowrob/queries/QueryContext.h"
-#include "knowrob/semweb/RDFComputable.h"
-#include "knowrob/ontologies/OntologyFile.h"
 #include "knowrob/backend/QueryableBackend.h"
 #include "knowrob/backend/BackendManager.h"
-#include "knowrob/triples/GraphPathQuery.h"
 #include "knowrob/backend/BackendInterface.h"
+#include "knowrob/triples/GraphPathQuery.h"
+#include "knowrob/ontologies/OntologySource.h"
 
 namespace knowrob {
 	// forward declaration
@@ -123,39 +119,6 @@ namespace knowrob {
 		std::shared_ptr<Vocabulary> vocabulary_;
 		bool isInitialized_;
 
-		// used to sort dependency nodes in a priority queue.
-		// the nodes are considered to be dependent on each other through free variables.
-		// the priority value is used to determine which nodes should be evaluated first.
-		struct DependencyNodeComparator {
-			bool operator()(const DependencyNodePtr &a, const DependencyNodePtr &b) const;
-		};
-
-		struct DependencyNodeQueue {
-			const DependencyNodePtr node_;
-			std::priority_queue<DependencyNodePtr, std::vector<DependencyNodePtr>, DependencyNodeComparator> neighbors_;
-
-			explicit DependencyNodeQueue(const DependencyNodePtr &node);
-		};
-
-		// compares literals
-		struct EDBComparator {
-			explicit EDBComparator(VocabularyPtr vocabulary)
-					: vocabulary_(std::move(vocabulary)) {}
-
-			bool operator()(const FramedTriplePatternPtr &a, const FramedTriplePatternPtr &b) const;
-
-			VocabularyPtr vocabulary_;
-		};
-
-		struct IDBComparator {
-			explicit IDBComparator(VocabularyPtr vocabulary)
-					: vocabulary_(std::move(vocabulary)) {}
-
-			bool operator()(const RDFComputablePtr &a, const RDFComputablePtr &b) const;
-
-			VocabularyPtr vocabulary_;
-		};
-
 		void configure(const boost::property_tree::ptree &config);
 
 		static void configurePrefixes(const boost::property_tree::ptree &config);
@@ -192,16 +155,6 @@ namespace knowrob {
 
 		std::optional<std::string> getVersionOfOrigin(const std::shared_ptr<NamedBackend> &definedBackend,
 													  std::string_view origin) const;
-
-		std::vector<RDFComputablePtr> createComputationSequence(
-				const std::list<DependencyNodePtr> &dependencyGroup) const;
-
-		void createComputationPipeline(
-				const std::shared_ptr<QueryPipeline> &pipeline,
-				const std::vector<RDFComputablePtr> &computableLiterals,
-				const std::shared_ptr<TokenBroadcaster> &pipelineInput,
-				const std::shared_ptr<TokenBroadcaster> &pipelineOutput,
-				const QueryContextPtr &ctx) const;
 	};
 
 	using KnowledgeBasePtr = std::shared_ptr<KnowledgeBase>;

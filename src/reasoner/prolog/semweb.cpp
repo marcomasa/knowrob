@@ -11,6 +11,7 @@
 #include "knowrob/reasoner/prolog/PrologReasoner.h"
 #include "knowrob/reasoner/ReasonerManager.h"
 #include "knowrob/semweb/ImportHierarchy.h"
+#include "knowrob/ontologies/OntologyFile.h"
 #include "knowrob/URI.h"
 
 using namespace knowrob;
