@@ -193,7 +193,8 @@ test('arg(-Index,+Term,+Value)'):-
 	assert_false(mongolog:test_call(
 		arg(_,foo(a,b,c),Value), Value, d)).
 
-test('arg(-UnwindedIndex,+Term,+Value)', fixme('$indexOfArray only returns the first occurence')):-
+test('arg(-UnwindedIndex,+Term,+Value)',
+			fixme('$indexOfArray only returns the first occurence')):-
 	findall(Index,
 		mongolog:test_call(
 			arg(Index,foo(a,b,a),Value), Value, a),

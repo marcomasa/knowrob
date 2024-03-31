@@ -90,7 +90,8 @@ holds(Query) ?>
 
 :- sw_register_prefix(test, 'http://knowrob.org/kb/swrl_test#').
 
-test('holds/1 with ns', [ blocked('holds/1 cannot handle namespaces') ]) :-
+test('holds/1 with ns',
+		fixme('holds/1 cannot handle namespaces')) :-
 	assert_true(holds(test:'hasHeightInMeters'(test:'RectangleBig',13))).
 
 test('holds(+S,+P,+O)') :-

@@ -36,7 +36,8 @@ test('parser_assert') :-
   ]),
   assertz(test_parser(Parser)).
 
-test('action_parser(Placing)', [blocked('unknown reason')]) :-
+test('action_parser(Placing)',
+		fixme('action parser does not produce results fir a unknown reason')) :-
   test_parser_run([
     tok(0.0, -(test:'Touching'),        [test:'TestHand',test:'TestObject']),
     tok(0.9, -(test:'Supporting'),      [test:'TestTable',test:'TestObject']),
@@ -46,7 +47,8 @@ test('action_parser(Placing)', [blocked('unknown reason')]) :-
     ],
     [action(_,test:'Placing',_)]).
 
-test('action_parser(asynch)', [blocked('unknown reason')]) :-
+test('action_parser(asynch)',
+		fixme('action parser does not produce results fir a unknown reason')) :-
   test_parser_run_asynch([
     tok(0.0, -(test:'Touching'),        [test:'TestHand',test:'TestObject']),
     tok(0.9, -(test:'Supporting'),      [test:'TestTable',test:'TestObject']),
@@ -56,7 +58,8 @@ test('action_parser(asynch)', [blocked('unknown reason')]) :-
     ],
     [action(_,test:'Placing',_)]).
 
-test('action_parser(PickingUp)', [blocked('unknown reason')]) :-
+test('action_parser(PickingUp)',
+		fixme('action parser does not produce results fir a unknown reason')) :-
   test_parser_run([
     tok(0.0,-(test:'Supporting'),     [test:'TestTable',test:'TestObject']),
     tok(1.0,-(test:'GraspMotion'),    [test:'TestHand']),
@@ -66,7 +69,8 @@ test('action_parser(PickingUp)', [blocked('unknown reason')]) :-
     ],
     [action(_,test:'PickingUp',_)]).
 
-test('action_parser(not PickingUp)', [blocked('unknown reason')]) :-
+test('action_parser(not PickingUp)',
+		fixme('action parser does not produce results fir a unknown reason')) :-
   test_parser_run([
     tok(0.0, -(test:'Supporting'),     [test:'TestTable',test:'TestObject']),
     tok(0.5, +(test:'Supporting'),     [test:'TestTable',test:'TestObject']),
@@ -76,7 +80,8 @@ test('action_parser(not PickingUp)', [blocked('unknown reason')]) :-
     ],
     [action(_,test:'PickingUp',_)]).
 
-test('action_parser(PickPlace)', [blocked('unknown reason')]) :-
+test('action_parser(PickPlace)',
+		fixme('action parser does not produce results fir a unknown reason')) :-
   test_parser_run([
     tok(0.0, -(test:'Supporting'),     [test:'TestTable',test:'TestObject']),
     tok(1.0, -(test:'GraspMotion'),    [test:'TestHand']),
@@ -90,7 +95,8 @@ test('action_parser(PickPlace)', [blocked('unknown reason')]) :-
     ],
     [action(_,test:'PickPlace',_)]).
 
-test('action_parser(PickPlace2)', [blocked('unknown reason')]) :-
+test('action_parser(PickPlace2)',
+		fixme('action parser does not produce results fir a unknown reason')) :-
   test_parser_run([
     %%%% first
     tok(0.0, -(test:'Supporting'),    [test:'TestTable',test:'TestObject']),

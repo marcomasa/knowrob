@@ -3,6 +3,7 @@
 
 :- use_module('interval.pl').
 
+:- use_module(library('unittest')).
 :- use_module(library('semweb'), [ sw_register_prefix/2 ]).
 :- sw_register_prefix(test, 'http://knowrob.org/kb/test_events.owl#').
 

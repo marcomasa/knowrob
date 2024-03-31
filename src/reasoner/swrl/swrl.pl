@@ -18,6 +18,7 @@
 :- use_module(library('reasoner')).
 :- use_module(library('semweb/rdf_db'), [ rdf_subject/1 ]).
 :- use_module(library('semweb/rdfs'), [ rdfs_individual_of/2 ]).
+:- use_module(library('mongolog/client'), [ mng_strip_type/3 ]).
 
 :- multifile swrl_builtin/4.
 % define reasoner settings.
