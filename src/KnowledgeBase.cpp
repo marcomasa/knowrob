@@ -26,7 +26,7 @@
 #define KB_SETTING_SEMWEB "semantic-web"
 #define KB_SETTING_PREFIXES "prefixes"
 #define KB_SETTING_PREFIX_ALIAS "alias"
-#define KB_SETTING_PREFIX_URI "prefixes"
+#define KB_SETTING_PREFIX_URI "uri"
 
 using namespace knowrob;
 

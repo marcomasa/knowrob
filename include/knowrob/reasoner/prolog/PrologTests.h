@@ -11,6 +11,7 @@
 #include "PrologReasoner.h"
 #include "knowrob/reasoner/ReasonerManager.h"
 #include "knowrob/Logger.h"
+#include "knowrob/knowrob.h"
 
 namespace knowrob {
 	/**
@@ -65,9 +66,9 @@ namespace knowrob {
 			static std::shared_ptr<BackendType> db;
 
 			if(!reasoner) {
-				static int reasonerIndex_ = 0;
 				std::stringstream ss;
-				ss << "prolog" << reasonerIndex_++;
+				ss << "prolog_";
+				insertUnique(ss);
 
 				kb = std::make_shared<KnowledgeBase>();
 				db = createBackend(ss.str(), kb);

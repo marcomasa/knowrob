@@ -7,6 +7,7 @@
 #include "knowrob/terms/IRIAtom.h"
 #include "knowrob/terms/Blank.h"
 #include "knowrob/Logger.h"
+#include "knowrob/knowrob.h"
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <iomanip>
@@ -28,13 +29,6 @@ Resource::Resource(std::string_view iri) {
 	}
 }
 
-static inline void write_unique(std::ostream &os) {
-	static boost::uuids::random_generator generator;
-	std::hash<std::string> str_hash;
-	os << std::setfill('0') << std::setw(8) << std::hex <<
-	   str_hash(to_string(generator()));
-}
-
 knowrob::IRIAtomPtr Resource::unique_iri(std::string_view ns, std::string_view name) {
 	std::stringstream ss;
 	ss << ns;
@@ -42,7 +36,7 @@ knowrob::IRIAtomPtr Resource::unique_iri(std::string_view ns, std::string_view n
 		ss << "#";
 	}
 	ss << name << '_';
-	write_unique(ss);
+	insertUnique(ss);
 	return IRIAtom::Tabled(ss.str());
 }
 
@@ -50,7 +44,7 @@ knowrob::IRIAtomPtr Resource::unique_iri(std::string_view type_iri) {
 	std::stringstream ss;
 	ss << type_iri;
 	ss << '_';
-	write_unique(ss);
+	insertUnique(ss);
 	return IRIAtom::Tabled(ss.str());
 }
 

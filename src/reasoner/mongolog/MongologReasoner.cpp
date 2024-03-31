@@ -12,6 +12,7 @@
 #include "knowrob/queries/QueryError.h"
 #include "knowrob/reasoner/ReasonerError.h"
 #include "knowrob/terms/Numeric.h"
+#include "knowrob/knowrob.h"
 
 using namespace knowrob;
 
@@ -278,9 +279,9 @@ namespace knowrob::testing {
 			static std::shared_ptr<MongoKnowledgeGraph> db;
 
 			if (!reasoner) {
-				static int reasonerIndex_ = 0;
 				std::stringstream ss;
-				ss << "prolog" << reasonerIndex_++;
+				ss << "mongolog_";
+				insertUnique(ss);
 
 				kb = std::make_shared<KnowledgeBase>();
 				db = createBackend2(ss.str(), kb);

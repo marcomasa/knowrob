@@ -43,6 +43,12 @@ namespace knowrob {
 	 */
 	void hashCombine(std::size_t &seed, const std::size_t &v);
 
+/**
+	 * Insert a unique identifier into a stream.
+	 * @param os the output stream.
+	 */
+	void insertUnique(std::ostream &os);
+
 	/**
 	 * Read a string representation of an object using the << operator.
 	 * @tparam T the type of the object.
