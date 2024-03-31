@@ -310,8 +310,11 @@ void MongoKnowledgeGraph::foreach(const TripleVisitor &visitor) const {
 	iterate(cursor, visitor);
 }
 
-void MongoKnowledgeGraph::batch(const TripleHandler &callback) const {
-	TripleCursor cursor(tripleCollection_);
+static void batch_(const std::shared_ptr<mongo::Collection> &collection, const TripleHandler &callback, bson_t *filter) {
+	TripleCursor cursor(collection);
+	if (filter) {
+		cursor.filter(filter);
+	}
 	std::vector<FramedTriplePtr> batchData(GlobalSettings::batchSize());
 	uint32_t currentSize = 0;
 
@@ -338,6 +341,16 @@ void MongoKnowledgeGraph::batch(const TripleHandler &callback) const {
 		auto batch = std::make_shared<ProxyTripleContainer>(&batchData);
 		callback(batch);
 	}
+}
+
+void MongoKnowledgeGraph::batch(const TripleHandler &callback) const {
+	batch_(tripleCollection_, callback, nullptr);
+}
+
+void MongoKnowledgeGraph::batchOrigin(std::string_view origin, const TripleHandler &callback) {
+	bson_t filterDoc;
+	BSON_APPEND_UTF8(&filterDoc, "graph", origin.data());
+	batch_(tripleCollection_, callback, &filterDoc);
 }
 
 void MongoKnowledgeGraph::match(const FramedTriplePattern &query, const TripleVisitor &visitor) {

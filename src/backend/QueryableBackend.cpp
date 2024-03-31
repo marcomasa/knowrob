@@ -20,12 +20,14 @@ QueryableBackend::QueryableBackend(BackendFeatures features)
 		: DataBackend(features) {
 }
 
-std::vector<std::string> QueryableBackend::getOrigins() {
+std::vector<VersionedOriginPtr> QueryableBackend::getOrigins() {
 	static auto v_origin = std::make_shared<Variable>("Origin");
 	static auto v_version = std::make_shared<Variable>("Version");
-	std::vector<std::string> origins;
+	std::vector<VersionedOriginPtr> origins;
 	match(FramedTriplePattern(v_origin, versionProperty, v_version),
-		  [&](const FramedTriplePtr &triple) { origins.emplace_back(triple->subject()); });
+		  [&](const FramedTriplePtr &triple) {
+			  origins.push_back(std::make_shared<VersionedOrigin>(triple->subject(), triple->valueAsString()));
+		  });
 	return origins;
 }
 

@@ -73,10 +73,94 @@ void KnowledgeBase::initBackends() {
 }
 
 void KnowledgeBase::synchronizeBackends() {
-	// TODO: support initial synch of persistent with non-persistent data backends.
-	//       e.g. mongo KG could be filled with facts initially, these should be mirrored into
-	//       other backends.
-	//       at least make sure no persistent backend has an outdated version of an ontology
+	// find all non-persistent backends, which we assume to be empty at this point
+	std::vector<std::shared_ptr<NamedBackend>> nonPersistent;
+	for (auto &it: backendManager_->plugins()) {
+		auto backend = it.second->value();
+		auto queryable = backendManager_->queryable().find(it.first);
+		if (queryable == backendManager_->queryable().end() || !queryable->second->isPersistent()) {
+			nonPersistent.push_back(it.second);
+		}
+	}
+
+	// synchronize persistent backends with each other
+	if (backendManager_->persistent().size() > 1) {
+		// find versions of persisted origins
+		using BackendOriginVersion = std::pair<std::shared_ptr<QueryableBackend>, VersionedOriginPtr>;
+		std::map<std::string_view, std::vector<BackendOriginVersion>> origins;
+		for (auto &it: backendManager_->persistent()) {
+			auto persistentBackend = it.second;
+			for (auto &origin: persistentBackend->getOrigins()) {
+				origins[origin->value()].emplace_back(it.second, origin);
+			}
+		}
+
+		// drop all persisted origins with an outdated version
+		for (auto &origin_pair: origins) {
+			auto &v = origin_pair.second;
+			if (v.size() < 2) continue;
+			// find the maximum version
+			std::string_view maxVersion;
+			for (auto &version: v) {
+				if (!maxVersion.empty() && version.second->version() > maxVersion) {
+					maxVersion = version.second->version();
+				}
+			}
+			// drop origin for backends with outdated version, also remove such backends from "origins" array
+			v.erase(std::remove_if(v.begin(), v.end(),
+								   [&maxVersion](const BackendOriginVersion &bov) {
+									   if (bov.second->version() != maxVersion) {
+										   bov.first->removeAllWithOrigin(bov.second->value());
+										   return true;
+									   } else {
+										   return false;
+									   }
+								   }), v.end());
+		}
+
+		// At this point, origins contains only the backends with the latest version.
+		// So data can be copied from any of them into all other persistent backends that do
+		// not have the data yet.
+		for (auto &origin_pair: origins) {
+			// First find all persistent backends that do not appear in origin_pair.
+			// These are the ones without the data.
+			std::vector<std::shared_ptr<NamedBackend>> included;
+			for (auto &it: backendManager_->persistent()) {
+				auto &persistentBackend = it.second;
+				if (std::find_if(origin_pair.second.begin(), origin_pair.second.end(),
+								 [&persistentBackend](const BackendOriginVersion &bov) {
+									 return bov.first == persistentBackend;
+								 }) == origin_pair.second.end()) {
+					included.push_back(backendManager_->getPluginWithID(it.first));
+				}
+			}
+			if (included.empty()) continue;
+
+			// Now copy the data from one of the backends in origin_pair to all backends in included.
+			auto &persistedBackend = origin_pair.second.begin()->first;
+			auto transaction = edb_->createTransaction(
+					persistedBackend,
+					BackendInterface::Insert,
+					BackendInterface::Including,
+					included);
+			persistedBackend->batchOrigin(origin_pair.first, [&](const TripleContainerPtr &triples) {
+				transaction->commit(triples);
+			});
+		}
+	}
+
+	// insert from first persistent backend into all non-persistent backends.
+	// persistent backends are synchronized before, so we can just take the first one.
+	if (!backendManager_->persistent().empty() && !nonPersistent.empty()) {
+		KB_DEBUG("Synchronizing persistent triples into {} non-persistent backends.", nonPersistent.size());
+		auto &persistedBackend = *backendManager_->persistent().begin();
+		auto transaction = edb_->createTransaction(
+				getBackendForQuery(),
+				BackendInterface::Insert,
+				BackendInterface::Including,
+				nonPersistent);
+		persistedBackend.second->batch([&](const TripleContainerPtr &triples) { transaction->commit(triples); });
+	}
 }
 
 void KnowledgeBase::initVocabulary() {
@@ -88,7 +172,8 @@ void KnowledgeBase::initVocabulary() {
 
 		// initialize the import hierarchy
 		for (auto &origin: backend->getOrigins()) {
-			vocabulary_->importHierarchy()->addDirectImport(vocabulary_->importHierarchy()->ORIGIN_SYSTEM, origin);
+			vocabulary_->importHierarchy()->addDirectImport(vocabulary_->importHierarchy()->ORIGIN_SYSTEM,
+															origin->value());
 		}
 
 		// iterate over all rdf:type assertions and add them to the vocabulary
@@ -395,7 +480,6 @@ KnowledgeBase::prepareLoad(std::string_view origin, std::string_view newVersion)
 		if (currentVersion.has_value()) {
 			if (currentVersion.value() != newVersion) {
 				backendsToLoad.emplace_back(it.second);
-				// TODO: rather include this operation as part of the transaction below
 				definedBackend->value()->removeAllWithOrigin(origin);
 			}
 		} else {

@@ -14,6 +14,7 @@
 #include "knowrob/queries/AnswerNo.h"
 #include "knowrob/triples/GraphConnective.h"
 #include "knowrob/triples/GraphQueryExpansion.h"
+#include "VersionedOrigin.h"
 
 namespace knowrob {
 	using ResourceCounter = std::function<void(std::string_view, uint64_t)>;
@@ -47,6 +48,14 @@ namespace knowrob {
 		virtual void batch(const TripleHandler &callback) const = 0;
 
 		/**
+		 * Iterate over all triples in the model that have a given origin.
+		 * @param origin the origin of the triples.
+		 * @param visitor the callback to handle the triples.
+		 * @return true if the iteration was successful.
+		 */
+		virtual void batchOrigin(std::string_view origin, const TripleHandler &callback) = 0;
+
+		/**
 		 * @param triple a framed triple.
 		 * @return true if the model contains the triple.
 		 */
@@ -73,7 +82,7 @@ namespace knowrob {
 		/**
 		 * @return a list of all origins that have been asserted.
 		 */
-		std::vector<std::string> getOrigins();
+		std::vector<VersionedOriginPtr> getOrigins();
 
 		/**
 		 * @param origin an origin string.

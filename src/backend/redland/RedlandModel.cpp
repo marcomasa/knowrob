@@ -158,7 +158,7 @@ void RedlandModel::setRaptorWorld(librdf_world *world) {
 void RedlandModel::setHashesStorage(RedlandHashType hashType, std::string_view dir) {
 	setStorageType(RedlandStorageType::HASHES);
 	setStorageHashType(hashType);
-	if(hashType == RedlandHashType::BDB) {
+	if (hashType == RedlandHashType::BDB) {
 		setStorageDirectory(dir);
 	}
 }
@@ -267,7 +267,7 @@ std::string RedlandModel::getStorageOptions() const {
 		}
 	}
 	// "hash-type" is required by "hashes" storage type
-	if(hashType_.has_value()) {
+	if (hashType_.has_value()) {
 		switch (hashType_.value()) {
 			case RedlandHashType::MEMORY:
 				opts.emplace_back("hash-type", "memory");
@@ -375,7 +375,7 @@ bool RedlandModel::removeOne(const FramedTriple &knowrobTriple) {
 	knowrobToRaptor(knowrobTriple, raptorTriple);
 	auto ret = librdf_model_context_remove_statement(model_, getContextNode(knowrobTriple), raptorTriple);
 	librdf_free_statement(raptorTriple);
-	return ret==0;
+	return ret == 0;
 }
 
 bool RedlandModel::removeAll(const TripleContainerPtr &triples) {
@@ -413,34 +413,45 @@ bool RedlandModel::removeAllWithOrigin(std::string_view origin) {
 	return true;
 }
 
+static void batch_(librdf_model *model, librdf_node *context, std::shared_ptr<RaptorContainer> &triples,
+				   const TripleHandler &callback) {
+	auto stream = librdf_model_find_statements_in_context(
+			model, nullptr, context);
+
+	while (!librdf_stream_end(stream)) {
+		auto statement = librdf_stream_get_object(stream);
+		triples->add(statement->subject, statement->predicate, statement->object, context);
+		if (triples->size() >= GlobalSettings::batchSize()) {
+			triples->shrink();
+			callback(triples);
+			triples->reset();
+		}
+		librdf_stream_next(stream);
+	}
+	librdf_free_stream(stream);
+}
+
 void RedlandModel::batch(const TripleHandler &callback) const {
 	auto triples = std::make_shared<RaptorContainer>(GlobalSettings::batchSize());
 	auto contexts = librdf_model_get_contexts(model_);
-
 	while (!librdf_iterator_end(contexts)) {
-		auto context = (librdf_node *) librdf_iterator_get_object(contexts);
-		auto stream = librdf_model_find_statements_in_context(
-				model_, nullptr, context);
-
-		while (!librdf_stream_end(stream)) {
-			auto statement = librdf_stream_get_object(stream);
-			triples->add(statement->subject, statement->predicate, statement->object, context);
-			if (triples->size() >= GlobalSettings::batchSize()) {
-				triples->shrink();
-				callback(triples);
-				triples->reset();
-			}
-			librdf_stream_next(stream);
-		}
-		librdf_free_stream(stream);
+		batch_(model_, (librdf_node *) librdf_iterator_get_object(contexts), triples, callback);
 		librdf_iterator_next(contexts);
 	}
-	// Clean up
 	if (triples->size() > 0) {
 		triples->shrink();
 		callback(triples);
 	}
 	librdf_free_iterator(contexts);
+}
+
+void RedlandModel::batchOrigin(std::string_view origin, const TripleHandler &callback) {
+	auto triples = std::make_shared<RaptorContainer>(GlobalSettings::batchSize());
+	batch_(model_, getContextNode(origin), triples, callback);
+	if (triples->size() > 0) {
+		triples->shrink();
+		callback(triples);
+	}
 }
 
 bool RedlandModel::contains(const FramedTriple &triple) {
@@ -535,7 +546,7 @@ librdf_node *RedlandModel::getContextNode(std::string_view origin) {
 	}
 	auto contextNode = librdf_new_node_from_uri_string(
 			world_,
-			(const unsigned char*)origin.data());
+			(const unsigned char *) origin.data());
 	contextNodes_[std::string(origin)] = contextNode;
 	return contextNode;
 }

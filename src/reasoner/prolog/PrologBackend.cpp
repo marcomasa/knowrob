@@ -83,7 +83,7 @@ bool PrologBackend::isPersistent() const {
 	return false;
 }
 
-void PrologBackend::batch(const TripleHandler &callback) const {
+static void batch_(const TripleHandler &callback, const groundable<Atom> &origin) {
 	// :- rdf(?subject, ?property, ?object, ?origin).
 	// Note: Prolog querying works via backtracking over term_t, and this
 	// changes the value of the term_t in the Prolog engine such that imo we cannot
@@ -94,7 +94,6 @@ void PrologBackend::batch(const TripleHandler &callback) const {
 	static auto var_s = std::make_shared<Variable>("s");
 	static auto var_p = std::make_shared<Variable>("p");
 	static auto var_o = std::make_shared<Variable>("o");
-	static auto var_g = std::make_shared<Variable>("g");
 	auto triples = std::make_shared<TripleViewBatch>(GlobalSettings::batchSize());
 
 	PROLOG_ENGINE_QUERY(
@@ -102,12 +101,11 @@ void PrologBackend::batch(const TripleHandler &callback) const {
 					   PrologTerm(var_s),
 					   PrologTerm(var_p),
 					   PrologTerm(var_o),
-					   PrologTerm(var_g)),
+					   PrologTerm(*origin)),
 			[&](const BindingsPtr &bindings) {
 				auto val_s = bindings->getAtomic(var_s->name());
 				auto val_p = bindings->getAtomic(var_p->name());
 				auto val_o = bindings->getAtomic(var_o->name());
-				auto val_g = bindings->getAtomic(var_g->name());
 				if(!val_s || !val_p || !val_o) {
 					KB_WARN("Failed to retrieve triple from Prolog: missing grounding.");
 					return;
@@ -123,8 +121,13 @@ void PrologBackend::batch(const TripleHandler &callback) const {
 				} else if (val_o->isBlank()) {
 					triple_ptr.ptr->setObjectBlank(val_o->stringForm());
 				}
-				if (val_g) {
-					triple_ptr.ptr->setGraph(val_g->stringForm());
+				if (origin.has_grounding()) {
+					triple_ptr.ptr->setGraph(origin.grounded()->stringForm());
+				} else {
+					auto val_g = bindings->getAtomic(origin.variable()->name());
+					if (val_g) {
+						triple_ptr.ptr->setGraph(val_g->stringForm());
+					}
 				}
 				triple_ptr.owned = true;
 
@@ -139,6 +142,16 @@ void PrologBackend::batch(const TripleHandler &callback) const {
 	if (triples->size() > 0) {
 		callback(triples);
 	}
+}
+
+void PrologBackend::batch(const TripleHandler &callback) const {
+	static groundable<Atom> origin_g(std::make_shared<Variable>("g"));
+	batch_(callback, origin_g);
+}
+
+void PrologBackend::batchOrigin(std::string_view origin, const TripleHandler &callback) {
+	groundable<Atom> origin_g(Atom::Tabled(origin));
+	batch_(callback, groundable<Atom>(origin_g));
 }
 
 void PrologBackend::query(const GraphQueryPtr &query, const BindingsHandler &callback) {

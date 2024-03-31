@@ -112,6 +112,9 @@ namespace knowrob {
 		// Override QueryableBackend
 		void batch(const TripleHandler &callback) const override;
 
+		// override QueryableBackend
+		void batchOrigin(std::string_view origin, const TripleHandler &callback) override;
+
 		// Override QueryableBackend
 		void match(const FramedTriplePattern &query, const TripleVisitor &visitor) override;
 
