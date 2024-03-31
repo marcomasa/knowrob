@@ -46,13 +46,10 @@ during(Statement, [Since,Until]) ?>
 		=<(double('Infinity')),
 		Scope
 	)),
-	call_with_context(Statement, [query_scope(Scope)]),
-	% read computed fact scope
-	% FIXME: This is not entirely accurate as get('v_scope') yields the accumulated scope so far.
-	%   but we only want the accumulated scope for Goal here.
-	%   SOLUTION: do the get within the *call* same for since and until.
-	assign(Since, string('$v_scope.time.since')),
-	assign(Until, string('$v_scope.time.until')).
+	call_with_context((
+		Statement,
+		assign(Since, string('$v_scope.time.since')),
+		assign(Until, string('$v_scope.time.until'))), [query_scope(Scope)]).
 
 %% since(+Statement, ?Instant) is nondet.
 %
@@ -80,9 +77,9 @@ since(Statement, Instant) ?>
 	pragma(get_time(Now)),
 	% only include records that still are thought to be true
 	pragma(time_scope(>=(0), >=(Now), Scope)),
-	call_with_context(Statement, [query_scope(Scope)]),
-	% read computed fact scope
-	assign(Instant, string('$v_scope.time.since')).
+	call_with_context((
+		Statement,
+		assign(Instant, string('$v_scope.time.since'))), [query_scope(Scope)]).
 
 %% until(+Statement, ?Instant) is nondet.
 %
@@ -109,8 +106,9 @@ until(Statement, Instant) ?>
 		=<(double('Infinity')),
 		Scope
 	)),
-	call_with_context(Statement, [query_scope(Scope)]),
-	assign(Instant, string('$v_scope.time.until')).
+	call_with_context((
+		Statement,
+		assign(Instant, string('$v_scope.time.until'))), [query_scope(Scope)]).
 
 		 /*******************************
 		 *	    UNIT TESTS	     		*
