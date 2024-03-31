@@ -37,6 +37,10 @@ namespace knowrob {
 	};
 }
 
+static bool isMaterializedInEDB(KnowledgeBase *kb, std::string_view property) {
+	return kb->vocabulary()->frequency(property) > 0;
+}
+
 QueryPipeline::QueryPipeline(KnowledgeBase *kb, const FormulaPtr &phi, const QueryContextPtr &ctx) {
 	auto outStream = std::make_shared<TokenBuffer>();
 	addStage(outStream);
@@ -210,7 +214,7 @@ QueryPipeline::QueryPipeline(KnowledgeBase *kb, const GraphPathQueryPtr &graphQu
 			edbOnlyLiterals.push_back(l);
 			auto l_p = l->propertyTerm();
 			if (l_p && l_p->termType() == TermType::ATOMIC &&
-				!kb->isMaterializedInEDB(std::static_pointer_cast<Atomic>(l_p)->stringForm())) {
+				!isMaterializedInEDB(kb, std::static_pointer_cast<Atomic>(l_p)->stringForm())) {
 				// generate a "don't know" message and return.
 				auto out = std::make_shared<TokenBuffer>();
 				auto channel = TokenStream::Channel::create(out);
@@ -452,7 +456,7 @@ void QueryPipeline::createComputationPipeline(
 		// --------------------------------------
 		bool isEDBStageNeeded = true;
 		if (lit->propertyTerm() && lit->propertyTerm()->termType() == TermType::ATOMIC) {
-			isEDBStageNeeded = kb->isMaterializedInEDB(
+			isEDBStageNeeded = isMaterializedInEDB(kb,
 					std::static_pointer_cast<Atomic>(lit->propertyTerm())->stringForm());
 		}
 		if (isEDBStageNeeded) {

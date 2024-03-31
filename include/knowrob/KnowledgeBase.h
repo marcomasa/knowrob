@@ -45,9 +45,7 @@ namespace knowrob {
 		void loadCommon();
 
 		/**
-		 * Load a data source into the knowledge base.
-		 * This will potentially load the data source into multiple backends
-		 * depending on which data formats are supported by the backends.
+		 * Load a data source into the knowledge base, possibly loading it into multiple backends.
 		 * @param source the data source to load
 		 * @return true if the data source was loaded successfully
 		 */
@@ -60,13 +58,11 @@ namespace knowrob {
 
 		auto &edb() const { return edb_; }
 
-		QueryableBackendPtr getBackendForQuery() const;
+		auto &reasonerManager() const { return reasonerManager_; }
 
-		/**
-		 * @param property a property IRI
-		 * @return true if the property is materialized in the EDB
-		 */
-		bool isMaterializedInEDB(std::string_view property) const;
+		auto &backendManager() const { return backendManager_; }
+
+		QueryableBackendPtr getBackendForQuery() const;
 
 		/**
 		 * Evaluate a query represented as a vector of literals.
@@ -94,22 +90,53 @@ namespace knowrob {
 		 */
 		TokenBufferPtr submitQuery(const FormulaPtr &query, const QueryContextPtr &ctx);
 
-		auto &reasonerManager() const { return reasonerManager_; }
-
-		auto &backendManager() const { return backendManager_; }
-
+		/**
+		 * Insert a single triple into the knowledge base.
+		 * @param triple the triple to insert
+		 * @return true if the triple was inserted successfully
+		 */
 		bool insertOne(const FramedTriple &triple);
 
+		/**
+		 * Insert a collection of triples into the knowledge base.
+		 * @param triples the triples to insert
+		 * @return true if the triples were inserted successfully
+		 */
 		bool insertAll(const TripleContainerPtr &triples);
 
+		/**
+		 * Insert a collection of triples into the knowledge base.
+		 * @param triples the triples to insert
+		 * @return true if the triples were inserted successfully
+		 */
 		bool insertAll(const std::vector<FramedTriplePtr> &triples);
 
+		/**
+		 * Remove a single triple from the knowledge base.
+		 * @param triple the triple to remove
+		 * @return true if the triple was removed successfully
+		 */
 		bool removeOne(const FramedTriple &triple);
 
+		/**
+		 * Remove a collection of triples from the knowledge base.
+		 * @param triples the triples to remove
+		 * @return true if the triples were removed successfully
+		 */
 		bool removeAll(const TripleContainerPtr &triples);
 
+		/**
+		 * Remove a collection of triples from the knowledge base.
+		 * @param triples the triples to remove
+		 * @return true if the triples were removed successfully
+		 */
 		bool removeAll(const std::vector<FramedTriplePtr> &triples);
 
+		/**
+		 * Remove all triples with a given origin from the knowledge base.
+		 * @param origin the origin of the triples to remove
+		 * @return true if the triples were removed successfully
+		 */
 		bool removeAllWithOrigin(std::string_view origin);
 
 	protected:
@@ -136,8 +163,6 @@ namespace knowrob {
 		void synchronizeBackends();
 
 		std::shared_ptr<NamedBackend> findSourceBackend(const FramedTriple &triple);
-
-		DataSourcePtr createDataSource(const boost::property_tree::ptree &subtree);
 
 		void startReasoner();
 

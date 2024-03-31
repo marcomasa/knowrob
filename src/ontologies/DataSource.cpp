@@ -11,6 +11,18 @@
 #include "knowrob/py/utils.h"
 
 #include "knowrob/ontologies/DataSource.h"
+#include "knowrob/semweb/OntologyLanguage.h"
+#include "knowrob/ontologies/OntologyFile.h"
+#include "knowrob/ontologies/SPARQLService.h"
+#include "knowrob/triples/GraphSelector.h"
+
+#define DATA_SOURCE_SETTING_FORMAT "format"
+#define DATA_SOURCE_SETTING_LANG "language"
+#define DATA_SOURCE_SETTING_TYPE "type"
+#define DATA_SOURCE_SETTING_FRAME "frame"
+
+#define DATA_SOURCE_TYPE_SPARQL "sparql"
+#define DATA_SOURCE_TYPE_ONTOLOGY "ontology"
 
 using namespace knowrob;
 namespace fs = std::filesystem;
@@ -80,6 +92,53 @@ bool DataSource::isVersionString(const std::string &versionString) {
 							  ascii::space);
 	// return true if parser succeeded
 	return (first == last && r);
+}
+
+static bool isOntologySourceType(
+		const std::string &format,
+		const boost::optional<std::string> &language,
+		const boost::optional<std::string> &type) {
+	if (type && (type.value() == DATA_SOURCE_TYPE_ONTOLOGY || type.value() == DATA_SOURCE_TYPE_SPARQL)) return true;
+	if (language && semweb::isOntologyLanguageString(language.value())) return true;
+	if (semweb::isTripleFormatString(format)) return true;
+	return false;
+}
+
+DataSourcePtr DataSource::create(const VocabularyPtr &vocabulary, const boost::property_tree::ptree &config) {
+	static const std::string formatDefault = {};
+
+	// read data source settings
+	URI dataSourceURI(config);
+	auto dataSourceFormat = config.get(DATA_SOURCE_SETTING_FORMAT, formatDefault);
+	auto o_dataSourceLanguage = config.get_optional<std::string>(DATA_SOURCE_SETTING_LANG);
+	auto o_type = config.get_optional<std::string>(DATA_SOURCE_SETTING_TYPE);
+	auto isOntology = isOntologySourceType(dataSourceFormat, o_dataSourceLanguage, o_type);
+	// an optional frame can be applied to all triples in a data source
+	auto o_tripleFrame = config.get_child_optional(DATA_SOURCE_SETTING_FRAME);
+	std::shared_ptr<GraphSelector> tripleFrame;
+	if (o_tripleFrame) {
+		tripleFrame = std::make_shared<GraphSelector>();
+		tripleFrame->set(*o_tripleFrame);
+	}
+
+	if (isOntology && o_type && o_type.value() == DATA_SOURCE_TYPE_SPARQL) {
+		auto sparqlService = std::make_shared<SPARQLService>(dataSourceURI, dataSourceFormat);
+		if (tripleFrame) {
+			sparqlService->setFrame(tripleFrame);
+		}
+		return sparqlService;
+	} else if (isOntology) {
+		auto ontoFile = std::make_shared<OntologyFile>(vocabulary, dataSourceURI, dataSourceFormat);
+		if (o_dataSourceLanguage.has_value()) {
+			ontoFile->setOntologyLanguage(semweb::ontologyLanguageFromString(o_dataSourceLanguage.value()));
+		}
+		if (tripleFrame) {
+			ontoFile->setFrame(tripleFrame);
+		}
+		return ontoFile;
+	} else {
+		return std::make_shared<DataSource>(dataSourceURI, dataSourceFormat, DataSourceType::UNSPECIFIED);
+	}
 }
 
 namespace knowrob::py {

@@ -8,6 +8,7 @@
 
 #include <string>
 #include "knowrob/URI.h"
+#include "knowrob/semweb/Vocabulary.h"
 
 namespace knowrob {
 	/**
@@ -86,6 +87,13 @@ namespace knowrob {
 		 * @return true if versionString is a valid version string
 		 */
 		static bool isVersionString(const std::string &versionString);
+
+		/**
+		 * Create a data source from a configuration.
+		 * @param config a property tree used to configure this.
+		 * @return a data source
+		 */
+		static std::shared_ptr<DataSource> create(const VocabularyPtr &vocabulary, const boost::property_tree::ptree &config);
 
 	protected:
 		DataSourceType dataSourceType_;
