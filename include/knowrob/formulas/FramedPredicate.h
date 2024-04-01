@@ -12,6 +12,9 @@
 #include "knowrob/triples/GraphSelector.h"
 
 namespace knowrob {
+	/**
+	 * A framed predicate.
+	 */
 	class FramedPredicate {
 	public:
 		/**
