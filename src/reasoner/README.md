@@ -1,53 +1,71 @@
 \page reasoner Reasoner
 
-KnowRob uses the Web Ontology Language (OWL) in combination with
-rule based reasoning powered by SWI Prolog.
-OWL ontologies can be parsed (owl_parse/1) which causes new facts to be
-asserted in the RDF triple store of SWI Prolog.
-SWI Prolog already provides querying with RDFS semantics
-(rdf_has/3, rdfs_individual_of/2).
+A reasoner is a component that can infer new knowledge from existing knowledge.
+In KnowRob, the actual mechanisms to perform the reasoning are configurable and can be exchanged.
+KnowRob defines abstract interfaces for reasoning components, which can be implemented
+through plugins.
+On the top level, the interface for reasoner plugins distinguishes between data-driven and
+goal-driven reasoning (see below).
+Plugins can be written in C++ in form of a shared library with a common access point
+or in Python.
+A few built-in reasoners are also available including one for rule-based reasoning
+using the Prolog language.
 
-Ontop of the RDFS semantics KnowRob implements a minimal OWL reasoner in Prolog.
-owl_individual_of/2 checks if a resource satisfies a class description
-according to OWL-Description entailment rules,
-and owl_has/3 checks if a relation can be deduced using OWL inference rules.
-Some OWL2 features such as property chains are also supported,
-but the reasoner is not OWL2 complete.
+### Data-driven Reasoning
 
-RDF triples may concretely be represented in the RDF triple store of SWI Prolog.
-But KnowRob supports multiple sources for triples including
-computational methods that ground relations in the data structures of the robot's
-control program, or in its senses.
-This concept is called *virtual knowledge base* in KnowRob.
-Several virtual triple sources are pre-defined in KnowRob
-including computable properties for
-qualitative spatial reasoning (comp_spatial),
-temporal reasoning (knowrob_common),
-ROS tf data (knowrob_memory, knowrob_mongo),
-and SWRL rules (swrl).
+Data-driven reasoning is based on the idea that new knowledge can be inferred from existing
+knowledge by applying rules or algorithms to the data.
+In KnowRob, data-driven reasoning is implemented through reasoner plugins that can be
+configured to perform reasoning tasks.
+The base class for data-driven reasoners is `DataDrivenReasoner`.
+It defines interfaces for starting, stopping and updating the reasoner.
+In addition, data driven reasoner may generate events to notify the knowledge base
+about their state.
+Depending on supported features, data-driven reasoners may be automatically updated
+at a fixed rate, or when they generate an invalidation event.
+Some reasoner may further choose to update themselves, maybe in case they can make
+use of an internal event system.
 
-KnowRob is also capable to handle temporal information,
-allowing robots to reason about past events.
-Please note that OWL is generally considered inappropriate for
-explicating time because it is limited to binary relations.
-One approach to handle time is to *reify* relations to concepts
-that also have time parameters.
-The ontology used by KnowRob comes with a few reification concepts
-that are handled within KnowRob.
-However, KnowRob also supports explicit time in its QA interface. The time
-specified is used as parameter for the triple store
-(or to select appropiate reifications of relations).
-In case of the default RDF triple store of SWI Prolog,
-all triples are assumed to hold forever.
-However, a dedicated *temporalized* triple store can be used
-to represent triples that only hold limited time.
-The time value specified in the query is used as parameter
-for the triple store in that case.
-knowrob_mem implements such a temporalized triple store.
-The main interface to access temporalized triples is the
-holds/2 predicate:
+The event mechanism is also used to notify the knowledge base about new knowledge
+that has been inferred.
+This is done by generating a `Assertion`, `Retraction` or `Replacement` event:
 
-    holds(knowrob:volumeOfObject(Obj, 15.0), 25.0)
+- `Assertion`: additional inferences that should be added to existing ones.
+- `Retraction`: previously inferred knowledge that should be removed.
+- `Replacement`: replace existing inferences with new ones.
+
+### Goal-driven Reasoning
+
+Goal-driven reasoning is based on the idea that new knowledge can be inferred from existing
+knowledge in a goal-oriented way by only considering the knowledge that is relevant to
+a specific goal.
+In KnowRob, goal-driven reasoning is implemented through reasoner plugins that can be
+configured to perform reasoning tasks.
+The base class for goal-driven reasoners is `GoalDrivenReasoner`.
+Goal-driven reasoner must explicitly state which relations they define.
+The knowledge base will only consult a given goal-driven reasoner if the goal refers
+to a relation that the reasoner defines.
+The interface further includes a method to submit a query to the reasoner.
+
+### Reasoner Plugins
+
+Reasoner plugins can br implemented in C++ or Python.
+
+#### C++ Reasoner Plugins
+
+A C++ reasoner plugin can be implemented as follows:
+
+- Create a new class that inherits from `DataDrivenReasoner` or `GoalDrivenReasoner`.
+- Call the `REASONER_PLUGIN` macro to create an entry point for KnowRob to load the plugin.
+- Compile the code as a shared library (`.so` file under Linux).
+- Refer to the library in a settings file within a "reasoner" block, using the "library" key.
+
+#### Python Reasoner Plugins
+
+A Python reasoner plugin can be implemented as follows:
+
+- Create a new class that inherits from `DataDrivenReasoner` or `GoalDrivenReasoner`.
+- Refer to the class in a settings file within a "reasoner" block, using the "module" key.
 
 ### Available Reasoning Components
 
