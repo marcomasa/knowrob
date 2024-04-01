@@ -8,7 +8,7 @@ from typing import List, Tuple, Union
 
 import traceback
 
-class FactxxBackend(DataBackend):
+class FactxxBackend(Storage):
 	def __init__(self):
 		super(FactxxBackend, self).__init__()
 		logDebug("FactxxBackend init.")
@@ -100,7 +100,7 @@ class FactxxReasoner(DataDrivenReasoner):
 	def initializeReasoner(self, ptree: PropertyTree) -> bool:
 		return True
 
-	def setDataBackend(self, storage: DataBackend):
+	def setDataBackend(self, storage: Storage):
 		# ensure that the storage is a FactxxBackend
 		if not isinstance(storage, FactxxBackend):
 			raise RuntimeError("FactxxReasoner requires a FactxxBackend")
