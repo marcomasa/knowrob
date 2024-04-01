@@ -1,4 +1,4 @@
-## Triples
+\page triples Triples
 
 Triples are the basic building blocks of the RDF data model.
 A triple is a statement that consists of three parts: a subject, a predicate, and an object.

@@ -126,13 +126,14 @@ an (incomplete) OWL reasoner, a SWRL reasoner, and some specialized
 reasoning modules that handle domain-specific problems
 such as reasoning about time intervals using Allen's interval
 calculus.
-More complete information about reasoning in KnowRob can be found
-[here](src/reasoning/README.md).
 
 ## Further Information
 
 More documentation can be found in the following subpages:
 
+- [Terms](src/terms/README.md)
+- [Formulas](src/formulas/README.md)
+- [Triples](src/triples/README.md)
 - [Ontologies](src/ontologies/README.md)
 - [Querying](src/queries/README.md)
 - [Backends](src/storage/README.md)
