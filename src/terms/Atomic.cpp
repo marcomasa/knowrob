@@ -9,7 +9,7 @@
 #include "knowrob/terms/String.h"
 #include "knowrob/terms/IRIAtom.h"
 #include "knowrob/triples/FramedTriple.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 

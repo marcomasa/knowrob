@@ -6,7 +6,7 @@
 #include <utility>
 #include <gtest/gtest.h>
 #include "knowrob/terms/Variable.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 

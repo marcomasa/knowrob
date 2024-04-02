@@ -13,7 +13,7 @@
 #include "knowrob/formulas/Conjunction.h"
 #include "knowrob/formulas/Disjunction.h"
 #include "knowrob/terms/Function.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 

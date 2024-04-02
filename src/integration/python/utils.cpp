@@ -4,7 +4,7 @@
  */
 
 #include <set>
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 #include "knowrob/URI.h"
 #include "knowrob/Logger.h"
 

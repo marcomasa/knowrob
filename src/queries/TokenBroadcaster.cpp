@@ -8,7 +8,7 @@
 #include "knowrob/queries/TokenQueue.h"
 #include "knowrob/Logger.h"
 #include "knowrob/queries/AnswerYes.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 

@@ -9,10 +9,10 @@
 @license BSD
 */
 
-:- use_module(library('semweb/rdf_db'), [ rdf/4, rdf_load/2 ]).
+:- use_module(library('semweb/rdf_db'), [ rdf/4, rdf_load/2, rdf_register_prefix/2 ]).
 
 % register RDF namespace of QUDT ontology
-:- sw_register_prefix(qudt, 'http://data.nasa.gov/qudt/owl/qudt#').
+:- rdf_register_prefix(qudt, 'http://data.nasa.gov/qudt/owl/qudt#').
 
 % load QUDT RDF data into a graph named "qudt"
 :- rdf_load('../../../../owl/unit.owl', [graph(qudt), silent(true)]).

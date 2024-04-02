@@ -14,7 +14,9 @@ PrefixRegistry::PrefixRegistry() {
 	registerPrefix_("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns");
 	registerPrefix_("rdfs", "http://www.w3.org/2000/01/rdf-schema");
 	registerPrefix_("xsd", "http://www.w3.org/2001/XMLSchema");
+	registerPrefix_("qudt", "http://data.nasa.gov/qudt/owl/qudt");
 	registerPrefix_("dul", "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl");
+	registerPrefix_("soma", "http://www.ease-crc.org/ont/SOMA.owl");
 	registerPrefix_("knowrob", "http://knowrob.org/kb/knowrob.owl");
 }
 

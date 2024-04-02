@@ -4,7 +4,7 @@
  */
 
 #include <boost/python.hpp>
-#include "knowrob/py/PythonError.h"
+#include "knowrob/integration/python/PythonError.h"
 #include "knowrob/Logger.h"
 
 using namespace knowrob;

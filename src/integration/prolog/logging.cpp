@@ -5,8 +5,8 @@
 
 #include <SWI-Prolog.h>
 #include "knowrob/Logger.h"
-#include "knowrob/reasoner/prolog/PrologTerm.h"
-#include "knowrob/reasoner/prolog/logging.h"
+#include "knowrob/integration/prolog/PrologTerm.h"
+#include "knowrob/integration/prolog/logging.h"
 
 using namespace knowrob;
 

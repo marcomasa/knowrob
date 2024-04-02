@@ -7,7 +7,7 @@
 #include "knowrob/reasoner/Reasoner.h"
 #include "knowrob/reasoner/ReasonerManager.h"
 #include "knowrob/reasoner/ReasonerError.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 

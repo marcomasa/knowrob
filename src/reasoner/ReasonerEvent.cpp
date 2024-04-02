@@ -4,7 +4,7 @@
  */
 
 #include "knowrob/reasoner/ReasonerEvent.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 using namespace knowrob::reasoner;

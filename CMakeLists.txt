@@ -210,11 +210,11 @@ add_library(knowrob SHARED
         src/reasoner/Reasoner.cpp
         src/reasoner/ReasonerManager.cpp
         src/PropertyTree.cpp
-        src/reasoner/prolog/PrologEngine.cpp
+        src/integration/prolog/PrologEngine.cpp
         src/reasoner/prolog/PrologReasoner.cpp
         src/reasoner/prolog/PrologTests.cpp
-        src/reasoner/prolog/logging.cpp
-        src/reasoner/prolog/ext/algebra.cpp
+        src/integration/prolog/logging.cpp
+        src/integration/prolog/ext/algebra.cpp
         src/reasoner/mongolog/MongologReasoner.cpp
         src/reasoner/mongolog/mongo_kb.cpp
         src/reasoner/mongolog/bson_pl.cpp
@@ -249,13 +249,13 @@ add_library(knowrob SHARED
         src/queries/Token.cpp
         src/triples/GraphSelector.cpp
         src/queries/AnswerMerger.cpp
-        src/py/utils.cpp
+        src/integration/python/utils.cpp
         src/triples/FramedTriple.cpp
         src/triples/TripleFormat.cpp
         src/semweb/OntologyLanguage.cpp
         src/reasoner/prolog/semweb.cpp
-        src/reasoner/prolog/PrologBackend.cpp
-        src/reasoner/prolog/PrologTerm.cpp
+        src/integration/prolog/PrologBackend.cpp
+        src/integration/prolog/PrologTerm.cpp
         src/ontologies/SPARQLService.cpp
         src/storage/redland/RaptorContainer.cpp
         src/ontologies/GraphRenaming.cpp
@@ -277,7 +277,7 @@ add_library(knowrob SHARED
         src/triples/SPARQLQuery.cpp
         src/triples/TripleContainer.cpp
         src/KnowRobError.cpp
-        src/py/PythonError.cpp
+        src/integration/python/PythonError.cpp
         src/storage/ReifiedTriple.cpp
         src/storage/ReifiedQuery.cpp
         src/storage/ReificationContainer.cpp
@@ -330,7 +330,7 @@ install(TARGETS knowrob-terminal RUNTIME DESTINATION bin)
 # Without this, any build libraries automatically have names "lib{x}.so"
 set(CMAKE_SHARED_MODULE_PREFIX "")
 
-add_library(knowrob_py MODULE src/py/knowrob_module.cpp)
+add_library(knowrob_py MODULE src/integration/python/knowrob_module.cpp)
 target_include_directories(knowrob_py PRIVATE
         ${SWIPL_INCLUDE_DIRS}
         ${EIGEN3_INCLUDE_DIR}

@@ -6,7 +6,7 @@
 #include "knowrob/KnowledgeBase.h"
 #include "knowrob/reasoner/DataDrivenReasoner.h"
 #include "knowrob/reasoner/ReasonerManager.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 

@@ -8,7 +8,7 @@
 #include <knowrob/Logger.h>
 #include <knowrob/ThreadPool.h>
 #include <boost/python/errors.hpp>
-#include "knowrob/py/PythonError.h"
+#include "knowrob/integration/python/PythonError.h"
 
 using namespace knowrob;
 

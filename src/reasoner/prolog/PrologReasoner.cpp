@@ -16,8 +16,9 @@
 #include "knowrob/semweb/PrefixRegistry.h"
 #include "knowrob/semweb/ImportHierarchy.h"
 #include "knowrob/KnowledgeBase.h"
-#include "knowrob/reasoner/prolog/PrologBackend.h"
+#include "knowrob/integration/prolog/PrologBackend.h"
 #include "knowrob/reasoner/ReasonerError.h"
+#include "knowrob/reasoner/prolog/semweb.h"
 #include "knowrob/queries/AnswerNo.h"
 #include "knowrob/terms/Numeric.h"
 #include "knowrob/TimePoint.h"
@@ -92,9 +93,13 @@ bool PrologReasoner::initializeReasoner(const PropertyTree &cfg) {
 		isKnowRobInitialized_ = true;
 
 		PL_register_foreign("reasoner_define_relation_cpp", 4, (pl_function_t) prolog::reasoner_define_relation4, 0);
+		PL_register_extensions_in_module("semweb", prolog::PL_extension_semweb);
 
 		// auto-load some files into "user" module
 		initializeGlobalPackages();
+
+		// load init file from reasoner directory
+		consult(std::filesystem::path("reasoner") / "prolog" / "__init__.pl", "user", false);
 
 		// register RDF namespaces with Prolog.
 		// in particular the ones specified in settings are globally registered with PrefixRegistry.

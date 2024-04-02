@@ -10,7 +10,7 @@
 #include "knowrob/semweb/xsd.h"
 #include "knowrob/Logger.h"
 #include <boost/python.hpp>
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 

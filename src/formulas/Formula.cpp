@@ -6,7 +6,7 @@
 #include <knowrob/formulas/Formula.h>
 #include "knowrob/formulas/Top.h"
 #include "knowrob/formulas/Bottom.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 

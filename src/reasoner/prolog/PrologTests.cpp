@@ -8,7 +8,7 @@
 #include "knowrob/terms/ListTerm.h"
 #include "knowrob/terms/OptionList.h"
 #include "knowrob/reasoner/prolog/PrologTests.h"
-#include "knowrob/reasoner/prolog/PrologBackend.h"
+#include "knowrob/integration/prolog/PrologBackend.h"
 
 using namespace knowrob;
 

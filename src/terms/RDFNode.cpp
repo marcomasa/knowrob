@@ -5,7 +5,7 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 #include "knowrob/terms/RDFNode.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 
 namespace knowrob {
 	RDFNodeType rdfNodeTypeGuess(std::string_view str) {

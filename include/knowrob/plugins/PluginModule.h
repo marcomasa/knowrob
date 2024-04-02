@@ -12,7 +12,7 @@
 #include <filesystem>
 #include <boost/python.hpp>
 #include "knowrob/plugins/PluginFactory.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 #include "knowrob/Logger.h"
 
 namespace knowrob {

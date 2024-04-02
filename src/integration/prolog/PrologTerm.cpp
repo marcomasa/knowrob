@@ -5,7 +5,7 @@
 
 #include <list>
 #include <stack>
-#include "knowrob/reasoner/prolog/PrologTerm.h"
+#include "knowrob/integration/prolog/PrologTerm.h"
 #include "knowrob/formulas/Predicate.h"
 #include "knowrob/formulas/Negation.h"
 #include "knowrob/formulas/Implication.h"

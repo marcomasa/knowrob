@@ -11,9 +11,9 @@
 #include "knowrob/storage/redland/RedlandModel.h"
 #include "knowrob/semweb/PrefixRegistry.h"
 #include "knowrob/storage/ReifiedTriple.h"
-#include "knowrob/reasoner/prolog/PrologEngine.h"
+#include "knowrob/integration/prolog/PrologEngine.h"
 #include "knowrob/storage/StorageInterface.h"
-#include "knowrob/reasoner/prolog/PrologBackend.h"
+#include "knowrob/integration/prolog/PrologBackend.h"
 
 using namespace knowrob;
 using namespace knowrob::mongo;

@@ -8,7 +8,7 @@
 #include "knowrob/terms/Atomic.h"
 #include "knowrob/terms/Function.h"
 #include "knowrob/terms/Variable.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 #include "knowrob/knowrob.h"
 
 using namespace knowrob;

@@ -9,12 +9,11 @@
 #include <cstdlib>
 
 #include "knowrob/Logger.h"
-#include "knowrob/reasoner/prolog/PrologEngine.h"
+#include "knowrob/integration/prolog/PrologEngine.h"
 #include "knowrob/knowrob.h"
 #include "knowrob/queries/QueryError.h"
-#include "knowrob/reasoner/prolog/logging.h"
-#include "knowrob/reasoner/prolog/ext/algebra.h"
-#include "knowrob/reasoner/prolog/semweb.h"
+#include "knowrob/integration/prolog/logging.h"
+#include "knowrob/integration/prolog/ext/algebra.h"
 #include "knowrob/semweb/PrefixRegistry.h"
 #include "knowrob/URI.h"
 
@@ -99,10 +98,9 @@ void PrologEngine::initializeProlog() {
 	PL_register_foreign("log_message", 2, (pl_function_t) prolog::log_message2, 0);
 	PL_register_foreign("log_message", 4, (pl_function_t) prolog::log_message4, 0);
 	PL_register_extensions_in_module("algebra", prolog::PL_extension_algebra);
-	PL_register_extensions_in_module("semweb", prolog::PL_extension_semweb);
 	KB_DEBUG("common foreign Prolog modules have been registered.");
 
-	consult(std::filesystem::path("reasoner") / "prolog" / "__init__.pl", "user", false);
+	consult(std::filesystem::path("integration") / "prolog" / "__init__.pl", "user", false);
 	KB_DEBUG("KnowRob __init__.pl has been consulted.");
 }
 
@@ -113,9 +111,11 @@ void PrologEngine::expandSearchPaths() {
 	// expand library search path, e.g. used by use_module/2 to locate Prolog source files.
 	// prefer files from projectPath
 	auto libPaths = {
+			installPath / "share" / "knowrob" / "integration" / "prolog",
 			installPath / "share" / "knowrob" / "reasoner" / "prolog",
 			installPath / "share" / "knowrob" / "reasoner",
 			installPath / "share" / "knowrob",
+			projectPath / "src" / "integration" / "prolog",
 			projectPath / "src" / "reasoner" / "prolog",
 			projectPath / "src" / "reasoner",
 			projectPath / "src"

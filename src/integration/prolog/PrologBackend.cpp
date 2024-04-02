@@ -4,9 +4,9 @@
  */
 
 #include "knowrob/storage/StorageManager.h"
-#include "knowrob/reasoner/prolog/PrologBackend.h"
-#include "knowrob/reasoner/prolog/PrologEngine.h"
-#include "knowrob/reasoner/prolog/PrologTerm.h"
+#include "knowrob/integration/prolog/PrologBackend.h"
+#include "knowrob/integration/prolog/PrologEngine.h"
+#include "knowrob/integration/prolog/PrologTerm.h"
 #include "knowrob/knowrob.h"
 
 using namespace knowrob;

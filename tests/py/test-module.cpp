@@ -8,7 +8,7 @@
 #include <knowrob/terms/Atom.h>
 #include <boost/python/extract.hpp>
 #include "knowrob/Logger.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 #include "knowrob/terms/String.h"
 #include "knowrob/triples/FramedTriple.h"
 

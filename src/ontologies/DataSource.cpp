@@ -8,7 +8,7 @@
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <gtest/gtest.h>
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 
 #include "knowrob/ontologies/DataSource.h"
 #include "knowrob/semweb/OntologyLanguage.h"

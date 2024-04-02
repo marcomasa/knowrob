@@ -5,7 +5,7 @@
 
 #include <boost/python.hpp>
 #include "knowrob/terms/IRIAtom.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 #include "knowrob/semweb/Resource.h"
 #include "knowrob/semweb/PrefixRegistry.h"
 

@@ -17,9 +17,9 @@
 // KnowRob
 #include "knowrob/ThreadPool.h"
 #include "knowrob/terms/Term.h"
-#include "PrologEngine.h"
+#include "knowrob/integration/prolog/PrologEngine.h"
 #include "knowrob/queries/AnswerYes.h"
-#include "PrologBackend.h"
+#include "knowrob/integration/prolog/PrologBackend.h"
 #include "knowrob/queries/AnswerNo.h"
 #include "knowrob/reasoner/GoalDrivenReasoner.h"
 

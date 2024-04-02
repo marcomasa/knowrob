@@ -12,7 +12,7 @@
 #include <locale>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include "knowrob/py/PythonError.h"
+#include "knowrob/integration/python/PythonError.h"
 
 uint32_t knowrob::GlobalSettings::batchSize_ = 500u;
 

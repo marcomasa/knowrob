@@ -6,7 +6,7 @@
 #include "knowrob/formulas/PredicateIndicator.h"
 #include "knowrob/terms/Function.h"
 #include "knowrob/terms/Numeric.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 

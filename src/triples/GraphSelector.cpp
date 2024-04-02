@@ -6,7 +6,7 @@
 #include "iomanip"
 #include "knowrob/triples/GraphSelector.h"
 #include "knowrob/knowrob.h"
-#include "knowrob/py/utils.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 
