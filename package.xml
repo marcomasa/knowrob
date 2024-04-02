@@ -25,6 +25,7 @@
   <build_depend>message_generation</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>actionlib_msgs</build_depend>
+  <build_depend>visualization_msgs</build_depend>
   <exec_depend>message_runtime</exec_depend>
 
   <depend>roslib</depend>
