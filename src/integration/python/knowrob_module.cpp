@@ -120,12 +120,6 @@ BOOST_PYTHON_MODULE (knowrob) {
 	// convert std::string_view to python::str and vice versa.
 	register_string_view_converter();
 
-    //boost::python::scope().attr("__doc__") = "knowrob module";
-	//boost::python::object submodule1(boost::python::handle<>(boost::python::borrowed(PyImport_AddModule("knowrob.submodule1"))));
-    //boost::python::scope().attr("submodule1") = submodule1;
-    //boost::python::scope submodule1_scope = submodule1;
-    //initialize_knowrob_submodule1();
-
 	/////////////////////////////////////////////////////
 	// mappings for KnowRob types
 	/////////////////////////////////////////////////////
