@@ -50,7 +50,7 @@ template<> std::shared_ptr<PrologBackend> createBackend<PrologBackend>() {
 
 // fixture class for testing
 template <class BackendType>
-class DataBackendTest : public ::testing::Test {
+class StorageTest : public ::testing::Test {
 public:
 	static std::shared_ptr<BackendType> kg_;
 	static std::shared_ptr<QueryableStorage> queryable_;
@@ -124,9 +124,9 @@ public:
 	}
 };
 
-template <typename T> std::shared_ptr<T> DataBackendTest<T>::kg_;
-template <typename T> std::shared_ptr<QueryableStorage> DataBackendTest<T>::queryable_;
-template <typename T> std::shared_ptr<StorageInterface> DataBackendTest<T>::backend_;
+template <typename T> std::shared_ptr<T> StorageTest<T>::kg_;
+template <typename T> std::shared_ptr<QueryableStorage> StorageTest<T>::queryable_;
+template <typename T> std::shared_ptr<StorageInterface> StorageTest<T>::backend_;
 
 static FramedTriplePattern parse(const std::string &str) {
 	auto p = QueryParser::parsePredicate(str);
@@ -134,16 +134,16 @@ static FramedTriplePattern parse(const std::string &str) {
 }
 
 using TestableBackends = ::testing::Types<RedlandModel, PrologBackend, MongoKnowledgeGraph>;
-TYPED_TEST_SUITE(DataBackendTest, TestableBackends);
+TYPED_TEST_SUITE(StorageTest, TestableBackends);
 
-#define TEST_LOOKUP(x) DataBackendTest<TypeParam>::lookup(x)
-#define TEST_QUERY(x) DataBackendTest<TypeParam>::query(x)
-#define TEST_INSERT_ONE(x) DataBackendTest<TypeParam>::insertOne(x)
-#define TEST_MERGE_ONE(x) DataBackendTest<TypeParam>::mergeOne(x)
+#define TEST_LOOKUP(x) StorageTest<TypeParam>::lookup(x)
+#define TEST_QUERY(x) StorageTest<TypeParam>::query(x)
+#define TEST_INSERT_ONE(x) StorageTest<TypeParam>::insertOne(x)
+#define TEST_MERGE_ONE(x) StorageTest<TypeParam>::mergeOne(x)
 
 #define swrl_test_ "http://knowrob.org/kb/swrl_test#"
 
-TYPED_TEST(DataBackendTest, Assert_a_b_c) {
+TYPED_TEST(StorageTest, Assert_a_b_c) {
 	FramedTripleCopy data_abc(swrl_test_"a", swrl_test_"b", swrl_test_"c");
 	EXPECT_NO_THROW(TEST_INSERT_ONE(data_abc));
 	EXPECT_EQ(TEST_LOOKUP(data_abc).size(), 1);
@@ -158,12 +158,12 @@ TYPED_TEST(DataBackendTest, Assert_a_b_c) {
 	EXPECT_EQ(TEST_LOOKUP(parse("triple(swrl_test:x, swrl_test:b, C)")).size(), 0);
 }
 
-TYPED_TEST(DataBackendTest, LoadTestOntology) {
-	EXPECT_NO_THROW(DataBackendTest<TypeParam>::loadOntology("owl/test/swrl.owl"));
-	EXPECT_NO_THROW(DataBackendTest<TypeParam>::loadOntology("owl/test/datatype_test.owl"));
+TYPED_TEST(StorageTest, LoadTestOntology) {
+	EXPECT_NO_THROW(StorageTest<TypeParam>::loadOntology("owl/test/swrl.owl"));
+	EXPECT_NO_THROW(StorageTest<TypeParam>::loadOntology("owl/test/datatype_test.owl"));
 }
 
-TYPED_TEST(DataBackendTest, QuerySubclassOf) {
+TYPED_TEST(StorageTest, QuerySubclassOf) {
 	FramedTripleCopy triple(
 			swrl_test_"Adult",
 			rdfs::subClassOf->stringForm().data(),
@@ -171,16 +171,16 @@ TYPED_TEST(DataBackendTest, QuerySubclassOf) {
 	EXPECT_EQ(TEST_LOOKUP(triple).size(), 1);
 }
 
-TYPED_TEST(DataBackendTest, DeleteSubclassOf) {
+TYPED_TEST(StorageTest, DeleteSubclassOf) {
 	FramedTripleCopy triple(
 			swrl_test_"Adult",
 			rdfs::subClassOf->stringForm().data(),
 			swrl_test_"TestThing");
-	EXPECT_NO_THROW(DataBackendTest<TypeParam>::queryable_->removeOne(triple));
+	EXPECT_NO_THROW(StorageTest<TypeParam>::queryable_->removeOne(triple));
 	EXPECT_EQ(TEST_LOOKUP(triple).size(), 0);
 }
 
-TYPED_TEST(DataBackendTest, AssertSubclassOf) {
+TYPED_TEST(StorageTest, AssertSubclassOf) {
 	FramedTripleCopy existing(
 			swrl_test_"Adult",
 			rdfs::subClassOf->stringForm().data(),
@@ -194,7 +194,7 @@ TYPED_TEST(DataBackendTest, AssertSubclassOf) {
 	EXPECT_EQ(TEST_LOOKUP(not_existing).size(), 0);
 }
 
-TYPED_TEST(DataBackendTest, PathQuery) {
+TYPED_TEST(StorageTest, PathQuery) {
 	// hasAncestor(Lea, ?x) & hasAncestor(?x, Rex) -> ?x = Fred
 	auto q1 = std::make_shared<FramedTriplePattern>(
 			QueryParser::parsePredicate("triple(swrl_test:'Lea', swrl_test:hasAncestor, ?x)"));
@@ -213,7 +213,7 @@ TYPED_TEST(DataBackendTest, PathQuery) {
 	}
 }
 
-TYPED_TEST(DataBackendTest, UnionQuery) {
+TYPED_TEST(StorageTest, UnionQuery) {
 	// hasAncestor(Fred, ?x) | hasSibling(Fred, ?x) -> ?x = Rex | Ernest
 	auto q1 = std::make_shared<FramedTriplePattern>(
 			QueryParser::parsePredicate("triple(swrl_test:'Fred', swrl_test:hasAncestor, ?x)"));
@@ -227,7 +227,7 @@ TYPED_TEST(DataBackendTest, UnionQuery) {
 	EXPECT_EQ(results.size(), 2);
 }
 
-TYPED_TEST(DataBackendTest, QueryNegatedTriple) {
+TYPED_TEST(StorageTest, QueryNegatedTriple) {
 	auto negated = std::make_shared<FramedTriplePattern>(
 			QueryParser::parsePredicate("triple(swrl_test:x, swrl_test:p, swrl_test:y)"), true);
 	EXPECT_EQ(TEST_LOOKUP(*negated).size(), 1);
@@ -236,7 +236,7 @@ TYPED_TEST(DataBackendTest, QueryNegatedTriple) {
 	EXPECT_EQ(TEST_LOOKUP(*negated).size(), 0);
 }
 
-TYPED_TEST(DataBackendTest, Knowledge) {
+TYPED_TEST(StorageTest, Knowledge) {
 	FramedTripleCopy statement(swrl_test_"Lea", swrl_test_"hasName", "Lea", knowrob::XSDType::STRING);
 	statement.setIsUncertain(false);
 	EXPECT_EQ(TEST_LOOKUP(statement).size(), 0);
@@ -246,7 +246,7 @@ TYPED_TEST(DataBackendTest, Knowledge) {
 	EXPECT_EQ(TEST_LOOKUP(statement).size(), 1);
 }
 
-TYPED_TEST(DataBackendTest, KnowledgeOfAgent) {
+TYPED_TEST(StorageTest, KnowledgeOfAgent) {
 	// assert knowledge of a named agent
 	FramedTripleCopy statement(swrl_test_"Lea", swrl_test_"hasName", "Lea", knowrob::XSDType::STRING);
 	statement.setIsUncertain(false);
@@ -259,7 +259,7 @@ TYPED_TEST(DataBackendTest, KnowledgeOfAgent) {
 	EXPECT_EQ(TEST_LOOKUP(statement).size(), 0);
 }
 
-TYPED_TEST(DataBackendTest, Belief) {
+TYPED_TEST(StorageTest, Belief) {
 	// assert uncertain statement
 	FramedTripleCopy statement(swrl_test_"Fred", swrl_test_"hasName", "Fred", knowrob::XSDType::STRING);
 	statement.setIsUncertain(true);
@@ -271,7 +271,7 @@ TYPED_TEST(DataBackendTest, Belief) {
 	EXPECT_EQ(TEST_LOOKUP(statement).size(), 0);
 }
 
-TYPED_TEST(DataBackendTest, WithConfidence) {
+TYPED_TEST(StorageTest, WithConfidence) {
 	// assert uncertain statement with confidence=0.5
 	FramedTripleCopy statement(swrl_test_"Bob", swrl_test_"hasName", "Bob", knowrob::XSDType::STRING);
 	statement.setIsUncertain(true);
@@ -287,7 +287,7 @@ TYPED_TEST(DataBackendTest, WithConfidence) {
 	EXPECT_EQ(TEST_LOOKUP(statement).size(), 0);
 }
 
-TYPED_TEST(DataBackendTest, WithTimeInterval) {
+TYPED_TEST(StorageTest, WithTimeInterval) {
 	// assert a statement with time interval [5,10]
 	FramedTripleCopy statement(swrl_test_"Alice", swrl_test_"hasName", "Alice", knowrob::XSDType::STRING);
 	statement.setBegin(5.0);
@@ -303,7 +303,7 @@ TYPED_TEST(DataBackendTest, WithTimeInterval) {
 	EXPECT_EQ(TEST_LOOKUP(statement).size(), 1);
 }
 
-TYPED_TEST(DataBackendTest, ExtendsTimeInterval) {
+TYPED_TEST(StorageTest, ExtendsTimeInterval) {
 	// assert a statement with time interval [10,20]
 	FramedTripleCopy statement(swrl_test_"Alice", swrl_test_"hasName", "Alice", knowrob::XSDType::STRING);
 	statement.setBegin(10.0);

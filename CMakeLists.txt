@@ -446,8 +446,13 @@ add_executable(all_gtests
         tests/gtests.cpp
         tests/QueryParserTest.cpp
         tests/KnowledgeBaseTest.cpp
-        tests/DataBackendTest.cpp
-        tests/py/test-module.cpp)
+        tests/StorageTest.cpp
+        tests/py/test-module.cpp
+        tests/TokenBroadcasterTest.cpp
+        tests/QueryTreeTest.cpp
+        tests/DependencyGraphTest.cpp
+        tests/DataSourceTest.cpp
+        tests/ConjunctiveBroadcasterTest.cpp)
 add_dependencies(all_gtests knowrob_py)
 target_link_libraries(all_gtests
         -Wl,--whole-archive,--no-as-needed
