@@ -10,6 +10,7 @@
 #include "knowrob/formulas/Disjunction.h"
 #include "knowrob/triples/GraphUnion.h"
 #include "knowrob/formulas/Conjunction.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 
@@ -88,4 +89,22 @@ FormulaPtr GraphQuery::toFormula() const {
 
 void GraphQuery::write(std::ostream &os) const {
 	os << *term_;
+}
+
+namespace knowrob::py {
+	template<>
+	void createType<GraphQuery>() {
+		using namespace boost::python;
+
+		createType<GraphTerm>();
+
+		class_<GraphQuery, std::shared_ptr<GraphQuery>, boost::noncopyable>
+		        ("GraphQuery", init<const std::shared_ptr<GraphTerm> &>())
+		        .def(init<const std::shared_ptr<GraphTerm> &, const QueryContextPtr &>())
+		        .def(init<const FramedTriplePatternPtr &>())
+		        .def(init<const FramedTriplePatternPtr &, const QueryContextPtr &>())
+		        .def(init<const std::vector<FramedTriplePatternPtr> &, const QueryContextPtr &>())
+				.def("term", &GraphQuery::term)
+				.def("toFormula", &GraphQuery::toFormula);
+	}
 }

@@ -20,7 +20,6 @@
 #include "knowrob/ontologies/GraphTransformation.h"
 #include "knowrob/ontologies/TransformedOntology.h"
 #include "knowrob/integration/python/utils.h"
-#include "knowrob/integration/python/converter/vector.h"
 
 #define KB_SETTING_REASONER "reasoner"
 #define KB_SETTING_DATA_BACKENDS "data-backends"
@@ -572,7 +571,6 @@ bool KnowledgeBase::loadNonOntologySource(const DataSourcePtr &source) const {
 	return hasHandler && allSucceeded;
 }
 
-
 namespace knowrob::py {
 	template<>
 	void createType<KnowledgeBase>() {
@@ -588,6 +586,7 @@ namespace knowrob::py {
 		using ListAction = bool (KnowledgeBase::*)(const std::vector<FramedTriplePtr> &);
 
 		createType<Vocabulary>();
+		createType<GraphQuery>();
 
 		class_<KnowledgeBase, std::shared_ptr<KnowledgeBase>, boost::noncopyable>
 				("KnowledgeBase", init<>())
