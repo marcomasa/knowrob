@@ -387,14 +387,14 @@ namespace knowrob::py {
 
 		void setGraph(std::string_view graph) override { call_method<void>(self, "setGraph", graph); }
 
-		void setPerspective(std::string_view agent) override { call_method<void>(self, "setPerspective", agent); }
+		void setPerspective(std::string_view perspective) override { call_method<void>(self, "setPerspective", perspective); }
 
 		std::optional<std::string_view> graph() const override {
 			return call_method<std::optional<std::string_view>>(self, "graph");
 		}
 
 		std::optional<std::string_view> perspective() const override {
-			return call_method<std::optional<std::string_view>>(self, "agent");
+			return call_method<std::optional<std::string_view>>(self, "perspective");
 		}
 
 		std::string_view valueAsString() const override { return call_method<std::string_view>(self, "valueAsString"); }
@@ -434,7 +434,7 @@ namespace knowrob::py {
 				.def("subject", pure_virtual(&FramedTriple::subject))
 				.def("predicate", pure_virtual(&FramedTriple::predicate))
 				.def("graph", pure_virtual(&FramedTriple::graph))
-				.def("agent", pure_virtual(&FramedTriple::perspective))
+				.def("perspective", pure_virtual(&FramedTriple::perspective))
 				.def("isOccasional", &FramedTriple::isOccasional)
 				.def("isUncertain", &FramedTriple::isUncertain)
 				.def("begin", &FramedTriple::begin)

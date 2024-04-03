@@ -508,6 +508,19 @@ namespace knowrob::py {
 				.def("objectOperator", &FramedTriplePattern::objectOperator)
 				.def("isOccasionalTerm", &FramedTriplePattern::isOccasionalTerm, return_value_policy<return_by_value>())
 				.def("isUncertainTerm", &FramedTriplePattern::isUncertainTerm, return_value_policy<return_by_value>())
-				.def("setGraphName", &FramedTriplePattern::setGraphName);
+				.def("setGraphName", &FramedTriplePattern::setGraphName)
+				.def("setPerspectiveTerm", &FramedTriplePattern::setPerspectiveTerm)
+				.def("setBeginTerm", &FramedTriplePattern::setBeginTerm)
+				.def("setEndTerm", &FramedTriplePattern::setEndTerm)
+				.def("setConfidenceTerm", &FramedTriplePattern::setConfidenceTerm)
+				.def("setObjectOperator", &FramedTriplePattern::setObjectOperator)
+				.def("setIsOccasionalTerm", &FramedTriplePattern::setIsOccasionalTerm)
+				.def("setIsUncertainTerm", &FramedTriplePattern::setIsUncertainTerm)
+				.def("filter", &FramedTriplePattern::filter)
+				.def("instantiateInto", &FramedTriplePattern::instantiateInto)
+				.def("getVariables", &FramedTriplePattern::getVariables)
+				.def("numVariables", &FramedTriplePattern::numVariables)
+				.def("getTripleFrame", &FramedTriplePattern::getTripleFrame)
+				.def("setTripleFrame", &FramedTriplePattern::setTripleFrame);
 	}
 }

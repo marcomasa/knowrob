@@ -35,6 +35,7 @@ namespace knowrob::py {
 		class_<Variable, std::shared_ptr<Variable>, bases<Term>>
 				("Variable", init<std::string>())
 				.def(self < self)
-				.def("name", &Variable::name);
+				.def("name", &Variable::name)
+				.def("isSameVariable", &Variable::isSameVariable);
 	}
 }

@@ -120,6 +120,7 @@ namespace knowrob::py {
 		class_<XSDAtomic, std::shared_ptr<XSDAtomicWrap>, bases<Atomic, RDFNode>, boost::noncopyable>
 				("XSDAtomic", no_init)
 				.def("xsdTypeIRI", &XSDAtomic::xsdTypeIRI)
-				.def("xsdType", pure_virtual(&XSDAtomic::xsdType));
+				.def("xsdType", pure_virtual(&XSDAtomic::xsdType))
+				.def("create", &XSDAtomic::create);
 	}
 }

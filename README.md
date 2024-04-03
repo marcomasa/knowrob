@@ -212,7 +212,8 @@ More documentation can be found in the following pages:
 - [Querying](src/queries/README.md)
 - [Backends](src/storage/README.md)
 - [Reasoner](src/reasoner/README.md)
-- [ROS](src/ros/README.md)
+- [Python Integration](src/integration/python/README.md)
+- [ROS Integration](src/integration/ros1/README.md)
 
 In addition, the following resources are available:
 - [API Documentation](https://knowrob.github.io/knowrob/)

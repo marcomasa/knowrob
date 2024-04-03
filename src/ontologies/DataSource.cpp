@@ -151,7 +151,16 @@ namespace knowrob::py {
 				.def("uri", &DataSource::uri, return_value_policy<copy_const_reference>())
 				.def("path", &DataSource::path, return_value_policy<copy_const_reference>())
 				.def("version", &DataSource::version)
-				.def("name", &DataSource::name);
+				.def("name", &DataSource::name)
+				.def("dataSourceType", &DataSource::dataSourceType)
+				.def("isVersionString", &DataSource::isVersionString)
+				.staticmethod("isVersionString")
+				.def("getNameFromURI", &DataSource::getNameFromURI)
+				.staticmethod("getNameFromURI")
+				.def("getVersionFromURI", &DataSource::getVersionFromURI)
+				.staticmethod("getVersionFromURI")
+				.def("create", &DataSource::create)
+				.staticmethod("create");
 	}
 }
 
