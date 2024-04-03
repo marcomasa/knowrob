@@ -7,6 +7,7 @@
 #include <set>
 #include "knowrob/semweb/Property.h"
 #include "knowrob/Logger.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob::semweb;
 
@@ -102,5 +103,41 @@ void Property::forallParents(const PropertyVisitor &visitor,
 			if (skipDuplicates && visited_.count(directParent->iri()) > 0) continue;
 			queue_.push(directParent.get());
 		}
+	}
+}
+
+namespace knowrob::py {
+	template<>
+	void createType<semweb::Property>() {
+		using namespace boost::python;
+
+		enum_<PropertyFlag>("PropertyFlag")
+				.value("DATATYPE_PROPERTY", DATATYPE_PROPERTY)
+				.value("ANNOTATION_PROPERTY", ANNOTATION_PROPERTY)
+				.value("OBJECT_PROPERTY", OBJECT_PROPERTY)
+				.value("TRANSITIVE_PROPERTY", TRANSITIVE_PROPERTY)
+				.value("REFLEXIVE_PROPERTY", REFLEXIVE_PROPERTY)
+				.value("SYMMETRIC_PROPERTY", SYMMETRIC_PROPERTY);
+
+		class_<semweb::Property, bases<semweb::Resource>, std::shared_ptr<semweb::Property>, boost::noncopyable>
+				("Property", init<std::string_view>())
+				.def(init<const IRIAtomPtr&>())
+				.def("addDirectParent", &semweb::Property::addDirectParent)
+				.def("removeDirectParent", &semweb::Property::removeDirectParent)
+				.def("directParents", &semweb::Property::directParents, return_value_policy<reference_existing_object>())
+				.def("setInverse", &semweb::Property::setInverse)
+				.def("inverse", &semweb::Property::inverse, return_value_policy<reference_existing_object>())
+				.def("hasFlag", &semweb::Property::hasFlag)
+				.def("setFlag", &semweb::Property::setFlag)
+				.def("isDatatypeProperty", &semweb::Property::isDatatypeProperty)
+				.def("isAnnotationProperty", &semweb::Property::isAnnotationProperty)
+				.def("isObjectProperty", &semweb::Property::isObjectProperty)
+				.def("isTransitiveProperty", &semweb::Property::isTransitiveProperty)
+				.def("isReflexiveProperty", &semweb::Property::isReflexiveProperty)
+				.def("isSymmetricProperty", &semweb::Property::isSymmetricProperty)
+				.def("forallParents", &semweb::Property::forallParents)
+				.def("reification", &semweb::Property::reification)
+				.def("reifiedIRI", &semweb::Property::reifiedIRI)
+				.def("unReifiedIRI", &semweb::Property::unReifiedIRI);
 	}
 }

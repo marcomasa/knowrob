@@ -11,6 +11,7 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <iomanip>
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob::semweb;
 
@@ -71,4 +72,25 @@ std::string_view Resource::iri_ns(std::string_view iri, bool includeDelimiter) {
 
 std::string_view Resource::ns(bool includeDelimiter) const {
 	return iri_ns(iri_->stringForm(), includeDelimiter);
+}
+
+namespace knowrob::py {
+	template<>
+	void createType<semweb::Resource>() {
+		using namespace boost::python;
+
+		using IRIArg1 = IRIAtomPtr (*)(std::string_view);
+		using IRIArg2 = IRIAtomPtr (*)(std::string_view,std::string_view);
+
+		class_<semweb::Resource, std::shared_ptr<semweb::Resource>, boost::noncopyable>
+				("Resource", no_init)
+				.def("iri", &semweb::Resource::iri)
+				.def("iriAtom", &semweb::Resource::iriAtom)
+				.def("name", &semweb::Resource::name)
+				.def("ns", &semweb::Resource::ns)
+				.def("unique_iri", static_cast<IRIArg1>(&semweb::Resource::unique_iri))
+				.def("unique_iri", static_cast<IRIArg2>(&semweb::Resource::unique_iri))
+				.def("iri_name", &semweb::Resource::iri_name)
+				.def("iri_ns", &semweb::Resource::iri_ns);
+	}
 }

@@ -10,6 +10,7 @@
 #include "knowrob/semweb/owl.h"
 #include "knowrob/semweb/PrefixProbe.h"
 #include "knowrob/storage/reification.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 using namespace knowrob::semweb;
@@ -239,4 +240,48 @@ void Vocabulary::addResourceType(const std::string_view &resource_iri, const std
 		defineProperty(resource_iri);
 	else if (isClassIRI(type_iri))
 		defineClass(resource_iri);
+}
+
+namespace knowrob::py {
+	template<>
+	void createType<Vocabulary>() {
+		using namespace boost::python;
+
+		using PropertyFun = semweb::PropertyPtr (Vocabulary::*)(const std::string_view&);
+		using SetFlag = void (Vocabulary::*)(const std::string_view&, semweb::PropertyFlag);
+
+		createType<semweb::Resource>();
+		createType<semweb::Property>();
+		createType<semweb::Class>();
+		createType<ImportHierarchy>();
+
+		class_<Vocabulary, std::shared_ptr<Vocabulary>, boost::noncopyable>
+				("Vocabulary", init<>())
+				.def("addResourceType", &Vocabulary::addResourceType)
+				.def("isDefinedClass", &Vocabulary::isDefinedClass)
+				.def("getDefinedClass", &Vocabulary::getDefinedClass)
+				.def("getDefinedClassesWithPrefix", &Vocabulary::getDefinedClassesWithPrefix)
+				.def("getDefinedClassNamesWithPrefix", &Vocabulary::getDefinedClassNamesWithPrefix)
+				.def("defineClass", &Vocabulary::defineClass)
+				.def("addSubClassOf", &Vocabulary::addSubClassOf)
+				.def("isSubClassOf", &Vocabulary::isSubClassOf)
+				.def("isDefinedProperty", &Vocabulary::isDefinedProperty)
+				.def("isDefinedReification", &Vocabulary::isDefinedReification)
+				.def("getDefinedProperty", &Vocabulary::getDefinedProperty)
+				.def("getDefinedReification", &Vocabulary::getDefinedReification)
+				.def("getDefinedPropertiesWithPrefix", &Vocabulary::getDefinedPropertiesWithPrefix)
+				.def("getDefinedPropertyNamesWithPrefix", &Vocabulary::getDefinedPropertyNamesWithPrefix)
+				.def("defineProperty", static_cast<PropertyFun>(&Vocabulary::defineProperty))
+				.def("addSubPropertyOf", &Vocabulary::addSubPropertyOf)
+				.def("setInverseOf", &Vocabulary::setInverseOf)
+				.def("setPropertyFlag", static_cast<SetFlag>(&Vocabulary::setPropertyFlag))
+				.def("isAnnotationProperty", &Vocabulary::isAnnotationProperty)
+				.def("isObjectProperty", &Vocabulary::isObjectProperty)
+				.def("isDatatypeProperty", &Vocabulary::isDatatypeProperty)
+				.def("isTaxonomicProperty", &Vocabulary::isTaxonomicProperty)
+				.def("setFrequency", &Vocabulary::setFrequency)
+				.def("increaseFrequency", &Vocabulary::increaseFrequency)
+				.def("frequency", &Vocabulary::frequency)
+				.def("importHierarchy", &Vocabulary::importHierarchy, return_value_policy<reference_existing_object>());
+	}
 }

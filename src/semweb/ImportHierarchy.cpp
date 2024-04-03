@@ -6,6 +6,7 @@
 #include <memory>
 #include "knowrob/semweb/ImportHierarchy.h"
 #include "knowrob/Logger.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 
@@ -121,4 +122,23 @@ void ImportHierarchy::removeCurrentGraph(std::string_view graphName) {
 
 	// finally delete the node
 	graphs_.erase(it);
+}
+
+namespace knowrob::py {
+	template<>
+	void createType<ImportHierarchy>() {
+		using namespace boost::python;
+
+		class_<ImportHierarchy, std::shared_ptr<ImportHierarchy>, boost::noncopyable>
+				("ImportHierarchy", init<>())
+				.def("isCurrentGraph", &ImportHierarchy::isCurrentGraph)
+				.def("isReservedOrigin", &ImportHierarchy::isReservedOrigin)
+				.def("clear", &ImportHierarchy::clear)
+				.def("setDefaultGraph", &ImportHierarchy::setDefaultGraph)
+				.def("defaultGraph", &ImportHierarchy::defaultGraph, return_value_policy<copy_const_reference>())
+				.def("addCurrentGraph", &ImportHierarchy::addCurrentGraph)
+				.def("removeCurrentGraph", &ImportHierarchy::removeCurrentGraph)
+				.def("addDirectImport", &ImportHierarchy::addDirectImport)
+				.def("getImports", &ImportHierarchy::getImports, return_value_policy<reference_existing_object>());
+	}
 }

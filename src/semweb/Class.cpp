@@ -1,11 +1,13 @@
-//
-// Created by daniel on 07.04.23.
-//
+/*
+ * This file is part of KnowRob, please consult
+ * https://github.com/knowrob/knowrob for license details.
+ */
 
 #include <queue>
 #include <set>
 #include "knowrob/semweb/Class.h"
 #include "knowrob/Logger.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob::semweb;
 
@@ -82,3 +84,20 @@ void Class::forallParents(const ClassVisitor &visitor,
 		}
 	}
 }
+namespace knowrob::py {
+	template<>
+	void createType<semweb::Class>() {
+		using namespace boost::python;
+
+		class_<semweb::Class, bases<semweb::Resource>, std::shared_ptr<semweb::Class>, boost::noncopyable>
+				("Class", init<std::string_view>())
+				.def(init<const IRIAtomPtr&>())
+				.def("addDirectParent", &semweb::Class::addDirectParent)
+				.def("removeDirectParent", &semweb::Class::removeDirectParent)
+				.def("directParents", &semweb::Class::directParents, return_value_policy<reference_existing_object>())
+				.def("isDirectSubClassOf", &semweb::Class::isDirectSubClassOf)
+				.def("isSubClassOf", &semweb::Class::isSubClassOf)
+				.def("forallParents", &semweb::Class::forallParents);
+	}
+}
+

@@ -32,6 +32,7 @@
 #include "knowrob/integration/python/converter.h"
 #include "knowrob/integration/python/utils.h"
 #include "knowrob/knowrob.h"
+#include "knowrob/KnowledgeBase.h"
 
 using namespace knowrob;
 
@@ -130,6 +131,7 @@ BOOST_PYTHON_MODULE (knowrob) {
 	register_query_types();
 	register_db_types();
 	register_reasoner_types();
+	createType<KnowledgeBase>();
 
 	/////////////////////////////////////////////////////
 	// mappings for optionals used in the structs above
