@@ -262,13 +262,14 @@ namespace knowrob::py {
 	void createType<Bindings>() {
 		using namespace boost::python;
 		class_<Bindings, std::shared_ptr<Bindings>>("Bindings", init<>())
-				.def(init<std::map<std::shared_ptr<Variable>, TermPtr>>())
+				.def(init<std::map<VariablePtr, TermPtr>>())
 				.def("__eq__", &Bindings::operator==)
 				.def("__iter__", range(&Bindings::begin, &Bindings::end))
+				.def("__len__", &Bindings::size)
+				.def("__hash__", &Bindings::hash)
 				.def("empty", &Bindings::empty)
 				.def("set", &Bindings::set)
 				.def("get", &Bindings::get, return_value_policy<copy_const_reference>())
-				.def("contains", &Bindings::contains)
-				.def("hash", &Bindings::hash);
+				.def("contains", &Bindings::contains);
 	}
 }
