@@ -171,6 +171,14 @@ TYPED_TEST(StorageTest, QuerySubclassOf) {
 	EXPECT_EQ(TEST_LOOKUP(triple).size(), 1);
 }
 
+TYPED_TEST(StorageTest, QueryRange) {
+	FramedTripleCopy triple(
+			swrl_test_"hasParent",
+			rdfs::range->stringForm().data(),
+			swrl_test_"TestThing");
+	EXPECT_EQ(TEST_LOOKUP(triple).size(), 1);
+}
+
 TYPED_TEST(StorageTest, DeleteSubclassOf) {
 	FramedTripleCopy triple(
 			swrl_test_"Adult",
