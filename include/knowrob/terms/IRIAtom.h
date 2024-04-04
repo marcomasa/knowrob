@@ -21,7 +21,9 @@ namespace knowrob {
 		 * Constructs an IRI atom from a string.
 		 * @param stringForm the string form of the IRI
 		 */
-		explicit IRIAtom(std::string_view stringForm) : Atom(stringForm, AtomType::IRI) {
+		explicit IRIAtom(std::string_view stringForm)
+				: Atom(stringForm, AtomType::IRI),
+				  RDFNode(RDFNodeType::IRI) {
 			isIRI_ = true;
 		}
 
@@ -38,9 +40,6 @@ namespace knowrob {
 		 * @return a shared pointer to a predicate
 		 */
 		PredicatePtr operator()(const TermPtr &s, const TermPtr &o) const;
-
-		// override RDFNode
-		RDFNodeType rdfNodeType() const override { return RDFNodeType::IRI; }
 
 	protected:
 		// override Term

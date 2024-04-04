@@ -45,6 +45,11 @@ namespace knowrob {
 		AtomicType atomicType() const { return atomicType_; }
 
 		/**
+		 * @return the hash of this atomic term.
+		 */
+		size_t hashOfAtomic() const;
+
+		/**
 		 * Get the lexical form of this atomic term.
 		 * @return the lexical form of this atomic term.
 		 */
@@ -56,11 +61,6 @@ namespace knowrob {
 		 * @return the atomic term
 		 */
 		static std::shared_ptr<Atomic> makeTripleValue(const FramedTriple &triple);
-
-		/**
-		 * @return the hash of this atomic term.
-		 */
-		size_t hashOfAtomic() const;
 
 		// Override Term
 		const std::set<std::string_view> &variables() const final { return Term::noVariables_; }

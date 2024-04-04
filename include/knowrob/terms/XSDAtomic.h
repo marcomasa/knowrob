@@ -18,7 +18,7 @@ namespace knowrob {
 	class XSDAtomic : public RDFNode, public Atomic {
 	public:
 		explicit XSDAtomic(XSDType xsdType)
-				: RDFNode(),
+				: RDFNode(RDFNodeType::LITERAL),
 				  Atomic(xsdType == XSDType::STRING ? AtomicType::STRING : AtomicType::NUMERIC),
 				  xsdType_(xsdType) {}
 
@@ -41,9 +41,6 @@ namespace knowrob {
 		 * @return the XSD datatype of the RDF literal
 		 */
 		XSDType xsdType() const { return xsdType_; }
-
-		// override RDFNode
-		RDFNodeType rdfNodeType() const override { return RDFNodeType::LITERAL; }
 
 	protected:
 		XSDType xsdType_;

@@ -19,7 +19,7 @@ namespace knowrob {
 		 * Constructs a blank node from a name.
 		 * @param name the name of the blank node
 		 */
-		explicit Blank(std::string_view name) : Atom(name) {
+		explicit Blank(std::string_view name) : Atom(name), RDFNode(RDFNodeType::BLANK) {
 			isBlank_ = true;
 		}
 
@@ -28,9 +28,6 @@ namespace knowrob {
 		 * @return a shared pointer to an IRI atom
 		 */
 		static std::shared_ptr<Blank> Tabled(std::string_view stringForm);
-
-		// Override RDFNode
-		RDFNodeType rdfNodeType() const final { return RDFNodeType::BLANK; }
 	};
 
 } // knowrob

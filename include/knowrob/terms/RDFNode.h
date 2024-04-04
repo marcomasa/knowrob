@@ -26,7 +26,12 @@ namespace knowrob {
 	 */
 	class RDFNode {
 	public:
-		virtual RDFNodeType rdfNodeType() const = 0;
+		explicit RDFNode(RDFNodeType rdfNodeType) : rdfNodeType_(rdfNodeType) {}
+
+		auto rdfNodeType() const { return rdfNodeType_; }
+
+	protected:
+		const RDFNodeType rdfNodeType_;
 	};
 
 	/**
