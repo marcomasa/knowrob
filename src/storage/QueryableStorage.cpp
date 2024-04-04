@@ -369,7 +369,6 @@ GraphQueryExpansionPtr QueryableStorage::expand(const GraphQueryPtr &q) {
 	return exp_ctx;
 }
 
-#if 0
 namespace knowrob::py {
 	struct QueryableStorageWrap : public QueryableStorage, boost::python::wrapper<QueryableStorage> {
 		explicit QueryableStorageWrap(PyObject *p, const StorageFeatures features)
@@ -385,7 +384,7 @@ namespace knowrob::py {
 		}
 
 		bool contains(const FramedTriple &triple) override {
-			return call_method<bool>(self, "contains", triple);
+			return call_method<bool, const FramedTriple &>(self, "contains", triple);
 		}
 
 		bool contains_default(const FramedTriple &triple) {
@@ -454,6 +453,7 @@ namespace knowrob::py {
 		bool removeAllWithOrigin(std::string_view origin) override {
 			return call_method<bool>(self, "removeAllWithOrigin", origin.data());
 		}
+
 	private:
 		PyObject *self;
 	};
@@ -468,7 +468,7 @@ namespace knowrob::py {
 				.def("dropSessionOrigins", &QueryableStorage::dropSessionOrigins)
 				.def("yes", &QueryableStorage::yes).staticmethod("yes")
 				.def("no", &QueryableStorage::no).staticmethod("no")
-				// methods that must be implemented by backend plugins
+						// methods that must be implemented by backend plugins
 				.def("foreach", &QueryableStorageWrap::foreach, &QueryableStorageWrap::foreach_default)
 				.def("contains", &QueryableStorageWrap::contains, &QueryableStorageWrap::contains_default)
 				.def("match", &QueryableStorageWrap::match, &QueryableStorageWrap::match_default)
@@ -479,4 +479,3 @@ namespace knowrob::py {
 				.def("count", pure_virtual(&QueryableStorageWrap::count));
 	}
 }
-#endif

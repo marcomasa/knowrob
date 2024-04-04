@@ -65,6 +65,6 @@ namespace knowrob::py {
 				.def("removeAll", pure_virtual(&Storage::removeAll))
 				.def("removeOne", pure_virtual(&Storage::removeOne))
 				.def("removeAllWithOrigin", pure_virtual(&Storage::removeAllWithOrigin));
-		//createType<QueryableStorage>();
+		createType<QueryableStorage>();
 	}
 }
