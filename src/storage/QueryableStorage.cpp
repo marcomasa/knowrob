@@ -463,15 +463,11 @@ namespace knowrob::py {
 		using namespace boost::python;
 		class_<QueryableStorage, std::shared_ptr<QueryableStorageWrap>, bases<Storage>, boost::noncopyable>
 				("QueryableStorage", init<StorageFeatures>())
-				.def("getOrigins", &QueryableStorage::getOrigins)
 				.def("setVersionOfOrigin", &QueryableStorage::setVersionOfOrigin)
 				.def("getVersionOfOrigin", &QueryableStorage::getVersionOfOrigin)
 				.def("dropSessionOrigins", &QueryableStorage::dropSessionOrigins)
-				.def("expand", &QueryableStorage::expand)
-				.def("yes", &QueryableStorage::yes)
-				.staticmethod("yes")
-				.def("no", &QueryableStorage::no)
-				.staticmethod("no")
+				.def("yes", &QueryableStorage::yes).staticmethod("yes")
+				.def("no", &QueryableStorage::no).staticmethod("no")
 				// methods that must be implemented by backend plugins
 				.def("foreach", &QueryableStorageWrap::foreach, &QueryableStorageWrap::foreach_default)
 				.def("contains", &QueryableStorageWrap::contains, &QueryableStorageWrap::contains_default)
@@ -480,13 +476,7 @@ namespace knowrob::py {
 				.def("batch", pure_virtual(&QueryableStorageWrap::batch))
 				.def("batchOrigin", pure_virtual(&QueryableStorageWrap::batchOrigin))
 				.def("query", pure_virtual(&QueryableStorageWrap::query))
-				.def("count", pure_virtual(&QueryableStorageWrap::count))
-				.def("initializeBackend", pure_virtual(&QueryableStorageWrap::initializeBackend))
-				.def("insertOne", pure_virtual(&QueryableStorageWrap::insertOne))
-				.def("insertAll", pure_virtual(&QueryableStorageWrap::insertAll))
-				.def("removeAll", pure_virtual(&QueryableStorageWrap::removeAll))
-				.def("removeOne", pure_virtual(&QueryableStorageWrap::removeOne))
-				.def("removeAllWithOrigin", pure_virtual(&QueryableStorageWrap::removeAllWithOrigin));
+				.def("count", pure_virtual(&QueryableStorageWrap::count));
 	}
 }
 #endif

@@ -90,7 +90,6 @@ namespace knowrob::py {
 				.def("__eq__", &Term::operator==)
 				.def("__repr__", +[](Term &t) { return readString(t); })
 				.def("termType", &Term::termType)
-				.def("isGround", pure_virtual(&Term::isGround))
 				.def("isAtomic", &Term::isAtomic)
 				.def("isAtom", &Term::isAtom)
 				.def("isVariable", &Term::isVariable)
@@ -99,6 +98,7 @@ namespace knowrob::py {
 				.def("isString", &Term::isString)
 				.def("isIRI", &Term::isIRI)
 				.def("isBlank", &Term::isBlank)
+				.def("isGround", &Term::isGround)
 				.def("hash", pure_virtual(&Term::hash))
 				.def("variables", pure_virtual(&Term::variables), return_value_policy<copy_const_reference>());
 	}

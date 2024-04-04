@@ -79,9 +79,10 @@ void ImportHierarchy::addDirectImport(std::string_view importerGraphName, std::s
 		return;
 	}
 
-	KB_DEBUG("Graph \"{}\" imports \"{}\".", importerGraphName, importedGraphName);
 	// g_importer.directlyImports += [g_imported]
-	g_importer.directImports_.insert(&g_imported);
+	auto pair = g_importer.directImports_.insert(&g_imported);
+	if (!pair.second) return;
+	KB_DEBUG("Graph \"{}\" imports \"{}\".", importerGraphName, importedGraphName);
 	// g_importer.imports += g_imported.imports + [gb]
 	g_importer.imports_.insert(g_imported.imports_.begin(), g_imported.imports_.end());
 	g_importer.imports_.insert(&g_imported);

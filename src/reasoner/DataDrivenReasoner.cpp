@@ -186,18 +186,20 @@ namespace knowrob::py {
 		}
 
 		void start() override {
+			// Note: In case there is an overwrite, we also want to make a call to the default implementation.
+			//  However, in case there is no overwrite, below will call the default implementation twice.
+			//  But the call is guarded by a check in the default implementation, so no problem.
 			start_default();
-			// Note: in case there is no overwrite, this will call the default implementation
-			//       a second time. But it is guarded by a check in the default implementation, so no problem.
 			call_method<void>(self, "start");
 		}
 
 		void start_default() { return this->DataDrivenReasoner::start(); }
 
 		void stop() override {
+			// Note: In case there is an overwrite, we also want to make a call to the default implementation.
+			//  However, in case there is no overwrite, below will call the default implementation twice.
+			//  But the call is guarded by a check in the default implementation, so no problem.
 			call_method<void>(self, "stop");
-			// Note: in case there is no overwrite, this will call the default implementation
-			//       a second time. But it is guarded by a check in the default implementation, so no problem.
 			stop_default();
 		}
 
@@ -228,7 +230,7 @@ namespace knowrob::py {
 				.def("setUpdateInterval", &DataDrivenReasonerWrap::setUpdateInterval)
 				.def("updateInterval", &DataDrivenReasonerWrap::updateInterval)
 						// methods that must be implemented by reasoner plugins
-				.def("update", pure_virtual(&DataDrivenReasonerWrap::update))
+				.def("update", &DataDrivenReasonerWrap::update)
 				.def("start", &DataDrivenReasonerWrap::start, &DataDrivenReasonerWrap::start_default)
 				.def("stop", &DataDrivenReasonerWrap::stop, &DataDrivenReasonerWrap::stop_default);
 	}
