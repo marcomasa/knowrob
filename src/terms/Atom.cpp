@@ -64,7 +64,8 @@ namespace knowrob::py {
 		using namespace boost::python;
 		enum_<AtomType>("AtomType")
 				.value("IRI", AtomType::IRI)
-				.value("REGULAR", AtomType::REGULAR);
+				.value("REGULAR", AtomType::REGULAR)
+				.export_values();
 		class_<Atom, std::shared_ptr<Atom>, bases<Atomic>>("Atom", no_init)
 				.def("Tabled", &Atom::Tabled).staticmethod("Tabled")
 				.def("atomType", &Atom::atomType)

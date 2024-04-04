@@ -91,7 +91,8 @@ namespace knowrob::py {
 		enum_<TermType>("TermType")
 				.value("FUNCTION", TermType::FUNCTION)
 				.value("ATOMIC", TermType::ATOMIC)
-				.value("VARIABLE", TermType::VARIABLE);
+				.value("VARIABLE", TermType::VARIABLE)
+				.export_values();
 		class_<Term, std::shared_ptr<TermWrap>, boost::noncopyable>
 				("Term", no_init)
 				.def("__eq__", &Term::operator==)

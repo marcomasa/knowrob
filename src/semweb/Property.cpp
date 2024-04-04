@@ -117,7 +117,8 @@ namespace knowrob::py {
 				.value("OBJECT_PROPERTY", OBJECT_PROPERTY)
 				.value("TRANSITIVE_PROPERTY", TRANSITIVE_PROPERTY)
 				.value("REFLEXIVE_PROPERTY", REFLEXIVE_PROPERTY)
-				.value("SYMMETRIC_PROPERTY", SYMMETRIC_PROPERTY);
+				.value("SYMMETRIC_PROPERTY", SYMMETRIC_PROPERTY)
+				.export_values();
 
 		class_<semweb::Property, bases<semweb::Resource>, std::shared_ptr<semweb::Property>, boost::noncopyable>
 				("Property", init<std::string_view>())

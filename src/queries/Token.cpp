@@ -51,7 +51,8 @@ namespace knowrob::py {
 		using namespace boost::python;
 		enum_<TokenType>("TokenType")
 				.value("CONTROL_TOKEN", TokenType::CONTROL_TOKEN)
-				.value("ANSWER_TOKEN", TokenType::ANSWER_TOKEN);
+				.value("ANSWER_TOKEN", TokenType::ANSWER_TOKEN)
+				.export_values();
 		class_<Token, std::shared_ptr<Token>, boost::noncopyable>
 				("Token", no_init)
 				.def("__repr__", &Token::stringForm)

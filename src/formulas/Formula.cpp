@@ -60,7 +60,8 @@ namespace knowrob::py {
 				.value("DISJUNCTION", FormulaType::DISJUNCTION)
 				.value("NEGATION", FormulaType::NEGATION)
 				.value("IMPLICATION", FormulaType::IMPLICATION)
-				.value("MODAL", FormulaType::MODAL);
+				.value("MODAL", FormulaType::MODAL)
+				.export_values();
 		class_<Formula, std::shared_ptr<Formula>, boost::noncopyable>
 				("Formula", no_init)
 				.def("type", &Formula::type)

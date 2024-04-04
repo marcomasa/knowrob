@@ -106,7 +106,8 @@ namespace knowrob::py {
 				.value("SHORT", XSDType::SHORT)
 				.value("UNSIGNED_LONG", XSDType::UNSIGNED_LONG)
 				.value("UNSIGNED_INT", XSDType::UNSIGNED_INT)
-				.value("UNSIGNED_SHORT", XSDType::UNSIGNED_SHORT);
+				.value("UNSIGNED_SHORT", XSDType::UNSIGNED_SHORT)
+				.export_values();
 		class_<XSDAtomic, std::shared_ptr<XSDAtomic>, bases<Atomic, RDFNode>, boost::noncopyable>
 				("XSDAtomic", no_init)
 				.def("xsdTypeIRI", &XSDAtomic::xsdTypeIRI)

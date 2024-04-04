@@ -27,7 +27,8 @@ namespace knowrob::py {
 		        .value("Sequence", GraphTermType::Sequence)
 		        .value("Union", GraphTermType::Union)
 		        .value("Pattern", GraphTermType::Pattern)
-		        .value("Builtin", GraphTermType::Builtin);
+		        .value("Builtin", GraphTermType::Builtin)
+		        .export_values();
 
 		class_<GraphTerm, std::shared_ptr<GraphTerm>, boost::noncopyable>
 		        ("GraphTerm", no_init)

@@ -50,7 +50,8 @@ namespace knowrob::py {
 		enum_<StorageFeature>("StorageFeature")
 				.value("NothingSpecial", StorageFeature::NothingSpecial)
 				.value("ReAssignment", StorageFeature::ReAssignment)
-				.value("TripleContext", StorageFeature::TripleContext);
+				.value("TripleContext", StorageFeature::TripleContext)
+				.export_values();
 		class_<Storage, std::shared_ptr<StorageWrap>, bases<DataSourceHandler>, boost::noncopyable>
 				("Storage", init<>())
 				.def("vocabulary", &Storage::vocabulary, return_value_policy<reference_existing_object>())

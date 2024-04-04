@@ -80,7 +80,8 @@ namespace knowrob::py {
 		enum_<AtomicType>("AtomicType")
 				.value("ATOM", AtomicType::ATOM)
 				.value("STRING", AtomicType::STRING)
-				.value("NUMERIC", AtomicType::NUMERIC);
+				.value("NUMERIC", AtomicType::NUMERIC)
+				.export_values();
 		class_<Atomic, std::shared_ptr<AtomicWrap>, bases<Term>, boost::noncopyable>
 				("Atomic", no_init)
 				.def("stringForm", pure_virtual(&Atomic::stringForm))

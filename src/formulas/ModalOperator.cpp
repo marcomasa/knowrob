@@ -182,7 +182,8 @@ namespace knowrob::py {
 				.value("KNOWLEDGE", ModalType::KNOWLEDGE)
 				.value("BELIEF", ModalType::BELIEF)
 				.value("ALWAYS", ModalType::ALWAYS)
-				.value("SOMETIMES", ModalType::SOMETIMES);
+				.value("SOMETIMES", ModalType::SOMETIMES)
+				.export_values();
 		class_<ModalOperator, std::shared_ptr<ModalOperator>>
 				("ModalOperator", init<ModalType>())
 				.def("isModalNecessity", &ModalOperator::isModalNecessity)
