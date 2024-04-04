@@ -6,10 +6,10 @@
 #include <boost/spirit/include/qi.hpp>
 #include "knowrob/queries/QueryParser.h"
 #include "knowrob/queries/QueryError.h"
-#include "knowrob/knowrob.h"
 #include "knowrob/queries/parsers/strings.h"
 #include "knowrob/queries/parsers/terms.h"
 #include "knowrob/queries/parsers/formula.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 
@@ -46,4 +46,18 @@ TermPtr QueryParser::parseConstant(const std::string &queryString) {
 
 std::string QueryParser::parseRawAtom(const std::string &queryString) {
 	return parse_<std::string, knowrob::parsers::str::StringRule>(queryString, knowrob::parsers::str::atom_or_iri());
+}
+
+namespace knowrob::py {
+	template<>
+	void createType<QueryParser>() {
+		using namespace boost::python;
+		class_<QueryParser, boost::noncopyable>
+				("QueryParser", no_init)
+				.def("parse", &QueryParser::parse).staticmethod("parse")
+				.def("parsePredicate", &QueryParser::parsePredicate).staticmethod("parsePredicate")
+				.def("parseFunction", &QueryParser::parseFunction).staticmethod("parseFunction")
+				.def("parseConstant", &QueryParser::parseConstant).staticmethod("parseConstant")
+				.def("parseRawAtom", &QueryParser::parseRawAtom).staticmethod("parseRawAtom");
+	}
 }

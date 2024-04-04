@@ -16,14 +16,44 @@ namespace knowrob {
 	 */
 	class QueryParser {
 	public:
+		/**
+		 * Parse a query string into a formula.
+		 *
+		 * @param queryString the query string.
+		 * @return the parsed formula.
+		 */
 		static FormulaPtr parse(const std::string &queryString);
 
+		/**
+		 * Parse a query string into a predicate.
+		 *
+		 * @param queryString the query string.
+		 * @return the parsed predicate.
+		 */
 		static PredicatePtr parsePredicate(const std::string &queryString);
 
+		/**
+		 * Parse a query string into a function.
+		 *
+		 * @param queryString the query string.
+		 * @return the parsed function.
+		 */
 		static FunctionPtr parseFunction(const std::string &queryString);
 
+		/**
+		 * Parse a query string into a constant term.
+		 *
+		 * @param queryString the query string.
+		 * @return the parsed constant term.
+		 */
 		static TermPtr parseConstant(const std::string &queryString);
 
+		/**
+		 * Parse a query string into a raw atom.
+		 *
+		 * @param queryString the query string.
+		 * @return the parsed raw atom.
+		 */
 		static std::string parseRawAtom(const std::string &queryString);
 	};
 

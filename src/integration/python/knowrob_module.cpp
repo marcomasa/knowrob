@@ -18,13 +18,11 @@
 #include "knowrob/terms/IRIAtom.h"
 #include "knowrob/formulas/Formula.h"
 #include "knowrob/queries/QueryContext.h"
+#include "knowrob/queries/QueryParser.h"
 #include "knowrob/reasoner/Reasoner.h"
-#include "knowrob/reasoner/DataDrivenReasoner.h"
-#include "knowrob/reasoner/GoalDrivenReasoner.h"
-
+#include "knowrob/KnowledgeBase.h"
 #include "knowrob/integration/python/converter.h"
 #include "knowrob/integration/python/utils.h"
-#include "knowrob/KnowledgeBase.h"
 
 using namespace knowrob;
 
@@ -74,9 +72,6 @@ static inline void register_triple_types() {
 	boost::python::class_<TripleList>("TripleList").def(boost::python::vector_indexing_suite<TripleList, true>());
 }
 
-static inline void register_query_types() {
-}
-
 BOOST_PYTHON_MODULE (knowrob) {
 	using namespace boost::python;
 	using namespace knowrob::py;
@@ -94,6 +89,7 @@ BOOST_PYTHON_MODULE (knowrob) {
 
 	createType<TokenStream>();
 	createType<QueryContext>();
+	createType<QueryParser>();
 	createType<DataSource>();
 	createType<DataSourceHandler>();
 	createType<Storage>();
