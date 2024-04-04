@@ -12,17 +12,13 @@ using namespace knowrob;
 CompoundFormula::CompoundFormula(FormulaType type,
 								 const std::vector<std::shared_ptr<Formula>> &formulae)
 		: Formula(type),
-		  formulae_(formulae),
-		  isGround_(isGround1()) {
+		  formulae_(formulae) {
+	isGround_ = isGround1();
 }
 
 bool CompoundFormula::isGround1() const {
 	return std::all_of(formulae_.begin(), formulae_.end(),
 					   [](const std::shared_ptr<Formula> &x) { return x->isGround(); });
-}
-
-bool CompoundFormula::isGround() const {
-	return isGround_;
 }
 
 void CompoundFormula::write(std::ostream &os) const {

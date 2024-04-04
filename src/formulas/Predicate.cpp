@@ -20,6 +20,7 @@ Predicate::Predicate(AtomPtr functor, const std::vector<TermPtr> &arguments)
 		  functor_(std::move(functor)),
 		  arguments_(arguments),
 		  variables_(getVariables1()) {
+	isGround_ = variables_.empty();
 }
 
 bool Predicate::isEqual(const Formula &other) const {

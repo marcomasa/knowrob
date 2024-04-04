@@ -58,7 +58,7 @@ namespace knowrob {
 		/**
 		 * @return true if this formula isMoreGeneralThan no free variables.
 		 */
-		virtual bool isGround() const = 0;
+		bool isGround() const { return isGround_; }
 
 		/**
 		 * @return true if this is the top concept.
@@ -77,6 +77,7 @@ namespace knowrob {
 
 	protected:
 		const FormulaType type_;
+		bool isGround_ = true;
 
 		virtual bool isEqual(const Formula &other) const = 0;
 	};

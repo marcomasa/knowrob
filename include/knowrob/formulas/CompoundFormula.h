@@ -34,14 +34,10 @@ namespace knowrob {
 		virtual const char *operator_symbol() const = 0;
 
 		// Override Formula
-		bool isGround() const override;
-
-		// Override Formula
 		void write(std::ostream &os) const override;
 
 	protected:
 		const std::vector<FormulaPtr> formulae_;
-		const bool isGround_;
 
 		bool isGround1() const;
 	};

@@ -51,18 +51,6 @@ namespace std {
 }
 
 namespace knowrob::py {
-	// this struct is needed because Formula has pure virtual methods
-	struct FormulaWrap : public Formula, boost::python::wrapper<Formula> {
-		explicit FormulaWrap(FormulaType type) : Formula(type) {}
-
-		bool isGround() const override { return this->get_override("isGround")(); }
-
-		void write(std::ostream &os) const override { this->get_override("write")(os); }
-
-		// protected:
-		bool isEqual(const Formula &other) const override { return this->get_override("isEqual")(other); }
-	};
-
 	template<>
 	void createType<Formula>() {
 		using namespace boost::python;
@@ -73,12 +61,11 @@ namespace knowrob::py {
 				.value("NEGATION", FormulaType::NEGATION)
 				.value("IMPLICATION", FormulaType::IMPLICATION)
 				.value("MODAL", FormulaType::MODAL);
-		class_<Formula, std::shared_ptr<FormulaWrap>, boost::noncopyable>
+		class_<Formula, std::shared_ptr<Formula>, boost::noncopyable>
 				("Formula", no_init)
 				.def("type", &Formula::type)
 				.def("__eq__", &Formula::operator==)
-				.def("isGround", pure_virtual(&Formula::isGround))
-				.def("write", pure_virtual(&Formula::write))
+				.def("isGround", &Formula::isGround)
 				.def("isAtomic", &Formula::isAtomic)
 				.def("isTop", &Formula::isTop)
 				.def("isBottom", &Formula::isBottom);

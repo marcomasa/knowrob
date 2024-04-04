@@ -51,9 +51,6 @@ namespace knowrob {
 		 */
 		const std::vector<TermPtr> &arguments() const { return arguments_; }
 
-		// Override Term, Formula
-		bool isGround() const override { return variables_.empty(); }
-
 		// Override Term
 		const std::set<std::string_view> &variables() { return variables_; }
 
