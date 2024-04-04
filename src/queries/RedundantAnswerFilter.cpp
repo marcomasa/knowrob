@@ -1,8 +1,10 @@
-//
-// Created by daniel on 30.07.23.
-//
+/*
+ * This file is part of KnowRob, please consult
+ * https://github.com/knowrob/knowrob for license details.
+ */
 
 #include "knowrob/queries/RedundantAnswerFilter.h"
+#include "knowrob/knowrob.h"
 
 using namespace knowrob;
 

@@ -16,9 +16,14 @@ namespace knowrob {
 	 */
 	class Answer : public Token {
 	public:
-		Answer() : frame_(std::make_shared<GraphSelector>()) {}
+		Answer()
+				: Token(TokenType::ANSWER_TOKEN),
+				  frame_(std::make_shared<GraphSelector>()) {}
 
-		Answer(const Answer &other) : frame_(other.frame_), reasonerTerm_(other.reasonerTerm_) {};
+		Answer(const Answer &other)
+				: Token(TokenType::ANSWER_TOKEN),
+				  frame_(other.frame_),
+				  reasonerTerm_(other.reasonerTerm_) {};
 
 		/**
 		 * The answer is framed in the context of a graph selector which determines
@@ -27,19 +32,13 @@ namespace knowrob {
 		 * perspective of a specific agent, or a specific point in time.
 		 * @return a graph selector.
 		 */
-		auto &frame() { return frame_; }
+		auto &frame() const { return frame_; }
 
 		/**
 		 * Assign a graph selector to this answer.
 		 * @param frame a graph selector.
 		 */
-		void setFrame(const std::shared_ptr<GraphSelector> &frame) {
-			if (frame != nullptr) {
-				frame_ = frame;
-			} else {
-				throw std::invalid_argument("frame must not be null");
-			}
-		}
+		void setFrame(const std::shared_ptr<GraphSelector> &frame);
 
 		/**
 		 * Apply a frame to this answer.
@@ -50,12 +49,12 @@ namespace knowrob {
 		/**
 		 * @return true if this answer is negative.
 		 */
-		virtual bool isNegative() const = 0;
+		bool isNegative() const { return isNegative_; }
 
 		/**
 		 * @return true if this answer is positive.
 		 */
-		virtual bool isPositive() const = 0;
+		bool isPositive() const { return isPositive_; }
 
 		/**
 		 * @return true if truth of this answer is uncertain.
@@ -91,27 +90,39 @@ namespace knowrob {
 		void setIsOccasionallyTrue(bool val);
 
 		/**
-		 * @return a human readable string representation of this answer.
-		 */
-		virtual std::string toHumanReadableString() const = 0;
-
-		/**
 		 * @return the name of the reasoner that was used to generate this answer.
 		 */
 		void setReasonerTerm(const AtomPtr &reasonerTerm) { reasonerTerm_ = reasonerTerm; }
 
-		// override Token
-		bool indicatesEndOfEvaluation() const override { return false; }
+		/**
+		 * @return the name of the reasoner that was used to generate this answer.
+		 */
+		auto &reasonerTerm() const { return reasonerTerm_; }
 
-		// override Token
-		TokenType type() const override { return TokenType::ANSWER_TOKEN; }
+		/**
+		 * @return the hash of this answer.
+		 */
+		size_t hashOfAnswer() const;
 
-		// override Token
-		size_t hash() const override;
+		/**
+		 * @return a string representation of this answer.
+		 */
+		std::string stringFormOfAnswer() const;
+
+		/**
+		 * @return a human readable string representation of this answer.
+		 */
+		std::string humanReadableForm() const;
 
 	protected:
 		std::shared_ptr<GraphSelector> frame_;
 		AtomPtr reasonerTerm_;
+		bool isPositive_ = false;
+		bool isNegative_ = false;
+
+		void setIsPositive(bool val) { isPositive_ = val; }
+
+		void setIsNegative(bool val) { isNegative_ = val; }
 	};
 
 	// alias

@@ -9,17 +9,20 @@
 #include "knowrob/queries/AnswerYes.h"
 #include "knowrob/knowrob.h"
 #include "knowrob/Logger.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 
 AnswerYes::AnswerYes()
 		: Answer(),
 		  substitution_(std::make_shared<Bindings>()) {
+	setIsPositive(true);
 }
 
 AnswerYes::AnswerYes(BindingsPtr substitution)
 		: Answer(),
 		  substitution_(std::move(substitution)) {
+	setIsPositive(true);
 }
 
 AnswerYes::AnswerYes(const AnswerYes &other)
@@ -27,6 +30,7 @@ AnswerYes::AnswerYes(const AnswerYes &other)
 		  substitution_(std::make_shared<Bindings>(*other.substitution_)),
 		  positiveGroundings_(other.positiveGroundings_),
 		  negativeGroundings_(other.negativeGroundings_) {
+	setIsPositive(true);
 }
 
 bool AnswerYes::isRicherThan(const AnswerYes &other) const {
@@ -95,13 +99,8 @@ bool AnswerYes::mergeWith(const AnswerYes &other, bool ignoreInconsistencies) {
 	return true;
 }
 
-size_t AnswerYes::hash() const {
-	size_t val = Answer::hash();
-	hashCombine(val, substitution_->hash());
-	return val;
-}
-
-std::ostream &AnswerYes::write(std::ostream &os) const {
+std::string AnswerYes::stringFormOfYes() const {
+	std::stringstream os;
 	if (reasonerTerm_) {
 		os << "[" << *reasonerTerm_ << "] ";
 	}
@@ -128,10 +127,10 @@ std::ostream &AnswerYes::write(std::ostream &os) const {
 	} else {
 		os << '\n';
 	}
-	return os;
+	return os.str();
 }
 
-std::string AnswerYes::toHumanReadableString() const {
+std::string AnswerYes::humanReadableFormOfYes() const {
 	std::stringstream os;
 	os << std::setprecision(4);
 	os << "the query is ";
@@ -188,3 +187,22 @@ namespace knowrob {
 		}
 	}
 } // namespace knowrob
+
+namespace knowrob::py {
+	template<>
+	void createType<AnswerYes>() {
+		using namespace boost::python;
+		class_<AnswerYes, bases<Answer>, std::shared_ptr<AnswerYes>, boost::noncopyable>
+				("AnswerYes", init<>())
+				.def("stringFormOfYes", &AnswerYes::stringFormOfYes)
+				.def("humanReadableFormOfYes", &AnswerYes::humanReadableFormOfYes)
+				.def("hasGrounding", &AnswerYes::hasGrounding)
+				.def("addGrounding", &AnswerYes::addGrounding)
+				.def("substitution", &AnswerYes::substitution, return_value_policy<reference_existing_object>())
+				.def("positiveGroundings", &AnswerYes::positiveGroundings, return_value_policy<reference_existing_object>())
+				.def("negativeGroundings", &AnswerYes::negativeGroundings, return_value_policy<reference_existing_object>())
+				.def("mergeWith", &AnswerYes::mergeWith)
+				.def("isRicherThan", &AnswerYes::isRicherThan)
+				.def("isGenericYes", &AnswerYes::isGenericYes);
+	}
+}

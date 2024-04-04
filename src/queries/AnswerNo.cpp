@@ -5,6 +5,7 @@
 
 #include "knowrob/queries/AnswerNo.h"
 #include "knowrob/knowrob.h"
+#include "knowrob/integration/python/utils.h"
 
 namespace knowrob {
 	const std::shared_ptr<const AnswerNo> &GenericNo() {
@@ -17,10 +18,12 @@ using namespace knowrob;
 
 AnswerNo::AnswerNo()
 		: Answer() {
+	setIsNegative(true);
 }
 
 AnswerNo::AnswerNo(const AnswerNo &other)
 		: Answer(other) {
+	setIsNegative(true);
 }
 
 void AnswerNo::addUngrounded(const std::shared_ptr<Predicate> &predicate, bool isNegated) {
@@ -45,7 +48,8 @@ bool AnswerNo::mergeWith(const AnswerNo &other) {
 	return true;
 }
 
-std::ostream &AnswerNo::write(std::ostream &os) const {
+std::string AnswerNo::stringFormOfNo() const {
+	std::stringstream os;
 	if (reasonerTerm_) {
 		os << "[" << *reasonerTerm_ << "] ";
 	}
@@ -72,10 +76,10 @@ std::ostream &AnswerNo::write(std::ostream &os) const {
 	} else {
 		os << '\n';
 	}
-	return os;
+	return os.str();
 }
 
-std::string AnswerNo::toHumanReadableString() const {
+std::string AnswerNo::humanReadableFormOfNo() const {
 	static const std::string longMsg = "there was evidence supporting the query to be false";
 	return longMsg;
 }
@@ -91,3 +95,18 @@ namespace knowrob {
 		}
 	}
 } // knowrob
+
+namespace knowrob::py {
+	template<>
+	void createType<AnswerNo>() {
+		using namespace boost::python;
+		class_<AnswerNo, bases<Answer>, std::shared_ptr<AnswerNo>, boost::noncopyable>
+				("AnswerNo", init<>())
+				.def("addUngrounded", &AnswerNo::addUngrounded)
+				.def("positiveUngrounded", &AnswerNo::positiveUngrounded, return_value_policy<reference_existing_object>())
+				.def("negativeUngrounded", &AnswerNo::negativeUngrounded, return_value_policy<reference_existing_object>())
+				.def("mergeWith", &AnswerNo::mergeWith)
+				.def("stringFormOfNo", &AnswerNo::stringFormOfNo)
+				.def("humanReadableFormOfNo", &AnswerNo::humanReadableFormOfNo);
+	}
+}

@@ -88,20 +88,15 @@ namespace knowrob {
 		 */
 		bool mergeWith(const AnswerYes &other, bool ignoreInconsistencies = false);
 
-		// override Token
-		size_t hash() const override;
+		/**
+		 * @return the string form of this answer.
+		 */
+		std::string stringFormOfYes() const;
 
-		// override Token
-		std::ostream &write(std::ostream &os) const override;
-
-		// override Answer
-		std::string toHumanReadableString() const override;
-
-		// override Answer
-		bool isNegative() const override { return false; }
-
-		// override Answer
-		bool isPositive() const override { return true; }
+		/**
+		 * @return the human readable form of this answer.
+		 */
+		std::string humanReadableFormOfYes() const;
 
 	protected:
 		std::vector<FramedPredicate> positiveGroundings_;

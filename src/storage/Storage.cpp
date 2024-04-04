@@ -1,5 +1,6 @@
 #include "knowrob/storage/Storage.h"
 #include "knowrob/integration/python/utils.h"
+#include "knowrob/storage/QueryableStorage.h"
 
 using namespace knowrob;
 
@@ -46,14 +47,23 @@ namespace knowrob::py {
 	template<>
 	void createType<Storage>() {
 		using namespace boost::python;
+		enum_<StorageFeature>("StorageFeature")
+				.value("NothingSpecial", StorageFeature::NothingSpecial)
+				.value("ReAssignment", StorageFeature::ReAssignment)
+				.value("TripleContext", StorageFeature::TripleContext);
 		class_<Storage, std::shared_ptr<StorageWrap>, bases<DataSourceHandler>, boost::noncopyable>
 				("Storage", init<>())
-				// methods that must be implemented by backend plugins
+				.def("vocabulary", &Storage::vocabulary, return_value_policy<reference_existing_object>())
+				.def("supports", &Storage::supports)
+				.def("getVersionOfOrigin", &Storage::getVersionOfOrigin)
+				.def("setVersionOfOrigin", &Storage::setVersionOfOrigin)
+						// methods that must be implemented by backend plugins
 				.def("initializeBackend", pure_virtual(&StorageWrap::initializeBackend))
 				.def("insertOne", pure_virtual(&StorageWrap::insertOne))
 				.def("insertAll", pure_virtual(&StorageWrap::insertAll))
 				.def("removeAll", pure_virtual(&StorageWrap::removeAll))
 				.def("removeOne", pure_virtual(&StorageWrap::removeOne))
 				.def("removeAllWithOrigin", pure_virtual(&StorageWrap::removeAllWithOrigin));
+		//createType<QueryableStorage>();
 	}
 }

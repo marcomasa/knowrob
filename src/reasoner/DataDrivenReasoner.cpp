@@ -218,6 +218,8 @@ namespace knowrob::py {
 				.value("InvalidatesItself", DataDrivenReasoner::InvalidatesItself)
 				.export_values();
 
+		py::createType<reasoner::Event>();
+
 		class_<DataDrivenReasoner, std::shared_ptr<DataDrivenReasonerWrap>, bases<Reasoner>, boost::noncopyable>
 				("DataDrivenReasoner", init<>())
 				.def("enableFeature", &DataDrivenReasonerWrap::enableFeature)
@@ -226,7 +228,7 @@ namespace knowrob::py {
 				.def("setUpdateInterval", &DataDrivenReasonerWrap::setUpdateInterval)
 				.def("updateInterval", &DataDrivenReasonerWrap::updateInterval)
 						// methods that must be implemented by reasoner plugins
-				.def("update", &DataDrivenReasonerWrap::update)
+				.def("update", pure_virtual(&DataDrivenReasonerWrap::update))
 				.def("start", &DataDrivenReasonerWrap::start, &DataDrivenReasonerWrap::start_default)
 				.def("stop", &DataDrivenReasonerWrap::stop, &DataDrivenReasonerWrap::stop_default);
 	}

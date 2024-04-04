@@ -18,20 +18,15 @@ namespace knowrob {
 
 		AnswerDontKnow(const AnswerDontKnow &other);
 
-		// override Token
-		size_t hash() const override;
+		/**
+		 * @return the string form of this answer.
+		 */
+		std::string stringFormOfDontKnow() const;
 
-		// override Token
-		std::ostream &write(std::ostream &os) const override;
-
-		// override Answer
-		std::string toHumanReadableString() const override;
-
-		// override Answer
-		bool isNegative() const override { return true; }
-
-		// override Answer
-		bool isPositive() const override { return false; }
+		/**
+		 * @return the human readable form of this answer.
+		 */
+		std::string humanReadableFormOfDontKnow() const;
 	};
 
 	// alias

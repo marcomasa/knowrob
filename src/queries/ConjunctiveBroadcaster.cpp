@@ -9,6 +9,7 @@
 #include "knowrob/queries/AnswerYes.h"
 #include "knowrob/queries/Answer.h"
 #include "knowrob/terms/Numeric.h"
+#include "knowrob/knowrob.h"
 
 using namespace knowrob;
 
@@ -18,7 +19,7 @@ ConjunctiveBroadcaster::ConjunctiveBroadcaster(bool ignoreInconsistentAnswers)
 		  hasSolution_(false) {}
 
 void ConjunctiveBroadcaster::push(Channel &channel, const TokenPtr &tok) {
-	if (tok->type() == TokenType::ANSWER_TOKEN) {
+	if (tok->tokenType() == TokenType::ANSWER_TOKEN) {
 		auto answer = std::static_pointer_cast<const Answer>(tok);
 		if (answer->isPositive()) {
 			const uint32_t channelID = channel.id();
@@ -27,7 +28,7 @@ void ConjunctiveBroadcaster::push(Channel &channel, const TokenPtr &tok) {
 
 			// add to the buffer for later combinations
 			// replace other answer with same hash if present
-			buffer_[channelID][answer->hash()] = answer;
+			buffer_[channelID][answer->hashOfAnswer()] = answer;
 
 			// generate combinations with other channels if each channel
 			// buffer has some content.
@@ -47,10 +48,9 @@ void ConjunctiveBroadcaster::push(Channel &channel, const TokenPtr &tok) {
 		}
 	} else {
 		if (tok->indicatesEndOfEvaluation() && !hasSolution_) {
-			if(negativeAnswers_.size()==1) {
+			if (negativeAnswers_.size() == 1) {
 				TokenBroadcaster::push(negativeAnswers_.front());
-			}
-			else {
+			} else {
 				auto no = std::make_shared<AnswerNo>();
 				for (auto &x: negativeAnswers_) {
 					no->mergeWith(*x);

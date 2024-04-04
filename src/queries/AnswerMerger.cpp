@@ -14,7 +14,7 @@ AnswerMerger::AnswerMerger(AnswerPtr partialResult)
 		  partialResult_(std::move(partialResult)) {}
 
 TokenPtr AnswerMerger::transform(const TokenPtr &tok) {
-	if (tok->type() == TokenType::ANSWER_TOKEN) {
+	if (tok->tokenType() == TokenType::ANSWER_TOKEN) {
 		auto answer = std::static_pointer_cast<const Answer>(tok);
 		return mergeAnswers(partialResult_, answer, true);
 	} else {

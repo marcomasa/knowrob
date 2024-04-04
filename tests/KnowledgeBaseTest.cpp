@@ -114,7 +114,7 @@ static std::vector<BindingsPtr> lookup(const FormulaPtr &formula, const QueryCon
 	while(true) {
 		auto solution = answerQueue->pop_front();
 		if(solution->indicatesEndOfEvaluation()) break;
-		if(solution->type() == TokenType::ANSWER_TOKEN) {
+		if(solution->tokenType() == TokenType::ANSWER_TOKEN) {
 			auto answer = std::static_pointer_cast<const Answer>(solution);
 			if(answer->isPositive()) {
 				auto answerYes = std::static_pointer_cast<const AnswerYes>(answer);

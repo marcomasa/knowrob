@@ -16,14 +16,7 @@
 #include "knowrob/terms/Blank.h"
 #include "knowrob/terms/String.h"
 #include "knowrob/terms/IRIAtom.h"
-#include "knowrob/formulas/Bottom.h"
-#include "knowrob/formulas/Top.h"
-#include "knowrob/formulas/Negation.h"
-#include "knowrob/formulas/Conjunction.h"
-#include "knowrob/formulas/Disjunction.h"
-#include "knowrob/formulas/Implication.h"
-#include "knowrob/formulas/ModalFormula.h"
-#include "knowrob/formulas/PredicateIndicator.h"
+#include "knowrob/formulas/Formula.h"
 #include "knowrob/queries/QueryContext.h"
 #include "knowrob/reasoner/Reasoner.h"
 #include "knowrob/reasoner/DataDrivenReasoner.h"
@@ -31,7 +24,6 @@
 
 #include "knowrob/integration/python/converter.h"
 #include "knowrob/integration/python/utils.h"
-#include "knowrob/knowrob.h"
 #include "knowrob/KnowledgeBase.h"
 
 using namespace knowrob;
@@ -65,17 +57,6 @@ static inline void register_term_types() {
 
 static inline void register_formula_types() {
 	py::createType<Formula>();
-	py::createType<CompoundFormula>();
-	py::createType<Negation>();
-	py::createType<Conjunction>();
-	py::createType<Disjunction>();
-	py::createType<Implication>();
-	py::createType<Predicate>();
-	py::createType<Bottom>();
-	py::createType<Top>();
-	py::createType<ModalFormula>();
-	py::createType<FirstOrderLiteral>();
-	py::createType<PredicateIndicator>();
 	// allow conversion between std::vector and python::list for Formula objects.
 	typedef std::vector<FormulaPtr> FormulaList;
 	py::custom_vector_from_seq<FormulaPtr>();
@@ -94,24 +75,6 @@ static inline void register_triple_types() {
 }
 
 static inline void register_query_types() {
-	py::createType<TokenStream>();
-	py::createType<TokenQueue>();
-	py::createType<TokenBroadcaster>();
-	py::createType<TokenBuffer>();
-	py::createType<QueryContext>();
-}
-
-static inline void register_db_types() {
-	py::createType<DataSource>();
-	py::createType<DataSourceHandler>();
-	py::createType<Storage>();
-}
-
-static inline void register_reasoner_types() {
-	py::createType<Reasoner>();
-	py::createType<DataDrivenReasoner>();
-	py::createType<GoalDrivenReasoner>();
-	py::createType<reasoner::Event>();
 }
 
 BOOST_PYTHON_MODULE (knowrob) {
@@ -128,9 +91,13 @@ BOOST_PYTHON_MODULE (knowrob) {
 	register_term_types();
 	register_formula_types();
 	register_triple_types();
-	register_query_types();
-	register_db_types();
-	register_reasoner_types();
+
+	createType<TokenStream>();
+	createType<QueryContext>();
+	createType<DataSource>();
+	createType<DataSourceHandler>();
+	createType<Storage>();
+	createType<Reasoner>();
 	createType<KnowledgeBase>();
 
 	/////////////////////////////////////////////////////

@@ -1,6 +1,7 @@
-//
-// Created by daniel on 30.01.24.
-//
+/*
+ * This file is part of KnowRob, please consult
+ * https://github.com/knowrob/knowrob for license details.
+ */
 
 #ifndef KNOWROB_END_OF_EVALUATION_H
 #define KNOWROB_END_OF_EVALUATION_H
@@ -10,30 +11,23 @@
 #include "Token.h"
 
 namespace knowrob {
+	/**
+	 * A control token that indicates the end of an evaluation.
+	 */
 	class EndOfEvaluation : public Token {
 	private:
-		EndOfEvaluation() = default;
+		EndOfEvaluation() : Token(TokenType::CONTROL_TOKEN) {
+			isTerminalToken_ = true;
+		};
 
 	public:
-		/**s
+		/**
 		 * @return the singleton instance.
 		 */
 		static auto &get() {
 			static std::shared_ptr<const EndOfEvaluation> instance(new EndOfEvaluation());
 			return instance;
 		}
-
-		// override Token
-		bool indicatesEndOfEvaluation() const override { return true; }
-
-		// override Token
-		TokenType type() const override { return TokenType::CONTROL_TOKEN; }
-
-		// override Token
-		std::ostream &write(std::ostream &os) const override { return os << "EndOfEvaluation"; }
-
-		// override Token
-		size_t hash() const override { return std::hash<std::string>()("EndOfEvaluation"); }
 	};
 }
 

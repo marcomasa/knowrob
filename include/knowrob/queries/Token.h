@@ -27,44 +27,41 @@ namespace knowrob {
 	 */
 	class Token {
 	public:
-		Token() = default;
+		explicit Token(TokenType tokenType) : tokenType_(tokenType) {};
 
 		/**
 		 * @return the type of this token.
 		 */
-		virtual TokenType type() const = 0;
-
-		/**
-		 * @return true if this token is a control token.
-		 */
-		bool isControlToken() const { return type() == TokenType::CONTROL_TOKEN; }
-
-		/**
-		 * @return true if this token is an answer token.
-		 */
-		bool isAnswerToken() const { return type() == TokenType::ANSWER_TOKEN; }
+		TokenType tokenType() const { return tokenType_; }
 
 		/**
 		 * @return the hash of this token.
 		 */
-		virtual size_t hash() const;
+		size_t hash() const;
+
+		/**
+		 * @return a programmer-readable string representation of this token.
+		 */
+		std::string stringForm() const;
+
+		/**
+		 * @return true if this token is a control token.
+		 */
+		bool isControlToken() const { return tokenType() == TokenType::CONTROL_TOKEN; }
+
+		/**
+		 * @return true if this token is an answer token.
+		 */
+		bool isAnswerToken() const { return tokenType() == TokenType::ANSWER_TOKEN; }
 
 		/**
 		 * @return true if this token indicates the end of an evaluation.
 		 */
-		virtual bool indicatesEndOfEvaluation() const = 0;
+		bool indicatesEndOfEvaluation() const { return isTerminalToken_; }
 
-		/**
-		 * Write this token to the given output stream.
-		 * @param os the output stream.
-		 * @return the output stream.
-		 */
-		virtual std::ostream &write(std::ostream &os) const = 0;
-
-		/**
-		 * @return a human readable string representation of this token.
-		 */
-		std::string toString() const;
+	protected:
+		TokenType tokenType_;
+		bool isTerminalToken_ = false;
 	};
 
 	// alias

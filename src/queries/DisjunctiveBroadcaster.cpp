@@ -20,7 +20,7 @@ void DisjunctiveBroadcaster::pushDeferredMessages() {
 	} else {
 		// neither a certain positive nor a certain negative answer has been produced.
 		if (deferredPositiveAnswers_.empty()) {
-			if (negativeAnswers_.size()==1) {
+			if (negativeAnswers_.size() == 1) {
 				TokenBroadcaster::push(negativeAnswers_.back());
 			} else if (!negativeAnswers_.empty()) {
 				auto no = std::make_shared<AnswerNo>();
@@ -79,7 +79,7 @@ void DisjunctiveBroadcaster::push(const TokenPtr &tok) {
 		// end of stream message indicates that the input stream has been closed.
 		pushDeferredMessages();
 		TokenBroadcaster::push(tok);
-	} else if (tok->type() == TokenType::ANSWER_TOKEN) {
+	} else if (tok->tokenType() == TokenType::ANSWER_TOKEN) {
 		pushAnswer(std::static_pointer_cast<const Answer>(tok));
 	} else {
 		TokenBroadcaster::push(tok);

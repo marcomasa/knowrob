@@ -7,6 +7,8 @@
 #include "knowrob/reasoner/Reasoner.h"
 #include "knowrob/reasoner/ReasonerManager.h"
 #include "knowrob/reasoner/ReasonerError.h"
+#include "knowrob/reasoner/GoalDrivenReasoner.h"
+#include "knowrob/reasoner/DataDrivenReasoner.h"
 #include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
@@ -64,5 +66,7 @@ namespace knowrob::py {
 						// methods that must be implemented by reasoner plugins
 				.def("initializeReasoner", &ReasonerWrap::initializeReasoner)
 				.def("setDataBackend", &ReasonerWrap::setDataBackend);
+		py::createType<DataDrivenReasoner>();
+		py::createType<GoalDrivenReasoner>();
 	}
 }

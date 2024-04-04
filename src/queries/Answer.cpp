@@ -8,8 +8,19 @@
 #include "knowrob/knowrob.h"
 #include "knowrob/queries/AnswerYes.h"
 #include "knowrob/queries/AnswerNo.h"
+#include "knowrob/queries/AnswerDontKnow.h"
+#include "knowrob/integration/python/utils.h"
+#include "knowrob/queries/EndOfEvaluation.h"
 
 using namespace knowrob;
+
+void Answer::setFrame(const std::shared_ptr<GraphSelector> &frame) {
+	if (frame != nullptr) {
+		frame_ = frame;
+	} else {
+		throw std::invalid_argument("frame must not be null");
+	}
+}
 
 void Answer::applyFrame(const GraphSelector &frame) {
 	frame_->graph = frame.graph;
@@ -50,8 +61,9 @@ void Answer::setIsOccasionallyTrue(bool val) {
 	frame_->occasional = val;
 }
 
-size_t Answer::hash() const {
-	size_t val = Token::hash();
+size_t Answer::hashOfAnswer() const {
+	size_t val = 0;
+	hashCombine(val, uint8_t(tokenType()));
 	if (isNegative()) {
 		hashCombine(val, 0);
 	} else if (isPositive()) {
@@ -59,17 +71,41 @@ size_t Answer::hash() const {
 	} else {
 		hashCombine(val, 2);
 	}
-	if(reasonerTerm_) {
-		hashCombine(val, reasonerTerm_->hash());
+	if (reasonerTerm()) {
+		hashCombine(val, reasonerTerm()->hash());
 	} else {
 		hashCombine(val, 0);
 	}
-	if(frame_) {
-		hashCombine(val, frame_->hash());
+	if (frame()) {
+		hashCombine(val, frame()->hash());
 	} else {
 		hashCombine(val, 0);
+	}
+	if (isPositive()) {
+		auto &bindings = ((AnswerYes *) this)->substitution();
+		hashCombine(val, bindings->hash());
 	}
 	return val;
+}
+
+std::string Answer::stringFormOfAnswer() const {
+	if (isNegative()) {
+		return ((AnswerNo *) this)->stringFormOfNo();
+	} else if (isPositive()) {
+		return ((AnswerYes *) this)->stringFormOfYes();
+	} else {
+		return ((AnswerDontKnow *) this)->stringFormOfDontKnow();
+	}
+}
+
+std::string Answer::humanReadableForm() const {
+	if (isNegative()) {
+		return ((AnswerNo *) this)->humanReadableFormOfNo();
+	} else if (isPositive()) {
+		return ((AnswerYes *) this)->humanReadableFormOfYes();
+	} else {
+		return ((AnswerDontKnow *) this)->humanReadableFormOfDontKnow();
+	}
 }
 
 namespace knowrob {
@@ -117,7 +153,32 @@ namespace knowrob {
 		} else if (v0->isNegative() != v1->isNegative()) {
 			return v0->isNegative() > v1->isNegative();
 		} else {
-			return v0->hash() < v1->hash();
+			return v0->hashOfAnswer() < v1->hashOfAnswer();
 		}
+	}
+}
+
+namespace knowrob::py {
+	template<>
+	void createType<Answer>() {
+		using namespace boost::python;
+		class_<Answer, bases<Token>, std::shared_ptr<Answer>, boost::noncopyable>
+				("Answer", no_init)
+				.def("isPositive", &Answer::isPositive)
+				.def("isNegative", &Answer::isNegative)
+				.def("isCertain", &Answer::isCertain)
+				.def("isUncertain", &Answer::isUncertain)
+				.def("isOccasionallyTrue", &Answer::isOccasionallyTrue)
+				.def("setIsOccasionallyTrue", &Answer::setIsOccasionallyTrue)
+				.def("setIsUncertain", &Answer::setIsUncertain)
+				.def("setFrame", &Answer::setFrame)
+				.def("frame", &Answer::frame, return_value_policy<reference_existing_object>())
+				.def("reasonerTerm", &Answer::reasonerTerm, return_value_policy<reference_existing_object>())
+				.def("hashOfAnswer", &Answer::hashOfAnswer)
+				.def("stringFormOfAnswer", &Answer::stringFormOfAnswer)
+				.def("humanReadableForm", &Answer::humanReadableForm);
+		createType<AnswerYes>();
+		createType<AnswerNo>();
+		createType<AnswerDontKnow>();
 	}
 }

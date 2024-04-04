@@ -18,7 +18,7 @@ NegationStage::NegationStage(KnowledgeBase *kb, QueryContextPtr ctx)
 		  ctx_(std::move(ctx)) {}
 
 void NegationStage::pushToBroadcast(const TokenPtr &tok) {
-	if (tok->type() == TokenType::ANSWER_TOKEN) {
+	if (tok->tokenType() == TokenType::ANSWER_TOKEN) {
 		auto answer = std::static_pointer_cast<const Answer>(tok);
 		if (answer->isPositive()) {
 			if (!succeeds(std::static_pointer_cast<const AnswerYes>(answer))) {
@@ -58,7 +58,7 @@ bool PredicateNegationStage::succeeds(const AnswerYesPtr &answer) {
 
 		// check if the EDB contains positive lit, if so negation cannot be true
 		results.push_back(kb_->edb()->getAnswerCursor(
-			kg, std::make_shared<GraphPathQuery>(instance, ctx_)));
+				kg, std::make_shared<GraphPathQuery>(instance, ctx_)));
 
 		// next check if positive lit is an IDB predicate, if so negation cannot be true.
 		// get list of reasoner that define the literal
@@ -68,7 +68,8 @@ bool PredicateNegationStage::succeeds(const AnswerYesPtr &answer) {
 			continue;
 		}
 		auto l_property_a = std::static_pointer_cast<Atomic>(l_property);
-		auto l_reasoner = kb_->reasonerManager()->getReasonerForRelation(PredicateIndicator(l_property_a->stringForm(), 2));
+		auto l_reasoner = kb_->reasonerManager()->getReasonerForRelation(
+				PredicateIndicator(l_property_a->stringForm(), 2));
 		for (auto &r: l_reasoner) {
 			results.push_back(r->submitQuery(instance, ctx_));
 		}
@@ -78,7 +79,7 @@ bool PredicateNegationStage::succeeds(const AnswerYesPtr &answer) {
 	for (auto &result: results) {
 		auto resultQueue = result->createQueue();
 		auto firstResult = resultQueue->pop_front();
-		if (firstResult->type() == TokenType::ANSWER_TOKEN) {
+		if (firstResult->tokenType() == TokenType::ANSWER_TOKEN) {
 			if (std::static_pointer_cast<const Answer>(firstResult)->isPositive()) {
 				return false;
 			}

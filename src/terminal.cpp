@@ -274,7 +274,7 @@ public:
 
 			if (nextResult->indicatesEndOfEvaluation()) {
 				break;
-			} else if (nextResult->type() == TokenType::ANSWER_TOKEN) {
+			} else if (nextResult->tokenType() == TokenType::ANSWER_TOKEN) {
 				auto answer = std::static_pointer_cast<const Answer>(nextResult);
 
 				if (answer->isPositive()) {

@@ -4,11 +4,13 @@
  */
 
 #include <mutex>
-#include <iostream>
 #include <knowrob/Logger.h>
 #include <knowrob/queries/TokenStream.h>
 #include <knowrob/queries/QueryError.h>
 #include "knowrob/integration/python/utils.h"
+#include "knowrob/queries/TokenQueue.h"
+#include "knowrob/queries/TokenBroadcaster.h"
+#include "knowrob/queries/TokenBuffer.h"
 
 using namespace knowrob;
 
@@ -118,6 +120,7 @@ namespace knowrob::py {
 	template<>
 	void createType<TokenStream>() {
 		using namespace boost::python;
+		createType<Token>();
 		class_<TokenStream, std::shared_ptr<TokenStream>, boost::noncopyable>
 				("TokenStream", no_init)
 				.def("isOpened", &TokenStream::isOpened);
@@ -128,5 +131,8 @@ namespace knowrob::py {
 				.def("close", &TokenStream::Channel::close)
 				.def("isOpened", &TokenStream::Channel::isOpened)
 				.def("id", &TokenStream::Channel::id);
+		createType<TokenQueue>();
+		createType<TokenBroadcaster>();
+		createType<TokenBuffer>();
 	}
 }

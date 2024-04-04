@@ -7,6 +7,14 @@
 #include "knowrob/formulas/Top.h"
 #include "knowrob/formulas/Bottom.h"
 #include "knowrob/integration/python/utils.h"
+#include "knowrob/formulas/CompoundFormula.h"
+#include "knowrob/formulas/Negation.h"
+#include "knowrob/formulas/Implication.h"
+#include "knowrob/formulas/Disjunction.h"
+#include "knowrob/formulas/ModalFormula.h"
+#include "knowrob/formulas/FirstOrderLiteral.h"
+#include "knowrob/formulas/PredicateIndicator.h"
+#include "knowrob/formulas/Conjunction.h"
 
 using namespace knowrob;
 
@@ -74,5 +82,17 @@ namespace knowrob::py {
 				.def("isAtomic", &Formula::isAtomic)
 				.def("isTop", &Formula::isTop)
 				.def("isBottom", &Formula::isBottom);
+
+		py::createType<CompoundFormula>();
+		py::createType<Negation>();
+		py::createType<Conjunction>();
+		py::createType<Disjunction>();
+		py::createType<Implication>();
+		py::createType<Predicate>();
+		py::createType<Bottom>();
+		py::createType<Top>();
+		py::createType<ModalFormula>();
+		py::createType<FirstOrderLiteral>();
+		py::createType<PredicateIndicator>();
 	}
 }

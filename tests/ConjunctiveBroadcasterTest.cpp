@@ -95,8 +95,8 @@ TEST_F(ConjunctiveBroadcasterTest, CombineMany_Unification) {
 	EXPECT_EQ(output->size(), 1);
 	if (output->size() == 1) {
 		auto combinedResult = output->front();
-		EXPECT_EQ(combinedResult->type(), TokenType::ANSWER_TOKEN);
-		if (combinedResult->type() == TokenType::ANSWER_TOKEN) {
+		EXPECT_EQ(combinedResult->tokenType(), TokenType::ANSWER_TOKEN);
+		if (combinedResult->tokenType() == TokenType::ANSWER_TOKEN) {
 			auto answer = std::static_pointer_cast<const Answer>(combinedResult);
 			EXPECT_TRUE(answer->isPositive());
 			EXPECT_FALSE(answer->isNegative());

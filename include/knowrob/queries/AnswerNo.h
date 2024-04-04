@@ -55,17 +55,15 @@ namespace knowrob {
 		 */
 		bool mergeWith(const AnswerNo &other);
 
-		// override Token
-		std::ostream &write(std::ostream &os) const override;
+		/**
+		 * @return the string form of this answer.
+		 */
+		std::string stringFormOfNo() const;
 
-		// override Answer
-		std::string toHumanReadableString() const override;
-
-		// override Answer
-		bool isNegative() const override { return true; }
-
-		// override Answer
-		bool isPositive() const override { return false; }
+		/**
+		 * @return the human readable form of this answer.
+		 */
+		std::string humanReadableFormOfNo() const;
 
 	protected:
 		std::vector<FramedPredicate> positiveUngrounded_;
