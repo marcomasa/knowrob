@@ -19,7 +19,9 @@ namespace knowrob {
 		 * Constructs a blank node from a name.
 		 * @param name the name of the blank node
 		 */
-		explicit Blank(std::string_view name) : Atom(name) {}
+		explicit Blank(std::string_view name) : Atom(name) {
+			isBlank_ = true;
+		}
 
 		/**
 		 * @param stringForm the string form of the IRI
@@ -29,9 +31,6 @@ namespace knowrob {
 
 		// Override RDFNode
 		RDFNodeType rdfNodeType() const final { return RDFNodeType::BLANK; }
-
-		// Override Term
-		bool isBlank() const final { return true; }
 	};
 
 } // knowrob

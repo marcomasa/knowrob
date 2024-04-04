@@ -86,26 +86,28 @@ namespace knowrob {
 		/**
 		 * @return true if this term is an IRI.
 		 */
-		virtual bool isIRI() const;
+		bool isIRI() const { return isIRI_; }
 
 		/**
 		 * @return true if this term is a blank node.
 		 */
-		virtual bool isBlank() const;
-
-		/**
-		 * @return set of variables of this term.
-		 */
-		virtual const std::set<std::string_view> &variables() const = 0;
+		bool isBlank() const { return isBlank_; }
 
 		/**
 		 * @return the hash of this.
 		 */
 		size_t hash() const;
 
+		/**
+		 * @return set of variables of this term.
+		 */
+		virtual const std::set<std::string_view> &variables() const = 0;
+
 	protected:
 		static const std::set<std::string_view> noVariables_;
 		const TermType termType_;
+		bool isBlank_ = false;
+		bool isIRI_ = false;
 
 		/**
 		 * Write the term into an ostream.

@@ -15,14 +15,6 @@ using namespace knowrob;
 
 const std::set<std::string_view> Term::noVariables_ = {};
 
-bool Term::isIRI() const {
-	return false;
-}
-
-bool Term::isBlank() const {
-	return false;
-}
-
 bool Term::isAtom() const {
 	return termType() == TermType::ATOMIC && ((Atomic *) this)->atomicType() == AtomicType::ATOM;
 }
