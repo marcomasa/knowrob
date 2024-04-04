@@ -52,9 +52,6 @@ namespace knowrob {
 		auto arity() const { return arguments_.size(); }
 
 		// Override Term
-		bool isAtomic() const override { return arguments_.empty(); }
-
-		// Override Term
 		const std::set<std::string_view> &variables() const override { return variables_; }
 
 		// Override Term

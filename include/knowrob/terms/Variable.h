@@ -47,9 +47,6 @@ namespace knowrob {
 		const AtomPtr &nameAtom() const { return nameAtom_; }
 
 		// Override Term
-		bool isAtomic() const override { return false; }
-
-		// Override Term
 		const std::set<std::string_view> &variables() const override { return variables_; }
 
 		// Override Term

@@ -69,8 +69,6 @@ namespace knowrob::py {
 	struct TermWrap : public Term, boost::python::wrapper<Term> {
 		explicit TermWrap(PyObject *p, TermType termType) : self(p), Term(termType) {}
 
-		bool isAtomic() const override { return knowrob::py::call_method<bool>(self, "isAtomic"); }
-
 		size_t hash() const override { return knowrob::py::call_method<size_t>(self, "hash"); }
 
 		const std::set<std::string_view> &
@@ -93,7 +91,7 @@ namespace knowrob::py {
 				.def("__repr__", +[](Term &t) { return readString(t); })
 				.def("termType", &Term::termType)
 				.def("isGround", pure_virtual(&Term::isGround))
-				.def("isAtomic", pure_virtual(&Term::isAtomic))
+				.def("isAtomic", &Term::isAtomic)
 				.def("isAtom", &Term::isAtom)
 				.def("isVariable", &Term::isVariable)
 				.def("isFunction", &Term::isFunction)

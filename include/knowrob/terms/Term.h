@@ -56,7 +56,7 @@ namespace knowrob {
 		/**
 		 * @return true if this term is bound and not compound.
 		 */
-		virtual bool isAtomic() const = 0;
+		bool isAtomic() const { return termType_ == TermType::ATOMIC; }
 
 		/**
 		 * @return true if this term is an atom.

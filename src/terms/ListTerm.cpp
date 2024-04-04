@@ -60,7 +60,7 @@ TEST(list_term, NIL) {
 	EXPECT_TRUE(ListTerm::nil()->elements().empty());
 	EXPECT_TRUE(ListTerm({}).elements().empty());
 	EXPECT_TRUE(ListTerm({}).isNIL());
-	EXPECT_TRUE(ListTerm::nil()->isAtomic());
+	EXPECT_FALSE(ListTerm::nil()->isAtomic());
 	EXPECT_TRUE(ListTerm::nil()->isGround());
 }
 

@@ -61,9 +61,6 @@ namespace knowrob {
 		size_t hash() const override;
 
 		// Override Term
-		bool isAtomic() const final { return true; }
-
-		// Override Term
 		const std::set<std::string_view> &variables() const final { return Term::noVariables_; }
 
 	protected:
