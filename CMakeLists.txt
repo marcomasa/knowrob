@@ -452,7 +452,8 @@ add_executable(all_gtests
         tests/QueryTreeTest.cpp
         tests/DependencyGraphTest.cpp
         tests/DataSourceTest.cpp
-        tests/ConjunctiveBroadcasterTest.cpp)
+        tests/ConjunctiveBroadcasterTest.cpp
+        tests/UnifierTest.cpp)
 add_dependencies(all_gtests knowrob_py)
 target_link_libraries(all_gtests
         -Wl,--whole-archive,--no-as-needed
