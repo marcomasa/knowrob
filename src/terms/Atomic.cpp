@@ -59,7 +59,7 @@ std::shared_ptr<Atomic> Atomic::makeTripleValue(const FramedTriple &triple) {
 	return IRIAtom::Tabled(triple.valueAsString());
 }
 
-size_t Atomic::hash() const {
+size_t Atomic::hashOfAtomic() const {
 	return std::hash<std::string_view>{}(stringForm());
 }
 

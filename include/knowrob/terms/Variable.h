@@ -49,9 +49,6 @@ namespace knowrob {
 		// Override Term
 		const std::set<std::string_view> &variables() const override { return variables_; }
 
-		// Override Term
-		size_t hash() const override { return nameAtom_->hash(); }
-
 	protected:
 		const AtomPtr nameAtom_;
 		const std::set<std::string_view> variables_;

@@ -43,6 +43,23 @@ bool Term::isString() const {
 	return termType() == TermType::ATOMIC && ((Atomic *) this)->atomicType() == AtomicType::STRING;
 }
 
+size_t Term::hash() const {
+	size_t val = 0;
+	hashCombine(val, uint8_t(termType()));
+	switch (termType()) {
+		case TermType::ATOMIC:
+			hashCombine(val, ((Atomic *) this)->hashOfAtomic());
+			break;
+		case TermType::FUNCTION:
+			hashCombine(val, ((Function *) this)->hashOfFunction());
+			break;
+		case TermType::VARIABLE:
+			hashCombine(val, std::hash<std::string_view>{}(((Variable *) this)->name()));
+			break;
+	}
+	return val;
+}
+
 bool Term::operator==(const Term &other) const {
 	if (this == &other) return true;
 	if (termType() != other.termType()) return false;
@@ -69,8 +86,6 @@ namespace knowrob::py {
 	struct TermWrap : public Term, boost::python::wrapper<Term> {
 		explicit TermWrap(PyObject *p, TermType termType) : self(p), Term(termType) {}
 
-		size_t hash() const override { return knowrob::py::call_method<size_t>(self, "hash"); }
-
 		const std::set<std::string_view> &
 		variables() const override { return knowrob::py::call_method<std::set<std::string_view> &>(self, "variables"); }
 
@@ -89,6 +104,7 @@ namespace knowrob::py {
 				("Term", no_init)
 				.def("__eq__", &Term::operator==)
 				.def("__repr__", +[](Term &t) { return readString(t); })
+				.def("__hash__", &Term::hash)
 				.def("termType", &Term::termType)
 				.def("isAtomic", &Term::isAtomic)
 				.def("isAtom", &Term::isAtom)
@@ -99,7 +115,6 @@ namespace knowrob::py {
 				.def("isIRI", &Term::isIRI)
 				.def("isBlank", &Term::isBlank)
 				.def("isGround", &Term::isGround)
-				.def("hash", pure_virtual(&Term::hash))
 				.def("variables", pure_virtual(&Term::variables), return_value_policy<copy_const_reference>());
 	}
 }

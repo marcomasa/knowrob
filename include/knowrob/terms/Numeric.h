@@ -166,9 +166,6 @@ namespace knowrob {
 			return numericForm() == otherNumeric->numericForm();
 		}
 
-		// Override Term
-		size_t hash() const override { return std::hash<T1>()(numericForm()); }
-
 	private:
 		// Note: both are mutable because they are initialized in a lazy fashion
 		mutable std::optional<std::string> stringForm_;

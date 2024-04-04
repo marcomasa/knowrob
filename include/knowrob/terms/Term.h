@@ -14,7 +14,7 @@ namespace knowrob {
 	/**
 	 * The type of a term.
 	 */
-	enum class TermType {
+	enum class TermType : uint8_t {
 		/** atomic term */
 		ATOMIC = 0,
 		/** a variable */
@@ -101,7 +101,7 @@ namespace knowrob {
 		/**
 		 * @return the hash of this.
 		 */
-		virtual size_t hash() const = 0;
+		size_t hash() const;
 
 	protected:
 		static const std::set<std::string_view> noVariables_;

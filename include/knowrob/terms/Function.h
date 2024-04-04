@@ -51,11 +51,13 @@ namespace knowrob {
 		 */
 		auto arity() const { return arguments_.size(); }
 
-		// Override Term
-		const std::set<std::string_view> &variables() const override { return variables_; }
+		/**
+		 * @return the hash of this function.
+		 */
+		size_t hashOfFunction() const;
 
 		// Override Term
-		size_t hash() const override;
+		const std::set<std::string_view> &variables() const override { return variables_; }
 
 	protected:
 		const std::shared_ptr<Atom> functor_;

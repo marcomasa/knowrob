@@ -57,8 +57,10 @@ namespace knowrob {
 		 */
 		static std::shared_ptr<Atomic> makeTripleValue(const FramedTriple &triple);
 
-		// Override Term
-		size_t hash() const override;
+		/**
+		 * @return the hash of this atomic term.
+		 */
+		size_t hashOfAtomic() const;
 
 		// Override Term
 		const std::set<std::string_view> &variables() const final { return Term::noVariables_; }

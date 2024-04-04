@@ -41,7 +41,7 @@ bool Function::isSameFunction(const Function &other) const {
 	return true;
 }
 
-size_t Function::hash() const {
+size_t Function::hashOfFunction() const {
 	auto seed = static_cast<size_t>(0);
 	hashCombine(seed, functor_->hash());
 	for (auto &arg: arguments_) {
