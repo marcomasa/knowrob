@@ -17,7 +17,10 @@ namespace knowrob {
 	 */
 	class XSDAtomic : public RDFNode, public Atomic {
 	public:
-		XSDAtomic() : RDFNode(), Atomic() {}
+		explicit XSDAtomic(XSDType xsdType)
+				: RDFNode(),
+				  Atomic(xsdType == XSDType::STRING ? AtomicType::STRING : AtomicType::NUMERIC),
+				  xsdType_(xsdType) {}
 
 		/**
 		 * Create an XSDAtomic from a lexical form and an XSD datatype IRI
@@ -37,10 +40,13 @@ namespace knowrob {
 		 * The XSD datatype determines how the lexical form maps to a literal value
 		 * @return the XSD datatype of the RDF literal
 		 */
-		virtual XSDType xsdType() const = 0;
+		XSDType xsdType() const { return xsdType_; }
 
 		// override RDFNode
 		RDFNodeType rdfNodeType() const override { return RDFNodeType::LITERAL; }
+
+	protected:
+		XSDType xsdType_;
 	};
 
 } // knowrob

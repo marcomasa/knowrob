@@ -51,7 +51,7 @@ namespace knowrob::py {
 
 		class_<TripleEvent, bases<ReasonerEvent>, std::shared_ptr<TripleEvent>, boost::noncopyable>
 				("TripleEvent", no_init)
-				.def("triples", &TripleEvent::triples, return_value_policy<copy_const_reference>())
+				.def("triples", &TripleEvent::triples, return_value_policy<reference_existing_object>())
 				.def("triple", &TripleEvent::triple, return_value_policy<reference_existing_object>());
 
 		class_<AssertionEvent, std::shared_ptr<AssertionEvent>, bases<TripleEvent>, boost::noncopyable>

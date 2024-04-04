@@ -11,7 +11,7 @@
 using namespace knowrob;
 
 Variable::Variable(std::string_view name)
-		: Term(),
+		: Term(TermType::VARIABLE),
 		  nameAtom_(Atom::Tabled(name)),
 		  variables_({nameAtom_->stringForm()}) {
 }

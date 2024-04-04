@@ -13,8 +13,10 @@ Atom::AtomTable &Atom::table() {
 	return theTable;
 }
 
-Atom::Atom(std::string_view stringForm)
-		: Atomic(), stringForm_(stringForm) {
+Atom::Atom(std::string_view stringForm, AtomType atomType)
+		: Atomic(AtomicType::ATOM),
+		  atomType_(atomType),
+		  stringForm_(stringForm) {
 }
 
 bool Atom::isSameAtom(const Atom &other) const {
@@ -27,7 +29,7 @@ void Atom::write(std::ostream &os) const {
 	if (stringForm_.empty()) {
 		os << "''";
 	} else if (std::islower(stringForm_[0]) &&
-	           std::all_of(stringForm_.begin(), stringForm_.end(), ::isalnum)) {
+			   std::all_of(stringForm_.begin(), stringForm_.end(), ::isalnum)) {
 		// avoid single quotes
 		os << stringForm_;
 	} else {
@@ -64,7 +66,7 @@ namespace knowrob::py {
 				.value("IRI", AtomType::IRI)
 				.value("REGULAR", AtomType::REGULAR);
 		class_<Atom, std::shared_ptr<Atom>, bases<Atomic>>("Atom", no_init)
-				.def("Tabled", &Atom::Tabled)
+				.def("Tabled", &Atom::Tabled).staticmethod("Tabled")
 				.def("atomType", &Atom::atomType)
 				.def("isSameAtom", &Atom::isSameAtom);
 	}

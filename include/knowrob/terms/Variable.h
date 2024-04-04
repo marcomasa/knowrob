@@ -47,9 +47,6 @@ namespace knowrob {
 		const AtomPtr &nameAtom() const { return nameAtom_; }
 
 		// Override Term
-		TermType termType() const final { return TermType::VARIABLE; }
-
-		// Override Term
 		bool isAtomic() const override { return false; }
 
 		// Override Term

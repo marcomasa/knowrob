@@ -66,9 +66,7 @@ size_t Atomic::hash() const {
 namespace knowrob::py {
 	// this struct is needed because Atomic has pure virtual methods
 	struct AtomicWrap : public Atomic, boost::python::wrapper<Atomic> {
-		explicit AtomicWrap(PyObject *p) : self(p), Atomic() {}
-
-		AtomicType atomicType() const override { return call_method<AtomicType>(self, "atomicType"); }
+		explicit AtomicWrap(PyObject *p, AtomicType atomicType) : self(p), Atomic(atomicType) {}
 
 		std::string_view stringForm() const override { return call_method<std::string_view>(self, "stringForm"); }
 
@@ -86,7 +84,7 @@ namespace knowrob::py {
 		class_<Atomic, std::shared_ptr<AtomicWrap>, bases<Term>, boost::noncopyable>
 				("Atomic", no_init)
 				.def("stringForm", pure_virtual(&Atomic::stringForm))
-				.def("atomicType", pure_virtual(&Atomic::atomicType))
+				.def("atomicType", &Atomic::atomicType)
 				.def("isSameAtomic", &Atomic::isSameAtomic);
 	}
 }

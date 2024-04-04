@@ -29,7 +29,7 @@ namespace knowrob {
 	 */
 	class Term {
 	public:
-		Term() = default;
+		explicit Term(TermType termType) : termType_(termType) {};
 
 		/**
 		 * @param other another term
@@ -46,7 +46,7 @@ namespace knowrob {
 		/**
 		 * @return the type of this term.
 		 */
-		virtual TermType termType() const = 0;
+		TermType termType() const { return termType_; }
 
 		/**
 		 * @return true if this term has no variables.
@@ -105,6 +105,7 @@ namespace knowrob {
 
 	protected:
 		static const std::set<std::string_view> noVariables_;
+		const TermType termType_;
 
 		/**
 		 * Write the term into an ostream.

@@ -11,7 +11,7 @@
 using namespace knowrob;
 
 Function::Function(AtomPtr functor, const std::vector<TermPtr> &arguments)
-		: Term(),
+		: Term(TermType::FUNCTION),
 		  functor_(std::move(functor)),
 		  arguments_(arguments),
 		  variables_(getVariables1()) {
@@ -71,7 +71,7 @@ namespace knowrob::py {
 		class_<Function, std::shared_ptr<Function>, bases<Term>>
 				("Function", init<std::string_view, const std::vector<TermPtr> &>())
 				.def(init<const AtomPtr &, const std::vector<TermPtr> &>())
-				.def("functor", &Function::functor, return_value_policy<copy_const_reference>())
-				.def("arguments", &Function::arguments, return_value_policy<copy_const_reference>());
+				.def("functor", &Function::functor, return_value_policy<reference_existing_object>())
+				.def("arguments", &Function::arguments, return_value_policy<reference_existing_object>());
 	}
 }

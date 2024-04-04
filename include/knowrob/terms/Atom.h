@@ -37,7 +37,7 @@ namespace knowrob {
 		 * Constructs an atom from a string.
 		 * @param stringForm the string form of the atom
 		 */
-		explicit Atom(std::string_view stringForm);
+		explicit Atom(std::string_view stringForm, AtomType atomType = AtomType::REGULAR);
 
 		/**
 		 * @param other another atom
@@ -48,19 +48,18 @@ namespace knowrob {
 		/**
 		 * @return the type of this atom.
 		 */
-		virtual AtomType atomType() const { return AtomType::REGULAR; }
-
-		// override Atomic
-		AtomicType atomicType() const final { return AtomicType::ATOM; }
+		AtomType atomType() const { return atomType_; }
 
 		// override Atomic
 		std::string_view stringForm() const final { return stringForm_; }
 
 	protected:
 		std::string_view stringForm_;
+		const AtomType atomType_;
 
 		using AtomTable = std::map<std::string, std::optional<std::weak_ptr<Atom>>, std::less<>>;
-		static AtomTable& table();
+
+		static AtomTable &table();
 
 		// override Term
 		void write(std::ostream &os) const override;

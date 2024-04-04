@@ -30,7 +30,8 @@ namespace knowrob {
 	 */
 	class Atomic : public Term {
 	public:
-		Atomic() = default;
+		explicit Atomic(AtomicType atomicType)
+				: Term(TermType::ATOMIC), atomicType_(atomicType) {}
 
 		/**
 		 * @param other another atomic
@@ -41,7 +42,7 @@ namespace knowrob {
 		/**
 		 * @return the type of the atomic term
 		 */
-		virtual AtomicType atomicType() const = 0;
+		AtomicType atomicType() const { return atomicType_; }
 
 		/**
 		 * Get the lexical form of this atomic term.
@@ -60,15 +61,14 @@ namespace knowrob {
 		size_t hash() const override;
 
 		// Override Term
-		TermType termType() const final { return TermType::ATOMIC; }
-
-		// Override Term
 		bool isAtomic() const final { return true; }
 
 		// Override Term
 		const std::set<std::string_view> &variables() const final { return Term::noVariables_; }
 
 	protected:
+		const AtomicType atomicType_;
+
 		// override Term
 		void write(std::ostream &os) const override { os << stringForm(); }
 	};

@@ -25,7 +25,7 @@ std::shared_ptr<Numeric> Numeric::falseAtom() {
 namespace knowrob::py {
 	// this struct is needed because Numeric has pure virtual methods
 	struct NumericWrap : public Numeric, boost::python::wrapper<Numeric> {
-		explicit NumericWrap(PyObject *p) : self(p), Numeric() {}
+		explicit NumericWrap(PyObject *p, XSDType xsdType) : self(p), Numeric(xsdType) {}
 
 		double asDouble() const override { return call_method<double>(self, "asDouble"); }
 

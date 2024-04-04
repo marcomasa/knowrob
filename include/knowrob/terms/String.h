@@ -14,19 +14,13 @@ namespace knowrob {
 	 */
 	class StringBase : public XSDAtomic {
 	public:
-		StringBase() = default;
+		StringBase() : XSDAtomic(XSDType::STRING) {}
 
 		/**
 		 * @param other another string
 		 * @return true if both strings are equal
 		 */
 		bool isSameString(const StringBase &other) const;
-
-		// override Atomic
-		AtomicType atomicType() const final { return AtomicType::STRING; }
-
-		// override XSDAtomic
-		XSDType xsdType() const final { return XSDType::STRING; }
 
 	protected:
 		// override Term

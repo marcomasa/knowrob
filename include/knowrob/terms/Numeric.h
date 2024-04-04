@@ -17,7 +17,7 @@ namespace knowrob {
 	 */
 	class Numeric : public XSDAtomic {
 	public:
-		Numeric() : XSDAtomic() {}
+		explicit Numeric(XSDType xsdType) : XSDAtomic(xsdType) {}
 
 		/**
 		 * @param other another numeric
@@ -84,9 +84,6 @@ namespace knowrob {
 		 * @return true if the numeric is a floating number
 		 */
 		bool isFloatingNumber() const;
-
-		// override Atomic
-		AtomicType atomicType() const final { return AtomicType::NUMERIC; }
 	};
 
 	/**
@@ -101,12 +98,12 @@ namespace knowrob {
 		/**
 		 * @param numericForm the numeric form of the term
 		 */
-		explicit NumericTemplate(T1 numericForm) : Numeric(), numericForm_(numericForm) {}
+		explicit NumericTemplate(T1 numericForm) : Numeric(T2), numericForm_(numericForm) {}
 
 		/**
 		 * @param stringForm the string form of the term
 		 */
-		explicit NumericTemplate(std::string_view stringForm) : Numeric(), stringForm_(stringForm) {}
+		explicit NumericTemplate(std::string_view stringForm) : Numeric(T2), stringForm_(stringForm) {}
 
 		T1 operator()() const { return numericForm(); }
 
@@ -171,9 +168,6 @@ namespace knowrob {
 
 		// Override Term
 		size_t hash() const override { return std::hash<T1>()(numericForm()); }
-
-		// override XSDAtomic
-		XSDType xsdType() const final { return T2; }
 
 	private:
 		// Note: both are mutable because they are initialized in a lazy fashion

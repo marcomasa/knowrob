@@ -93,16 +93,6 @@ namespace knowrob {
 }
 
 namespace knowrob::py {
-	// this struct is needed because XSDAtomic has pure virtual methods
-	struct XSDAtomicWrap : public XSDAtomic, boost::python::wrapper<XSDAtomic> {
-		explicit XSDAtomicWrap(PyObject *p) : self(p), XSDAtomic() {}
-
-		XSDType xsdType() const override { return call_method<XSDType>(self, "xsdType"); }
-
-	private:
-		PyObject *self;
-	};
-
 	template<>
 	void createType<XSDAtomic>() {
 		using namespace boost::python;
@@ -117,10 +107,10 @@ namespace knowrob::py {
 				.value("UNSIGNED_LONG", XSDType::UNSIGNED_LONG)
 				.value("UNSIGNED_INT", XSDType::UNSIGNED_INT)
 				.value("UNSIGNED_SHORT", XSDType::UNSIGNED_SHORT);
-		class_<XSDAtomic, std::shared_ptr<XSDAtomicWrap>, bases<Atomic, RDFNode>, boost::noncopyable>
+		class_<XSDAtomic, std::shared_ptr<XSDAtomic>, bases<Atomic, RDFNode>, boost::noncopyable>
 				("XSDAtomic", no_init)
 				.def("xsdTypeIRI", &XSDAtomic::xsdTypeIRI)
-				.def("xsdType", pure_virtual(&XSDAtomic::xsdType))
+				.def("xsdType", &XSDAtomic::xsdType)
 				.def("create", &XSDAtomic::create);
 	}
 }

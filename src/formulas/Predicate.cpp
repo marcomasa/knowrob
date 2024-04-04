@@ -96,7 +96,7 @@ namespace knowrob::py {
 		class_<Predicate, std::shared_ptr<Predicate>, bases<Formula>>
 				("Predicate", init<std::string_view, const std::vector<TermPtr> &>())
 				.def(init<const AtomPtr &, const std::vector<TermPtr> &>())
-				.def("arguments", &Predicate::arguments, return_value_policy<copy_const_reference>())
+				.def("arguments", &Predicate::arguments, return_value_policy<reference_existing_object>())
 				.def("functor", &Predicate::functor, return_value_policy<copy_const_reference>());
 	}
 }

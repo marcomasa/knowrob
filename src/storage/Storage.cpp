@@ -58,12 +58,12 @@ namespace knowrob::py {
 				.def("getVersionOfOrigin", &Storage::getVersionOfOrigin)
 				.def("setVersionOfOrigin", &Storage::setVersionOfOrigin)
 						// methods that must be implemented by backend plugins
-				.def("initializeBackend", pure_virtual(&StorageWrap::initializeBackend))
-				.def("insertOne", pure_virtual(&StorageWrap::insertOne))
-				.def("insertAll", pure_virtual(&StorageWrap::insertAll))
-				.def("removeAll", pure_virtual(&StorageWrap::removeAll))
-				.def("removeOne", pure_virtual(&StorageWrap::removeOne))
-				.def("removeAllWithOrigin", pure_virtual(&StorageWrap::removeAllWithOrigin));
+				.def("initializeBackend", pure_virtual(&Storage::initializeBackend))
+				.def("insertOne", pure_virtual(&Storage::insertOne))
+				.def("insertAll", pure_virtual(&Storage::insertAll))
+				.def("removeAll", pure_virtual(&Storage::removeAll))
+				.def("removeOne", pure_virtual(&Storage::removeOne))
+				.def("removeAllWithOrigin", pure_virtual(&Storage::removeAllWithOrigin));
 		//createType<QueryableStorage>();
 	}
 }

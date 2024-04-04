@@ -52,9 +52,6 @@ namespace knowrob {
 		auto arity() const { return arguments_.size(); }
 
 		// Override Term
-		TermType termType() const override { return TermType::FUNCTION; }
-
-		// Override Term
 		bool isAtomic() const override { return arguments_.empty(); }
 
 		// Override Term

@@ -67,11 +67,9 @@ namespace std {
 namespace knowrob::py {
 	// this struct is needed because Term has pure virtual methods
 	struct TermWrap : public Term, boost::python::wrapper<Term> {
-		explicit TermWrap(PyObject *p) : self(p), Term() {}
+		explicit TermWrap(PyObject *p, TermType termType) : self(p), Term(termType) {}
 
 		bool isAtomic() const override { return knowrob::py::call_method<bool>(self, "isAtomic"); }
-
-		TermType termType() const override { return knowrob::py::call_method<TermType>(self, "termType"); }
 
 		size_t hash() const override { return knowrob::py::call_method<size_t>(self, "hash"); }
 
@@ -92,7 +90,7 @@ namespace knowrob::py {
 		class_<Term, std::shared_ptr<TermWrap>, boost::noncopyable>
 				("Term", no_init)
 				.def("__eq__", &Term::operator==)
-				.def("__str__", +[](Term &t) { return readString(t); })
+				.def("__repr__", +[](Term &t) { return readString(t); })
 				.def("termType", &Term::termType)
 				.def("isGround", pure_virtual(&Term::isGround))
 				.def("isAtomic", pure_virtual(&Term::isAtomic))

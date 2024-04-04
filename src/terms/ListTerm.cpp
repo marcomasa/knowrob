@@ -48,7 +48,7 @@ namespace knowrob::py {
 				("ListTerm", init<const std::vector<TermPtr> &>())
 				.def("__iter__", range(&ListTerm::begin, &ListTerm::end))
 				.def("isNIL", &ListTerm::isNIL)
-				.def("elements", &ListTerm::elements, return_value_policy<copy_const_reference>());
+				.def("elements", &ListTerm::elements, return_value_policy<reference_existing_object>());
 	}
 }
 
