@@ -158,6 +158,34 @@ TYPED_TEST(StorageTest, Assert_a_b_c) {
 	EXPECT_EQ(TEST_LOOKUP(parse("triple(swrl_test:x, swrl_test:b, C)")).size(), 0);
 }
 
+TYPED_TEST(StorageTest, TripleWithOrigin) {
+	FramedTripleCopy data_cbd(swrl_test_"c", swrl_test_"b", swrl_test_"d");
+	EXPECT_EQ(TEST_LOOKUP(data_cbd).size(), 0);
+	data_cbd.setGraph(swrl_test_"origin1");
+	EXPECT_NO_THROW(TEST_INSERT_ONE(data_cbd));
+	EXPECT_EQ(TEST_LOOKUP(data_cbd).size(), 1);
+	data_cbd.setGraph(swrl_test_"origin2");
+	EXPECT_NO_THROW(TEST_INSERT_ONE(data_cbd));
+	// lookup with given origin produces only one result
+	EXPECT_EQ(TEST_LOOKUP(data_cbd).size(), 1);
+	// but if origin is not specified, at least one result is expected
+	// Note: some backends produce duplicate results, one for each origin.
+	//       others may actually not provide the information about the origin at all,
+	//       e.g in redland `librdf_model_find_statements` does not provide the
+	//       origin information (context nodes in redland).
+	EXPECT_GE(TEST_LOOKUP(parse("triple(swrl_test:c, swrl_test:b, swrl_test:d)")).size(), 1);
+	// after removing the statement from one origin, the other one is still present
+	EXPECT_NO_THROW(StorageTest<TypeParam>::queryable_->removeOne(data_cbd));
+	EXPECT_EQ(TEST_LOOKUP(parse("triple(swrl_test:c, swrl_test:b, swrl_test:d)")).size(), 1);
+	// removing again with origin2 should not change anything
+	EXPECT_NO_THROW(StorageTest<TypeParam>::queryable_->removeOne(data_cbd));
+	EXPECT_EQ(TEST_LOOKUP(parse("triple(swrl_test:c, swrl_test:b, swrl_test:d)")).size(), 1);
+	// but when retracting the triple with origin1, it is gone
+	data_cbd.setGraph(swrl_test_"origin1");
+	EXPECT_NO_THROW(StorageTest<TypeParam>::queryable_->removeOne(data_cbd));
+	EXPECT_EQ(TEST_LOOKUP(parse("triple(swrl_test:c, swrl_test:b, swrl_test:d)")).size(), 0);
+}
+
 TYPED_TEST(StorageTest, LoadTestOntology) {
 	EXPECT_NO_THROW(StorageTest<TypeParam>::loadOntology("owl/test/swrl.owl"));
 	EXPECT_NO_THROW(StorageTest<TypeParam>::loadOntology("owl/test/datatype_test.owl"));
