@@ -16,7 +16,8 @@ PropertyTree::PropertyTree()
 		  delimiter_(".") {}
 
 PropertyTree::PropertyTree(const boost::property_tree::ptree *ptree)
-		: ptree_(ptree) {
+		: ptree_(ptree),
+		  delimiter_(".") {
 	static const std::string formatDefault = {};
 
 	// load all key-value pairs into settings map
