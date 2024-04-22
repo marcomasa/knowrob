@@ -44,7 +44,6 @@ KnowledgeBase::KnowledgeBase()
 
 KnowledgeBase::KnowledgeBase(const boost::property_tree::ptree &config) : KnowledgeBase() {
 	configure(config);
-
 	init();
 }
 
@@ -170,7 +169,7 @@ void KnowledgeBase::initVocabulary() {
 	auto v_s = std::make_shared<Variable>("?s");
 	auto v_o = std::make_shared<Variable>("?o");
 
-	for (auto &it: backendManager_->queryable()) {
+	for (auto &it: backendManager_->persistent()) {
 		auto backend = it.second;
 
 		// initialize the import hierarchy
@@ -178,8 +177,7 @@ void KnowledgeBase::initVocabulary() {
 			vocabulary_->importHierarchy()->addDirectImport(vocabulary_->importHierarchy()->ORIGIN_SYSTEM,
 															origin->value());
 		}
-
-
+		
 		// iterate over all rdf:type assertions and add them to the vocabulary
 		backend->match(FramedTriplePattern(v_s, rdf::type, v_o),
 					   [this](const FramedTriplePtr &triple) {
