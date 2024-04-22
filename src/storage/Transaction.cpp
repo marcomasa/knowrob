@@ -190,10 +190,12 @@ void Insert::updateVocabulary(const FramedTriple &triple) {
 		auto sub = vocabulary_->defineClass(triple.subject());
 		auto sup = vocabulary_->defineClass(triple.valueAsString());
 		sub->addDirectParent(sup);
+		vocabulary_->increaseFrequency(rdfs::subClassOf->stringForm());
 	} else if (isSubPropertyOfIRI(triple.predicate())) {
 		auto sub = vocabulary_->defineProperty(triple.subject());
 		auto sup = vocabulary_->defineProperty(triple.valueAsString());
 		sub->addDirectParent(sup);
+		vocabulary_->increaseFrequency(rdfs::subPropertyOf->stringForm());
 	} else if (isTypeIRI(triple.predicate())) {
 		vocabulary_->addResourceType(triple.subject(), triple.valueAsString());
 		// increase frequency in vocabulary
@@ -211,11 +213,13 @@ void Insert::updateVocabulary(const FramedTriple &triple) {
 			!skippedTypes.count(triple.valueAsString())) {
 			vocabulary_->increaseFrequency(triple.valueAsString());
 		}
+		vocabulary_->increaseFrequency(rdf::type->stringForm());
 	} else if (isInverseOfIRI(triple.predicate())) {
 		auto p = vocabulary_->defineProperty(triple.subject());
 		auto q = vocabulary_->defineProperty(triple.valueAsString());
 		p->setInverse(q);
 		q->setInverse(p);
+		vocabulary_->increaseFrequency(owl::inverseOf->stringForm());
 	} else if (owl::imports->stringForm() == triple.predicate()) {
 		auto resolvedImport = URI::resolve(triple.valueAsString());
 		auto importedGraph = DataSource::getNameFromURI(resolvedImport);
