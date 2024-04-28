@@ -9,6 +9,7 @@
 #include "knowrob/formulas/Formula.h"
 #include "knowrob/formulas/Predicate.h"
 #include "knowrob/terms/Function.h"
+#include "boost/any.hpp"
 
 namespace knowrob {
 	/**
@@ -55,6 +56,8 @@ namespace knowrob {
 		 * @return the parsed raw atom.
 		 */
 		static std::string parseRawAtom(const std::string &queryString);
+
+		static FormulaPtr applyModality(const std::unordered_map<std::string, boost::any> &options, FormulaPtr phi);
 	};
 
 } // knowrob

@@ -10,7 +10,6 @@
 #ifndef KNOWROB_ROSINTERFACE_H
 #define KNOWROB_ROSINTERFACE_H
 
-#include "knowrob/ros/ROSInterface.h"
 // KnowRob
 #include "knowrob/knowrob.h"
 #include "knowrob/Logger.h"
@@ -54,11 +53,9 @@ namespace knowrob {
 
         void executeTellCB(const tellGoalConstPtr &goal);
 
-        static FormulaPtr
-        applyModality(const GraphQueryMessage &query,
-                      FormulaPtr ptr);
+        std::unordered_map<std::string, boost::any> translateGraphQueryMessage(const GraphQueryMessage& query);
 
-        GraphAnswerMessage createGraphAnswer(std::shared_ptr<const Answer> sharedPtr);
+        GraphAnswerMessage createGraphAnswer(std::shared_ptr<const AnswerYes> sharedPtr);
     };
 }
 

@@ -6,16 +6,14 @@
  * https://github.com/knowrob/knowrob for license details.
  */
 
-#include "knowrob/ros/ROSInterface.h"
+#include "knowrob/integration/ros1/ROSInterface.h"
 // KnowRob
 #include "knowrob/knowrob.h"
 #include "knowrob/Logger.h"
 #include "knowrob/KnowledgeBase.h"
 #include "knowrob/queries/QueryParser.h"
 #include "knowrob/queries/QueryError.h"
-#include "knowrob/modalities/BeliefModality.h"
 #include "knowrob/formulas/ModalFormula.h"
-#include "knowrob/modalities/KnowledgeModality.h"
 #include "knowrob/terms/ListTerm.h"
 #include "knowrob/queries/QueryTree.h"
 // ROS
@@ -47,113 +45,76 @@ ROSInterface::ROSInterface(const boost::property_tree::ptree& config)
 
 ROSInterface::~ROSInterface() = default;
 
-FormulaPtr
-ROSInterface::applyModality(const GraphQueryMessage &query,
-                            FormulaPtr phi) {
-    FormulaPtr mFormula = std::move(phi);
+// Function to convert GraphQueryMessage to std::unordered_map
+std::unordered_map<std::string, boost::any> ROSInterface::translateGraphQueryMessage(const GraphQueryMessage& query) {
+    std::unordered_map<std::string, boost::any> options;
 
-    // Add epistemic operator
-    if (query.epistemicOperator == GraphQueryMessage::BELIEF) {
-        if (!query.aboutAgentIRI.empty()) {
-            if (query.confidence != 1.0){
-                mFormula = std::make_shared<ModalFormula>(
-                        BeliefModality::B(query.aboutAgentIRI, query.confidence), mFormula);
-            } else {
-                mFormula = std::make_shared<ModalFormula>(
-                        BeliefModality::B(query.aboutAgentIRI), mFormula);
-            }
-        }
-    } else if (query.epistemicOperator == GraphQueryMessage::KNOWLEDGE) {
-        if (!query.aboutAgentIRI.empty()) {
-            mFormula = std::make_shared<ModalFormula>(
-                    KnowledgeModality::K(query.aboutAgentIRI),mFormula);
-        }
-    }
-    // Add temporal operator
-    if (query.temporalOperator == GraphQueryMessage::SOME_PAST) {
-        if (query.minPastTimestamp != GraphQueryMessage::UNSPECIFIED_TIMESTAMP
-            || query.maxPastTimestamp != GraphQueryMessage::UNSPECIFIED_TIMESTAMP) {
-            if (query.minPastTimestamp == GraphQueryMessage::UNSPECIFIED_TIMESTAMP) {
-                mFormula = std::make_shared<ModalFormula>(
-                        PastModality::P(TimeInterval(std::nullopt,
-                                                     query.maxPastTimestamp)),mFormula);
-            } else if (query.maxPastTimestamp == GraphQueryMessage::UNSPECIFIED_TIMESTAMP) {
-                mFormula = std::make_shared<ModalFormula>(
-                        PastModality::P(TimeInterval(query.minPastTimestamp,
-                                                     std::nullopt)),mFormula);
-            } else {
-                mFormula = std::make_shared<ModalFormula>(
-                        PastModality::P(TimeInterval(query.minPastTimestamp,
-                                                     query.maxPastTimestamp)),mFormula);
-            }
-        } else {
-            mFormula = std::make_shared<ModalFormula>(
-                    PastModality::P(),mFormula);
-        }
-    } else if (query.temporalOperator == GraphQueryMessage::ALL_PAST) {
-        if (query.minPastTimestamp != GraphQueryMessage::UNSPECIFIED_TIMESTAMP
-            || query.maxPastTimestamp != GraphQueryMessage::UNSPECIFIED_TIMESTAMP) {
-            if (query.minPastTimestamp == GraphQueryMessage::UNSPECIFIED_TIMESTAMP) {
-                mFormula = std::make_shared<ModalFormula>(
-                        PastModality::H(TimeInterval(std::nullopt,
-                                                     query.maxPastTimestamp)),mFormula);
-            } else if (query.maxPastTimestamp == GraphQueryMessage::UNSPECIFIED_TIMESTAMP) {
-                mFormula = std::make_shared<ModalFormula>(
-                        PastModality::H(TimeInterval(query.minPastTimestamp,
-                                                     std::nullopt)),mFormula);
-            } else {
-                mFormula = std::make_shared<ModalFormula>(
-                        PastModality::H(TimeInterval(query.minPastTimestamp,
-                                                     query.maxPastTimestamp)),mFormula);
-            }
-        } else {
-            mFormula = std::make_shared<ModalFormula>(
-                    PastModality::H(),mFormula);
-        }
-    }
-    return mFormula;
+    options["epistemicOperator"] = query.epistemicOperator;
+    options["aboutAgentIRI"] = query.aboutAgentIRI;
+    options["confidence"] = query.confidence;
+    options["temporalOperator"] = query.temporalOperator;
+    options["minPastTimestamp"] = query.minPastTimestamp;
+    options["maxPastTimestamp"] = query.maxPastTimestamp;
+
+    return options;
 }
 
-GraphAnswerMessage ROSInterface::createGraphAnswer(std::shared_ptr<const Answer> answer) {
-    const SubstitutionPtr &substitution = answer->substitution();
+GraphAnswerMessage ROSInterface::createGraphAnswer(std::shared_ptr<const AnswerYes> answer) {
+    const BindingsPtr &substitution = answer->substitution();
     GraphAnswerMessage graphAnswer;
     for (const auto& pair : *substitution) {
         KeyValuePair kvpair;
-        kvpair.key = pair.first.name();
-        TermPtr term = pair.second;
+        kvpair.key = pair.first;
+        TermPtr term = pair.second.second;
         // Stringstream for list terms
         std::stringstream ss;
 
-        switch(term->type()) {
-            case TermType::STRING:
-                kvpair.type = KeyValuePair::TYPE_STRING;
-                kvpair.value_string = ((StringTerm*)term.get())->value();
-                break;
-            case TermType::DOUBLE:
-                kvpair.type = KeyValuePair::TYPE_FLOAT;
-                kvpair.value_float = ((DoubleTerm*)term.get())->value();
-                break;
-            case TermType::INT32:
-                kvpair.type = KeyValuePair::TYPE_INT;
-                kvpair.value_int = ((Integer32Term*)term.get())->value();
-                break;
-            case TermType::LONG:
-                kvpair.type = KeyValuePair::TYPE_LONG;
-                kvpair.value_long = ((LongTerm*)term.get())->value();
-                break;
-            case TermType::LIST:
-                kvpair.type = KeyValuePair::TYPE_LIST;
-                ss << ((ListTerm*)term.get());
-                kvpair.value_list = ss.str();
-                break;
-            case TermType::VARIABLE:
-                // TDDO: Can a variable be in the answer?
-            case TermType::PREDICATE:
-                // TDDO: Can a predicate be in the answer?
-                break;
-            case TermType::MODAL_OPERATOR:
-                throw std::runtime_error("Modal Operator is not allowed as TermType in the answer." );
-        }
+		if (term->termType() == TermType::ATOMIC) {
+			auto atomic = std::static_pointer_cast<Atomic>(term);
+			switch (atomic->atomicType()) {
+				case AtomicType::STRING:
+				case AtomicType::ATOM:
+					kvpair.type = KeyValuePair::TYPE_STRING;
+					kvpair.value_string = atomic->stringForm().data();
+					break;
+				case AtomicType::NUMERIC: {
+					auto numeric = std::static_pointer_cast<Numeric>(atomic);
+					switch (numeric->xsdType()) {
+						case XSDType::FLOAT:
+						case XSDType::DOUBLE:
+							kvpair.type = KeyValuePair::TYPE_FLOAT;
+							kvpair.value_float = numeric->asDouble();
+							break;
+						case XSDType::NON_NEGATIVE_INTEGER:
+						case XSDType::UNSIGNED_INT:
+						case XSDType::INTEGER:
+							kvpair.type = KeyValuePair::TYPE_INT;
+							kvpair.value_int = numeric->asInteger();
+							break;
+						case XSDType::UNSIGNED_LONG:
+						case XSDType::LONG:
+							kvpair.type = KeyValuePair::TYPE_LONG;
+							kvpair.value_long = numeric->asLong();
+							break;
+						case XSDType::UNSIGNED_SHORT:
+						case XSDType::SHORT:
+							kvpair.type = KeyValuePair::TYPE_INT;
+							kvpair.value_int = numeric->asShort();
+							break;
+						case XSDType::BOOLEAN:
+						case XSDType::STRING:
+						case XSDType::LAST:
+							break;
+					}
+					break;
+				}
+			}
+		} else if (term->termType() == TermType::FUNCTION) {
+			// TODO: Can this happen? If yes implement it
+		} else if (term->termType() == TermType::VARIABLE) {
+			// TODO: Can this happen? If yes implement it
+		}
+
         graphAnswer.substitution.push_back(kvpair);
     }
     return graphAnswer;
@@ -165,9 +126,10 @@ void ROSInterface::executeAskAllCB(const askallGoalConstPtr& goal)
     // Implement your action here
     FormulaPtr phi(QueryParser::parse(goal->query.queryString));
 
-    FormulaPtr mPhi = applyModality(goal->query, phi);
+    FormulaPtr mPhi = QueryParser::applyModality(translateGraphQueryMessage(goal->query), phi);
 
-    auto resultStream = kb_.submitQuery(mPhi, QUERY_FLAG_ALL_SOLUTIONS);
+	auto ctx = std::make_shared<QueryContext>(QUERY_FLAG_ALL_SOLUTIONS);
+    auto resultStream = kb_.submitQuery(mPhi, ctx);
     auto resultQueue = resultStream->createQueue();
 
     int numSolutions_ = 0;
@@ -175,23 +137,27 @@ void ROSInterface::executeAskAllCB(const askallGoalConstPtr& goal)
     while(true) {
         auto nextResult = resultQueue->pop_front();
 
-        if(AnswerStream::isEOS(nextResult)) {
+        if(nextResult->indicatesEndOfEvaluation()) {
             break;
         }
-        else {
-            if (nextResult->substitution()->empty()) {
-                numSolutions_ = 1;
-                break;
-            } else {
-                // Push one answer
-                GraphAnswerMessage answer = createGraphAnswer(nextResult);
-                result.answer.push_back(answer);
-                numSolutions_ += 1;
-                // publish feedback
-                askallFeedback feedback;
-                feedback.numberOfSolutions = numSolutions_;
-                askall_action_server_.publishFeedback(feedback);
-            }
+		else if (nextResult->tokenType() == TokenType::ANSWER_TOKEN) {
+			auto answer = std::static_pointer_cast<const Answer>(nextResult);
+			if (answer->isPositive()) {
+				auto positiveAnswer = std::static_pointer_cast<const AnswerYes>(answer);
+				if (positiveAnswer->substitution()->empty()) {
+					numSolutions_ = 1;
+					break;
+				} else {
+					// Push one answer
+					GraphAnswerMessage graphAns = createGraphAnswer(positiveAnswer);
+					result.answer.push_back(graphAns);
+					numSolutions_ += 1;
+					// publish feedback
+					askallFeedback feedback;
+					feedback.numberOfSolutions = numSolutions_;
+					askall_action_server_.publishFeedback(feedback);
+				}
+			}
         }
     }
 
@@ -209,9 +175,10 @@ void ROSInterface::executeAskIncrementalCB(const askincrementalGoalConstPtr& goa
     // Implement your action here
     FormulaPtr phi(QueryParser::parse(goal->query.queryString));
 
-    FormulaPtr mPhi = applyModality(goal->query, phi);
+    FormulaPtr mPhi = QueryParser::applyModality(translateGraphQueryMessage(goal->query), phi);
 
-    auto resultStream = kb_.submitQuery(mPhi, QUERY_FLAG_ALL_SOLUTIONS);
+	auto ctx = std::make_shared<QueryContext>(QUERY_FLAG_ALL_SOLUTIONS);
+	auto resultStream = kb_.submitQuery(mPhi, ctx);
     auto resultQueue = resultStream->createQueue();
 
     int numSolutions_ = 0;
@@ -250,9 +217,10 @@ void ROSInterface::executeAskOneCB(const askoneGoalConstPtr& goal)
 {
     FormulaPtr phi(QueryParser::parse(goal->query.queryString));
 
-    FormulaPtr mPhi = applyModality(goal->query, phi);
+    FormulaPtr mPhi = QueryParser::applyModality(translateGraphQueryMessage(goal->query), phi);
 
-    auto resultStream = kb_.submitQuery(mPhi, QUERY_FLAG_ONE_SOLUTION);
+	auto ctx = std::make_shared<QueryContext>(QUERY_FLAG_ONE_SOLUTION);
+	auto resultStream = kb_.submitQuery(mPhi, ctx);
     auto resultQueue = resultStream->createQueue();
 
     askoneResult result;
@@ -277,7 +245,7 @@ void ROSInterface::executeAskOneCB(const askoneGoalConstPtr& goal)
 void ROSInterface::executeTellCB(const tellGoalConstPtr &goal) {
     FormulaPtr phi(QueryParser::parse(goal->query.queryString));
 
-    FormulaPtr mPhi = applyModality(goal->query, phi);
+    FormulaPtr mPhi = QueryParser::applyModality(translateGraphQueryMessage(goal->query), phi);
 
     const QueryTree qt(phi);
     if(qt.numPaths()>1) {
@@ -329,16 +297,16 @@ boost::property_tree::ptree loadSetting() {
 }
 
 int main(int argc, char **argv) {
-	InitKnowledgeBase(argc, argv);
+    InitKnowledgeBase(argc, argv);
 
     // Load settings files
-	try {
+    try {
         ros::init(argc, argv, "knowrob_node");
         ROSInterface ros_interface(loadSetting());
         ros::spin();
-	}
-	catch(std::exception& e) {
-		KB_ERROR("an exception occurred: {}.", e.what());
-		return EXIT_FAILURE;
-	}
+    }
+    catch(std::exception& e) {
+        KB_ERROR("an exception occurred: {}.", e.what());
+        return EXIT_FAILURE;
+    }
 }
