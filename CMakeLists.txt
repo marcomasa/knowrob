@@ -80,55 +80,6 @@ add_definitions(-DBOOST_ALLOW_DEPRECATED_HEADERS)
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 ##############
-########## ROS1
-##############
-# NOTE: seems catkin_package must be called *before* any library is build.
-
-if (false)
-    find_package(catkin QUIET COMPONENTS
-        roscpp roslib tests/urdf message_generation
-        geometry_msgs message_generation json_prolog_msgs actionlib actionlib_msgs)
-
-    message(STATUS "Building with ROS1 support.")
-
-    add_definitions(-DKNOWROB_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\")
-
-    include_directories(${catkin_INCLUDE_DIRS})
-
-    catkin_python_setup()
-
-    # build messages
-    add_action_files(
-            DIRECTORY action
-            FILES
-            askall.action
-            askone.action
-            askincremental.action
-            tell.action
-    )
-
-    add_message_files(
-            FILES
-            KeyValuePair.msg
-            GraphQueryMessage.msg
-            GraphAnswerMessage.msg
-            EventToken.msg
-    )
-
-    generate_messages(DEPENDENCIES
-            std_msgs
-            geometry_msgs
-            actionlib_msgs)
-
-    catkin_package(
-            CATKIN_DEPENDS roscpp roslib
-            CFG_EXTRAS ontologies.cmake
-    )
-else ()
-    message(STATUS "Building without ROS1 support.")
-endif ()
-
-##############
 #### MONGO DB
 ##############
 
@@ -450,7 +401,6 @@ if (CATKIN_DEVEL_PREFIX)
             Boost::program_options
             knowrob
             ${catkin_LIBRARIES}
-            ${EIGEN3_INCLUDE_DIR}
             ${Boost_INCLUDE_DIRS}
             ${PYTHON_INCLUDE_DIRS}
             ${Boost_Python_COMPONENT})
@@ -459,6 +409,8 @@ if (CATKIN_DEVEL_PREFIX)
     #catkin_install_python(PROGRAMS scripts/knowrob_ros.py
     #  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     #)
+else ()
+    message(STATUS "Building without ROS1 support.")
 endif ()
 
 ##############
