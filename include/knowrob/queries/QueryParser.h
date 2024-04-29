@@ -57,7 +57,6 @@ namespace knowrob {
 		 */
 		static std::string parseRawAtom(const std::string &queryString);
 
-		static FormulaPtr applyModality(const std::unordered_map<std::string, boost::any> &options, FormulaPtr phi);
 	};
 
 } // knowrob

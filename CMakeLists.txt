@@ -211,6 +211,7 @@ add_library(knowrob SHARED
         src/reasoner/ReasonerManager.cpp
         src/PropertyTree.cpp
         src/integration/prolog/PrologEngine.cpp
+        src/integration/InterfaceUtils.cpp
         src/reasoner/prolog/PrologReasoner.cpp
         src/reasoner/prolog/PrologTests.cpp
         src/integration/prolog/logging.cpp
@@ -399,6 +400,7 @@ if (CATKIN_DEVEL_PREFIX)
       rospy
       std_msgs
       message_generation
+      actionlib
       actionlib_msgs
     )
 
@@ -447,7 +449,11 @@ if (CATKIN_DEVEL_PREFIX)
     target_link_libraries(knowrob-ros
             Boost::program_options
             knowrob
-            ${catkin_LIBRARIES})
+            ${catkin_LIBRARIES}
+            ${EIGEN3_INCLUDE_DIR}
+            ${Boost_INCLUDE_DIRS}
+            ${PYTHON_INCLUDE_DIRS}
+            ${Boost_Python_COMPONENT})
     install(TARGETS knowrob-ros RUNTIME DESTINATION bin)
 
     #catkin_install_python(PROGRAMS scripts/knowrob_ros.py

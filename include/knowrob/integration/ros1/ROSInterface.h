@@ -6,7 +6,6 @@
  * https://github.com/knowrob/knowrob for license details.
  */
 
-
 #ifndef KNOWROB_ROSINTERFACE_H
 #define KNOWROB_ROSINTERFACE_H
 

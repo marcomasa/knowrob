@@ -24,6 +24,7 @@
 #include <knowrob/GraphQueryMessage.h>
 #include <knowrob/KeyValuePair.h>
 #include <knowrob/askallAction.h>
+#include "knowrob/integration/InterfaceUtils.h"
 #include <boost/property_tree/json_parser.hpp>
 #include <utility>
 
@@ -126,7 +127,7 @@ void ROSInterface::executeAskAllCB(const askallGoalConstPtr& goal)
     // Implement your action here
     FormulaPtr phi(QueryParser::parse(goal->query.queryString));
 
-    FormulaPtr mPhi = QueryParser::applyModality(translateGraphQueryMessage(goal->query), phi);
+    FormulaPtr mPhi = InterfaceUtils::applyModality(translateGraphQueryMessage(goal->query), phi);
 
 	auto ctx = std::make_shared<QueryContext>(QUERY_FLAG_ALL_SOLUTIONS);
     auto resultStream = kb_.submitQuery(mPhi, ctx);
@@ -175,7 +176,7 @@ void ROSInterface::executeAskIncrementalCB(const askincrementalGoalConstPtr& goa
     // Implement your action here
     FormulaPtr phi(QueryParser::parse(goal->query.queryString));
 
-    FormulaPtr mPhi = QueryParser::applyModality(translateGraphQueryMessage(goal->query), phi);
+    FormulaPtr mPhi = InterfaceUtils::applyModality(translateGraphQueryMessage(goal->query), phi);
 
 	auto ctx = std::make_shared<QueryContext>(QUERY_FLAG_ALL_SOLUTIONS);
 	auto resultStream = kb_.submitQuery(mPhi, ctx);
@@ -188,19 +189,23 @@ void ROSInterface::executeAskIncrementalCB(const askincrementalGoalConstPtr& goa
     while(true) {
         auto nextResult = resultQueue->pop_front();
 
-        if(AnswerStream::isEOS(nextResult)) {
+        if(nextResult->indicatesEndOfEvaluation()) {
             break;
         }
-        else {
-            isTrue = true;
-            if (nextResult->substitution()->empty()) {
-                break;
-            } else {
-                // Publish feedback
-                feedback.answer = createGraphAnswer(nextResult);
-                numSolutions_ += 1;
-                askincremental_action_server_.publishFeedback(feedback);
-            }
+        else if (nextResult->tokenType() == TokenType::ANSWER_TOKEN) {
+			auto answer = std::static_pointer_cast<const Answer>(nextResult);
+			if (answer->isPositive()) {
+				auto positiveAnswer = std::static_pointer_cast<const AnswerYes>(answer);
+				isTrue = true;
+				if (positiveAnswer->substitution()->empty()) {
+					break;
+				} else {
+					// Publish feedback
+					feedback.answer = createGraphAnswer(positiveAnswer);
+					numSolutions_ += 1;
+					askincremental_action_server_.publishFeedback(feedback);
+				}
+			}
         }
     }
 
@@ -217,7 +222,7 @@ void ROSInterface::executeAskOneCB(const askoneGoalConstPtr& goal)
 {
     FormulaPtr phi(QueryParser::parse(goal->query.queryString));
 
-    FormulaPtr mPhi = QueryParser::applyModality(translateGraphQueryMessage(goal->query), phi);
+    FormulaPtr mPhi = InterfaceUtils::applyModality(translateGraphQueryMessage(goal->query), phi);
 
 	auto ctx = std::make_shared<QueryContext>(QUERY_FLAG_ONE_SOLUTION);
 	auto resultStream = kb_.submitQuery(mPhi, ctx);
@@ -226,14 +231,18 @@ void ROSInterface::executeAskOneCB(const askoneGoalConstPtr& goal)
     askoneResult result;
     auto nextResult = resultQueue->pop_front();
 
-    if(AnswerStream::isEOS(nextResult)) {
+    if(nextResult->indicatesEndOfEvaluation()) {
         result.status = askoneResult::FALSE;
-    } else {
-        result.status = askoneResult::TRUE;
-        if (!nextResult->substitution()->empty()) {
-            GraphAnswerMessage answer = createGraphAnswer(nextResult);
-            result.answer = answer;
-        }
+    } else if (nextResult->tokenType() == TokenType::ANSWER_TOKEN) {
+		auto answer = std::static_pointer_cast<const Answer>(nextResult);
+		if (answer->isPositive()) {
+			auto positiveAnswer = std::static_pointer_cast<const AnswerYes>(answer);
+			result.status = askoneResult::TRUE;
+			if (positiveAnswer->substitution()->empty()) {
+				GraphAnswerMessage answer = createGraphAnswer(positiveAnswer);
+				result.answer = answer;
+			}
+		}
     }
 
     askoneFeedback  feedback;
@@ -245,34 +254,17 @@ void ROSInterface::executeAskOneCB(const askoneGoalConstPtr& goal)
 void ROSInterface::executeTellCB(const tellGoalConstPtr &goal) {
     FormulaPtr phi(QueryParser::parse(goal->query.queryString));
 
-    FormulaPtr mPhi = QueryParser::applyModality(translateGraphQueryMessage(goal->query), phi);
+    FormulaPtr mPhi = InterfaceUtils::applyModality(translateGraphQueryMessage(goal->query), phi);
 
-    const QueryTree qt(phi);
-    if(qt.numPaths()>1) {
-        throw QueryError("Disjunctions are not allowed in assertions. "
-                         "Appears in statement {}.", *phi);
-    }
-    else if(qt.numPaths()==0) {
-        throw QueryError("Invalid assertion: '{}'", *phi);
-    }
-
-    std::vector<StatementData> data(qt.begin()->literals().size());
-    std::vector<RDFLiteralPtr> buf(qt.begin()->literals().size());
-    uint32_t dataIndex = 0;
-    for(auto &lit : qt.begin()->literals()) {
-        buf[dataIndex] = RDFLiteral::fromLiteral(lit);
-        data[dataIndex++] = buf[dataIndex]->toStatementData();
-    }
+    bool success = InterfaceUtils::assertStatements(kb_, {mPhi});
 
     tellResult result;
     tellFeedback feedback;
-    if(kb_.insert(data)) {
+    if(success) {
         result.status = tellResult::TRUE;
-        std::cout << "success, " << dataIndex << " statement(s) were asserted." << "\n";
     }
     else {
         result.status = tellResult::TELL_FAILED;
-        std::cout << "assertion failed." << "\n";
     }
     feedback.finished = true;
     tell_action_server_.publishFeedback(feedback);

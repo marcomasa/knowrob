@@ -31,6 +31,7 @@
 #include "knowrob/queries/Answer.h"
 #include "knowrob/queries/AnswerYes.h"
 #include "knowrob/queries/FormulaQuery.h"
+#include "knowrob/integration/InterfaceUtils.h"
 
 using namespace knowrob;
 namespace po = boost::program_options;
@@ -163,9 +164,9 @@ public:
 		registerCommand("exit", 0,
 						[this](const std::vector<TermPtr> &) { return exitTerminal(); });
 		registerCommand("assert", 1,
-						[this](const std::vector<FormulaPtr> &x) { return assertStatements(x); });
+						[this](const std::vector<FormulaPtr> &x) { return InterfaceUtils::assertStatements(kb_, x); });
 		registerCommand("tell", 1,
-						[this](const std::vector<FormulaPtr> &x) { return assertStatements(x); });
+						[this](const std::vector<FormulaPtr> &x) { return InterfaceUtils::assertStatements(kb_, x); });
 	}
 
 	static char getch() {
@@ -296,43 +297,6 @@ public:
 
 		if (numSolutions_ == 0) {
 			std::cout << "no." << std::endl;
-		}
-	}
-
-	bool assertStatements(const std::vector<FormulaPtr> &args) {
-		std::vector<FramedTriplePtr> data(args.size());
-		std::vector<FramedTriplePatternPtr> buf(args.size());
-		uint32_t dataIndex = 0;
-
-		for (auto &phi: args) {
-			const QueryTree qt(phi);
-			if (qt.numPaths() > 1) {
-				throw QueryError("Disjunctions are not allowed in assertions. "
-								 "Appears in statement {}.", *phi);
-			} else if (qt.numPaths() == 0) {
-				throw QueryError("Invalid assertion: '{}'", *phi);
-			}
-			for (auto &psi: qt.begin()->nodes()) {
-				switch (psi->type()) {
-					case knowrob::FormulaType::PREDICATE:
-						buf[dataIndex] = std::make_shared<FramedTriplePattern>(
-								std::static_pointer_cast<Predicate>(psi), false);
-						data[dataIndex].ptr = new FramedTripleCopy();
-						data[dataIndex].owned = true;
-						buf[dataIndex]->instantiateInto(*data[dataIndex].ptr);
-						dataIndex += 1;
-						break;
-					default:
-						throw QueryError("Invalid assertion: '{}'", *phi);
-				}
-			}
-		}
-		if (kb_.insertAll(data)) {
-			std::cout << "success, " << dataIndex << " statement(s) were asserted." << "\n";
-			return true;
-		} else {
-			std::cout << "assertion failed." << "\n";
-			return false;
 		}
 	}
 
