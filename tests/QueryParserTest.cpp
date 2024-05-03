@@ -169,7 +169,7 @@ TEST_F(QueryParserTest, PredicatesWithNS) {
 			QueryParser::parsePredicate("owl:p(X,Y)"),
 			"http://www.w3.org/2002/07/owl#p", 2, {TermType::VARIABLE, TermType::VARIABLE}));
 	TEST_NO_THROW(testPredicate(
-			QueryParser::parsePredicate("http://www.w3.org/2002/07/owl#p(X,Y)"),
+			QueryParser::parsePredicate("'http://www.w3.org/2002/07/owl#p'(X,Y)"),
 			"http://www.w3.org/2002/07/owl#p", 2, {TermType::VARIABLE, TermType::VARIABLE}));
 	TEST_NO_THROW(testPredicate(
 			QueryParser::parsePredicate("owl:p(owl:x, owl:y)"),
