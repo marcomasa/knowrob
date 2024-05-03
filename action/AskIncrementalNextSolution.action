@@ -8,4 +8,4 @@ byte INVALID_QUERY_ID = 3
 GraphAnswerMessage answer
 byte status
 ---
-bool success
+bool finished

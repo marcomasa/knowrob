@@ -7,4 +7,4 @@ byte QUERY_FAILED = 2
 bool status
 uint32 queryId
 ---
-bool success
+bool finished

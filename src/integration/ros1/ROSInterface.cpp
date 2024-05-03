@@ -188,11 +188,12 @@ void ROSInterface::executeAskIncrementalCB(const AskIncrementalGoalConstPtr& goa
 	// Store result queue for execution of next solution
 	query_results_[next_query_id_] = resultQueue;
 
+	// Result, feedback
     AskIncrementalResult result;
     AskIncrementalFeedback feedback;
 
 	// Publish feedback
-	feedback.success = true;
+	feedback.finished = true;
 	askincremental_action_server_.publishFeedback(feedback);
 
 	// Publish result
@@ -253,7 +254,7 @@ void ROSInterface::executeAskIncrementalNextSolutionCB(const AskIncrementalNextS
 	}
 
 	// Publish feedback
-	feedback.success = true;
+	feedback.finished = true;
 	askincremental_next_solution_action_server_.publishFeedback(feedback);
 	// Publish result
 	askincremental_next_solution_action_server_.setSucceeded(result);
@@ -266,7 +267,7 @@ void ROSInterface::executeAskOneCB(const AskOneGoalConstPtr& goal)
 
     FormulaPtr mPhi = InterfaceUtils::applyModality(translateGraphQueryMessage(goal->query), phi);
 
-	auto ctx = std::make_shared<QueryContext>(QUERY_FLAG_ONE_SOLUTION);
+	auto ctx = std::make_shared<QueryContext>(QUERY_FLAG_ALL_SOLUTIONS);
 	auto resultStream = kb_.submitQuery(mPhi, ctx);
     auto resultQueue = resultStream->createQueue();
 
@@ -280,16 +281,16 @@ void ROSInterface::executeAskOneCB(const AskOneGoalConstPtr& goal)
 		if (answer->isPositive()) {
 			auto positiveAnswer = std::static_pointer_cast<const AnswerYes>(answer);
 			result.status = AskOneResult::TRUE;
-			if (positiveAnswer->substitution()->empty()) {
-				GraphAnswerMessage answer = createGraphAnswer(positiveAnswer);
-				result.answer = answer;
-			}
+			GraphAnswerMessage answer = createGraphAnswer(positiveAnswer);
+			result.answer = answer;
 		}
     }
 
-    AskOneFeedback  feedback;
+	// Publish feedback
+    AskOneFeedback feedback;
     feedback.finished = true;
     askone_action_server_.publishFeedback(feedback);
+	// Publish result
     askone_action_server_.setSucceeded(result);
 }
 
