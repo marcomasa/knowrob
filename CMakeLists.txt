@@ -80,7 +80,7 @@ add_definitions(-DBOOST_ALLOW_DEPRECATED_HEADERS)
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 # NOTE: seems catkin_package must be called *before* any library is build.
-if (BUILD_WITH_CATKIN AND catkin_FOUND)
+if (BUILD_WITH_CATKIN)
     message(STATUS "Building with ROS1 support.")
     find_package(catkin REQUIRED COMPONENTS
         roscpp
@@ -91,9 +91,11 @@ if (BUILD_WITH_CATKIN AND catkin_FOUND)
         actionlib_msgs
     )
 
+endif()
+if (BUILD_WITH_CATKIN AND catkin_FOUND)
     catkin_package(
-            CATKIN_DEPENDS roscpp roslib
-            CFG_EXTRAS ontologies.cmake
+        CATKIN_DEPENDS roscpp roslib
+        CFG_EXTRAS ontologies.cmake
     )
 endif()
 
