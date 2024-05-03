@@ -61,10 +61,13 @@ InterfaceUtils::applyModality(const std::unordered_map<std::string, boost::any> 
 	FormulaPtr mFormula = std::move(phi);
 
 	// Retrieve epistemicOperator and check if it is "BELIEF"
-	auto epistemicOperator = boost::any_cast<std::string>(options.at("epistemicOperator"));
-	if (epistemicOperator == "BELIEF") {
+	KB_INFO("[KnowRob] epistemicOperator.");
+	auto epistemicOperator = boost::any_cast<int>(options.at("epistemicOperator"));
+	if (epistemicOperator == 1) {
 		// Retrieve aboutAgentIRI and confidence
+		KB_INFO("[KnowRob] aboutAgentIRI.");
 		auto aboutAgentIRI = boost::any_cast<std::string>(options.at("aboutAgentIRI"));
+		KB_INFO("[KnowRob] confidence.");
 		auto confidence = boost::any_cast<double>(options.at("confidence"));
 		if (!aboutAgentIRI.empty()) {
 			if (confidence != 1.0){
@@ -75,8 +78,9 @@ InterfaceUtils::applyModality(const std::unordered_map<std::string, boost::any> 
 						modals::B(aboutAgentIRI), mFormula);
 			}
 		}
-	} else if (epistemicOperator == "KNOWLEDGE") {
+	} else if (epistemicOperator == 0) {
 		// Retrieve aboutAgentIRI
+		KB_INFO("[KnowRob] aboutAgentIRI.");
 		auto aboutAgentIRI = boost::any_cast<std::string>(options.at("aboutAgentIRI"));
 		if (!aboutAgentIRI.empty()) {
 			mFormula = std::make_shared<ModalFormula>(
@@ -84,16 +88,18 @@ InterfaceUtils::applyModality(const std::unordered_map<std::string, boost::any> 
 		}
 	}
 	// Retrieve temporalOperator
-	auto temporalOperator = boost::any_cast<std::string>(options.at("temporalOperator"));
+	KB_INFO("[KnowRob] temporalOperator.");
+	auto temporalOperator = boost::any_cast<int>(options.at("temporalOperator"));
 
 	// Retrieve minPastTimestamp and maxPastTimestamp
-	auto minPastTimestamp = boost::any_cast<long long>(options.at("minPastTimestamp"));
-	auto maxPastTimestamp = boost::any_cast<long long>(options.at("maxPastTimestamp"));
+	KB_INFO("[KnowRob] pasttimestamp.");
+	auto minPastTimestamp = boost::any_cast<double>(options.at("minPastTimestamp"));
+	auto maxPastTimestamp = boost::any_cast<double>(options.at("maxPastTimestamp"));
 
 	auto minPastTimePoint = minPastTimestamp != -1 ? std::optional<TimePoint>(knowrob::time::fromSeconds(minPastTimestamp)) : std::nullopt;
 	auto maxPastTimePoint = maxPastTimestamp != -1 ? std::optional<TimePoint>(knowrob::time::fromSeconds(maxPastTimestamp)) : std::nullopt;
 
-	if (temporalOperator == "SOME_PAST") {
+	if (temporalOperator == 2) {
 		if (minPastTimestamp != -1 || maxPastTimestamp != -1) {
 			if (minPastTimestamp == -1) {
 				mFormula = std::make_shared<ModalFormula>(
@@ -112,7 +118,7 @@ InterfaceUtils::applyModality(const std::unordered_map<std::string, boost::any> 
 			mFormula = std::make_shared<ModalFormula>(
 					modals::P(),mFormula);
 		}
-	} else if (temporalOperator == "ALL_PAST") {
+	} else if (temporalOperator == 1) {
 		if (minPastTimestamp != -1 || maxPastTimestamp != -1) {
 			if (minPastTimestamp == -1) {
 				mFormula = std::make_shared<ModalFormula>(

@@ -359,6 +359,8 @@ if (CATKIN_DEVEL_PREFIX)
 
     include_directories(${catkin_INCLUDE_DIRS})
 
+    add_definitions(-DKNOWROB_SOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")
+
     # catkin_python_setup()
 
     add_message_files(
@@ -372,10 +374,11 @@ if (CATKIN_DEVEL_PREFIX)
     add_action_files(
             DIRECTORY action
             FILES
-            askall.action
-            askone.action
-            askincremental.action
-            tell.action
+            AskAll.action
+            AskOne.action
+            AskIncremental.action
+            AskIncrementalNextSolution.action
+            Tell.action
     )
 
     generate_messages(DEPENDENCIES
@@ -399,6 +402,7 @@ if (CATKIN_DEVEL_PREFIX)
             ${catkin_EXPORTED_TARGETS})
     target_link_libraries(knowrob-ros
             Boost::program_options
+            ${KNOWROB_LIBRARIES}
             knowrob
             ${catkin_LIBRARIES}
             ${Boost_INCLUDE_DIRS}
@@ -406,9 +410,7 @@ if (CATKIN_DEVEL_PREFIX)
             ${Boost_Python_COMPONENT})
     install(TARGETS knowrob-ros RUNTIME DESTINATION bin)
 
-    #catkin_install_python(PROGRAMS scripts/knowrob_ros.py
-    #  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    #)
+
 else ()
     message(STATUS "Building without ROS1 support.")
 endif ()

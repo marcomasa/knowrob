@@ -23,7 +23,7 @@
 #include <knowrob/GraphAnswerMessage.h>
 #include <knowrob/GraphQueryMessage.h>
 #include <knowrob/KeyValuePair.h>
-#include <knowrob/askallAction.h>
+#include <knowrob/AskAllAction.h>
 #include "knowrob/integration/InterfaceUtils.h"
 #include <boost/property_tree/json_parser.hpp>
 #include <utility>
@@ -34,6 +34,7 @@ ROSInterface::ROSInterface(const boost::property_tree::ptree& config)
         : askall_action_server_(nh_, "knowrob/askall", boost::bind(&ROSInterface::executeAskAllCB, this, _1), false),
           askone_action_server_(nh_, "knowrob/askone", boost::bind(&ROSInterface::executeAskOneCB, this, _1), false),
           askincremental_action_server_(nh_, "knowrob/askincremental", boost::bind(&ROSInterface::executeAskIncrementalCB, this, _1), false),
+		  askincremental_next_solution_action_server_(nh_, "knowrob/askincremental_next_solution", boost::bind(&ROSInterface::executeAskIncrementalNextSolutionCB, this, _1), false),
           tell_action_server_(nh_, "knowrob/tell", boost::bind(&ROSInterface::executeTellCB, this, _1), false),
           kb_(config)
 {
@@ -41,6 +42,7 @@ ROSInterface::ROSInterface(const boost::property_tree::ptree& config)
     askall_action_server_.start();
     askone_action_server_.start();
     askincremental_action_server_.start();
+	askincremental_next_solution_action_server_.start();
     tell_action_server_.start();
 }
 
@@ -50,10 +52,10 @@ ROSInterface::~ROSInterface() = default;
 std::unordered_map<std::string, boost::any> ROSInterface::translateGraphQueryMessage(const GraphQueryMessage& query) {
     std::unordered_map<std::string, boost::any> options;
 
-    options["epistemicOperator"] = query.epistemicOperator;
+    options["epistemicOperator"] = int(query.epistemicOperator);
     options["aboutAgentIRI"] = query.aboutAgentIRI;
     options["confidence"] = query.confidence;
-    options["temporalOperator"] = query.temporalOperator;
+    options["temporalOperator"] = int(query.temporalOperator);
     options["minPastTimestamp"] = query.minPastTimestamp;
     options["maxPastTimestamp"] = query.maxPastTimestamp;
 
@@ -121,7 +123,7 @@ GraphAnswerMessage ROSInterface::createGraphAnswer(std::shared_ptr<const AnswerY
     return graphAnswer;
 }
 
-void ROSInterface::executeAskAllCB(const askallGoalConstPtr& goal)
+void ROSInterface::executeAskAllCB(const AskAllGoalConstPtr& goal)
 {
 
     // Implement your action here
@@ -134,7 +136,7 @@ void ROSInterface::executeAskAllCB(const askallGoalConstPtr& goal)
     auto resultQueue = resultStream->createQueue();
 
     int numSolutions_ = 0;
-    askallResult result;
+    AskAllResult result;
     while(true) {
         auto nextResult = resultQueue->pop_front();
 
@@ -154,7 +156,7 @@ void ROSInterface::executeAskAllCB(const askallGoalConstPtr& goal)
 					result.answer.push_back(graphAns);
 					numSolutions_ += 1;
 					// publish feedback
-					askallFeedback feedback;
+					AskAllFeedback feedback;
 					feedback.numberOfSolutions = numSolutions_;
 					askall_action_server_.publishFeedback(feedback);
 				}
@@ -163,15 +165,16 @@ void ROSInterface::executeAskAllCB(const askallGoalConstPtr& goal)
     }
 
     if(numSolutions_ == 0) {
-        result.status = askallResult::FALSE;
+        result.status = AskAllResult::FALSE;
     } else {
-        result.status = askallResult::TRUE;
+        result.status = AskAllResult::TRUE;
     }
     askall_action_server_.setSucceeded(result);
 }
 
-void ROSInterface::executeAskIncrementalCB(const askincrementalGoalConstPtr& goal)
+void ROSInterface::executeAskIncrementalCB(const AskIncrementalGoalConstPtr& goal)
 {
+	std::lock_guard<std::mutex> lock(query_mutex_);
 
     // Implement your action here
     FormulaPtr phi(QueryParser::parse(goal->query.queryString));
@@ -182,17 +185,52 @@ void ROSInterface::executeAskIncrementalCB(const askincrementalGoalConstPtr& goa
 	auto resultStream = kb_.submitQuery(mPhi, ctx);
     auto resultQueue = resultStream->createQueue();
 
-    int numSolutions_ = 0;
-    bool isTrue = false;
-    askincrementalResult result;
-    askincrementalFeedback feedback;
-    while(true) {
-        auto nextResult = resultQueue->pop_front();
+	// Store result queue for execution of next solution
+	query_results_[next_query_id_] = resultQueue;
 
-        if(nextResult->indicatesEndOfEvaluation()) {
-            break;
-        }
-        else if (nextResult->tokenType() == TokenType::ANSWER_TOKEN) {
+    AskIncrementalResult result;
+    AskIncrementalFeedback feedback;
+
+	// Publish feedback
+	feedback.success = true;
+	askincremental_action_server_.publishFeedback(feedback);
+
+	// Publish result
+	result.queryId = next_query_id_;
+	result.status = AskIncrementalResult::TRUE;
+	askincremental_action_server_.setSucceeded(result);
+
+	next_query_id_ += 1;
+}
+
+void ROSInterface::executeAskIncrementalNextSolutionCB(const AskIncrementalNextSolutionGoalConstPtr &goal) {
+	// Lock mutex
+	std::lock_guard<std::mutex> lock(query_mutex_);
+
+	// Get result queue for query ID
+	auto resultQueue = query_results_[goal->queryId];
+
+	// Check if query ID is valid
+	if(resultQueue == nullptr) {
+		AskIncrementalNextSolutionResult result;
+		result.status = AskIncrementalNextSolutionResult::INVALID_QUERY_ID;
+		askincremental_next_solution_action_server_.setAborted(result);
+		return;
+	}
+
+	// Define feedback, result and isTrue
+	AskIncrementalNextSolutionFeedback feedback;
+	AskIncrementalNextSolutionResult result;
+	bool isTrue = false;
+
+	// Implement your action here
+	while(true) {
+		auto nextResult = resultQueue->pop_front();
+
+		if(nextResult->indicatesEndOfEvaluation()) {
+			break;
+		}
+		else if (nextResult->tokenType() == TokenType::ANSWER_TOKEN) {
 			auto answer = std::static_pointer_cast<const Answer>(nextResult);
 			if (answer->isPositive()) {
 				auto positiveAnswer = std::static_pointer_cast<const AnswerYes>(answer);
@@ -201,24 +239,28 @@ void ROSInterface::executeAskIncrementalCB(const askincrementalGoalConstPtr& goa
 					break;
 				} else {
 					// Publish feedback
-					feedback.answer = createGraphAnswer(positiveAnswer);
-					numSolutions_ += 1;
-					askincremental_action_server_.publishFeedback(feedback);
+					result.answer = createGraphAnswer(positiveAnswer);
 				}
 			}
-        }
-    }
+		}
+	}
 
-    if(isTrue) {
-        result.status = askallResult::TRUE;
-    } else {
-        result.status = askallResult::FALSE;
-    }
-    result.numberOfSolutionsFound = numSolutions_;
-    askincremental_action_server_.setSucceeded(result);
+	// If there is no next solution set status to false
+	if(isTrue) {
+		result.status = AskIncrementalNextSolutionResult::TRUE;
+	} else {
+		result.status = AskIncrementalNextSolutionResult::FALSE;
+	}
+
+	// Publish feedback
+	feedback.success = true;
+	askincremental_next_solution_action_server_.publishFeedback(feedback);
+	// Publish result
+	askincremental_next_solution_action_server_.setSucceeded(result);
+
 }
 
-void ROSInterface::executeAskOneCB(const askoneGoalConstPtr& goal)
+void ROSInterface::executeAskOneCB(const AskOneGoalConstPtr& goal)
 {
     FormulaPtr phi(QueryParser::parse(goal->query.queryString));
 
@@ -228,16 +270,16 @@ void ROSInterface::executeAskOneCB(const askoneGoalConstPtr& goal)
 	auto resultStream = kb_.submitQuery(mPhi, ctx);
     auto resultQueue = resultStream->createQueue();
 
-    askoneResult result;
+    AskOneResult result;
     auto nextResult = resultQueue->pop_front();
 
     if(nextResult->indicatesEndOfEvaluation()) {
-        result.status = askoneResult::FALSE;
+        result.status = AskOneResult::FALSE;
     } else if (nextResult->tokenType() == TokenType::ANSWER_TOKEN) {
 		auto answer = std::static_pointer_cast<const Answer>(nextResult);
 		if (answer->isPositive()) {
 			auto positiveAnswer = std::static_pointer_cast<const AnswerYes>(answer);
-			result.status = askoneResult::TRUE;
+			result.status = AskOneResult::TRUE;
 			if (positiveAnswer->substitution()->empty()) {
 				GraphAnswerMessage answer = createGraphAnswer(positiveAnswer);
 				result.answer = answer;
@@ -245,26 +287,26 @@ void ROSInterface::executeAskOneCB(const askoneGoalConstPtr& goal)
 		}
     }
 
-    askoneFeedback  feedback;
+    AskOneFeedback  feedback;
     feedback.finished = true;
     askone_action_server_.publishFeedback(feedback);
     askone_action_server_.setSucceeded(result);
 }
 
-void ROSInterface::executeTellCB(const tellGoalConstPtr &goal) {
+void ROSInterface::executeTellCB(const TellGoalConstPtr &goal) {
     FormulaPtr phi(QueryParser::parse(goal->query.queryString));
 
     FormulaPtr mPhi = InterfaceUtils::applyModality(translateGraphQueryMessage(goal->query), phi);
 
     bool success = InterfaceUtils::assertStatements(kb_, {mPhi});
 
-    tellResult result;
-    tellFeedback feedback;
+    TellResult result;
+    TellFeedback feedback;
     if(success) {
-        result.status = tellResult::TRUE;
+        result.status = TellResult::TRUE;
     }
     else {
-        result.status = tellResult::TELL_FAILED;
+        result.status = TellResult::TELL_FAILED;
     }
     feedback.finished = true;
     tell_action_server_.publishFeedback(feedback);
@@ -295,6 +337,7 @@ int main(int argc, char **argv) {
     try {
         ros::init(argc, argv, "knowrob_node");
         ROSInterface ros_interface(loadSetting());
+		KB_INFO("[KnowRob] ROS node started.");
         ros::spin();
     }
     catch(std::exception& e) {
