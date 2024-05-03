@@ -79,6 +79,16 @@ add_definitions(-DKNOWROB_BUILD_DIR=\"${CMAKE_BINARY_DIR}\")
 add_definitions(-DBOOST_ALLOW_DEPRECATED_HEADERS)
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
+# NOTE: seems catkin_package must be called *before* any library is build.
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  rospy
+  std_msgs
+  message_generation
+  actionlib
+  actionlib_msgs
+)
+
 ##############
 #### MONGO DB
 ##############
@@ -300,7 +310,7 @@ target_link_libraries(knowrob_py PRIVATE
 # NOTE: The library needs to be copied into site-packages directory of Python, or
 #       the PYTHONPATH needs to be set to include the build directory.
 # If catkin is used (e.g. in context of ROS) the library is in the devel space instead of build
-if (CATKIN_DEVEL_PREFIX)
+if ((catkin_FOUND) AND (CATKIN_DEVEL_PREFIX))
     add_custom_command(TARGET knowrob_py POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         ${CATKIN_DEVEL_PREFIX}/lib/knowrob_py.so
@@ -345,15 +355,7 @@ endif ()
 ########## ROS1
 ##############
 
-if (CATKIN_DEVEL_PREFIX)
-    find_package(catkin REQUIRED COMPONENTS
-      roscpp
-      rospy
-      std_msgs
-      message_generation
-      actionlib
-      actionlib_msgs
-    )
+if ((catkin_FOUND) AND (CATKIN_DEVEL_PREFIX))
 
     message(STATUS "Building with ROS1 support.")
 
