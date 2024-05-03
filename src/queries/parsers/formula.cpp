@@ -210,12 +210,12 @@ namespace knowrob::parsers::formula {
 	namespace qi = boost::spirit::qi;
 
 	PredicateRule &predicate_n() {
-		RETURN_PREDICATE_RULE((str::atom() >> '(' >> (term() % ',') >> ')')
+		RETURN_PREDICATE_RULE((str::atom_or_iri() >> '(' >> (term() % ',') >> ')')
 		                      [qi::_val = ptr_<Predicate>()(qi::_1, qi::_2)]);
 	}
 
 	PredicateRule &predicate_0() {
-		RETURN_PREDICATE_RULE(str::atom() [qi::_val = ptr_<Predicate>()(qi::_1, std::vector<TermPtr>())]);
+		RETURN_PREDICATE_RULE(str::atom_or_iri() [qi::_val = ptr_<Predicate>()(qi::_1, std::vector<TermPtr>())]);
 	}
 
 	PredicateRule &predicate() {
