@@ -81,7 +81,6 @@ add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 # NOTE: seems catkin_package must be called *before* any library is build.
 if (BUILD_WITH_CATKIN)
-    message(STATUS "Building with ROS1 support.")
     find_package(catkin REQUIRED COMPONENTS
         roscpp
         rospy
@@ -93,6 +92,30 @@ if (BUILD_WITH_CATKIN)
 
 endif()
 if (BUILD_WITH_CATKIN AND catkin_FOUND)
+    message(STATUS "Building with ROS1 support.")
+
+    add_message_files(
+            FILES
+            KeyValuePair.msg
+            GraphQueryMessage.msg
+            GraphAnswerMessage.msg
+            EventToken.msg
+    )
+
+    add_action_files(
+            DIRECTORY action
+            FILES
+            AskAll.action
+            AskOne.action
+            AskIncremental.action
+            AskIncrementalNextSolution.action
+            Tell.action
+    )
+
+    generate_messages(DEPENDENCIES
+            std_msgs
+            actionlib_msgs)
+
     catkin_package(
         CATKIN_DEPENDS roscpp roslib
         CFG_EXTRAS ontologies.cmake
@@ -372,28 +395,6 @@ if (BUILD_WITH_CATKIN AND catkin_FOUND AND CATKIN_DEVEL_PREFIX)
     add_definitions(-DKNOWROB_SOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")
 
     # catkin_python_setup()
-
-    add_message_files(
-            FILES
-            KeyValuePair.msg
-            GraphQueryMessage.msg
-            GraphAnswerMessage.msg
-            EventToken.msg
-    )
-
-    add_action_files(
-            DIRECTORY action
-            FILES
-            AskAll.action
-            AskOne.action
-            AskIncremental.action
-            AskIncrementalNextSolution.action
-            Tell.action
-    )
-
-    generate_messages(DEPENDENCIES
-            std_msgs
-            actionlib_msgs)
 
     include_directories(
       ${catkin_INCLUDE_DIRS}
