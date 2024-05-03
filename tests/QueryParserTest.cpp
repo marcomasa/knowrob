@@ -164,6 +164,18 @@ TEST_F(QueryParserTest, Predicates) {
             "nullary", 0, {}))
 }
 
+TEST_F(QueryParserTest, PredicatesWithNS) {
+	TEST_NO_THROW(testPredicate(
+			QueryParser::parsePredicate("owl:p(X,Y)"),
+			"http://www.w3.org/2002/07/owl#p", 2, {TermType::VARIABLE, TermType::VARIABLE}));
+	TEST_NO_THROW(testPredicate(
+			QueryParser::parsePredicate("'http://www.w3.org/2002/07/owl#p'(X,Y)"),
+			"http://www.w3.org/2002/07/owl#p", 2, {TermType::VARIABLE, TermType::VARIABLE}));
+	TEST_NO_THROW(testPredicate(
+			QueryParser::parsePredicate("owl:p(owl:x, owl:y)"),
+			"http://www.w3.org/2002/07/owl#p", 2, {TermType::ATOMIC, TermType::ATOMIC}));
+}
+
 TEST_F(QueryParserTest, PredicateWithCompundArgument) {
     TEST_NO_THROW(testPredicate(
             QueryParser::parsePredicate("p(X,'<'(a))"),
