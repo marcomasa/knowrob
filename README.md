@@ -31,6 +31,7 @@ The following list of software is required to build KnowRob:
 - [Redland and Raptor2](https://librdf.org)
 - [spdlog](https://github.com/gabime/spdlog.git)
 - [fmt](https://github.com/fmtlib/fmt)
+- [Eigen 3](https://eigen.tuxfamily.org/index.php?title=Main_Page)
 
 #### Optional Dependencies
 
