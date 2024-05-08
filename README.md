@@ -36,6 +36,7 @@ The following list of software is required to build KnowRob:
   - python
   - program options
   - serialization
+- [GTest](https://github.com/google/googletest)
 
 #### Optional Dependencies
 
