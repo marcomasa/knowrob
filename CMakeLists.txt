@@ -5,7 +5,7 @@ if (POLICY CMP0148)
     cmake_policy(SET CMP0148 OLD)
 endif ()
 
-option(BUILD_WITH_CATKIN "Build the interface for ROS1 systems" ON)
+option(WITH_ROS1_INTERFACE "Build the interface for ROS1 systems" ON)
 
 project(knowrob
         DESCRIPTION "A Knowledge Base System for Cognition-enabled Robots")
@@ -80,7 +80,7 @@ add_definitions(-DBOOST_ALLOW_DEPRECATED_HEADERS)
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 # NOTE: seems catkin_package must be called *before* any library is build.
-if (BUILD_WITH_CATKIN)
+if (WITH_ROS1_INTERFACE)
     find_package(catkin REQUIRED COMPONENTS
         roscpp
         rospy
@@ -91,10 +91,11 @@ if (BUILD_WITH_CATKIN)
     )
 
 endif()
-if (BUILD_WITH_CATKIN AND catkin_FOUND)
+if (WITH_ROS1_INTERFACE AND catkin_FOUND)
     message(STATUS "Building with ROS1 support.")
 
     add_message_files(
+            DIRECTORY ros1/msg
             FILES
             KeyValuePair.msg
             GraphQueryMessage.msg
@@ -103,7 +104,7 @@ if (BUILD_WITH_CATKIN AND catkin_FOUND)
     )
 
     add_action_files(
-            DIRECTORY action
+            DIRECTORY ros1/action
             FILES
             AskAll.action
             AskOne.action
@@ -343,7 +344,7 @@ target_link_libraries(knowrob_py PRIVATE
 # NOTE: The library needs to be copied into site-packages directory of Python, or
 #       the PYTHONPATH needs to be set to include the build directory.
 # If catkin is used (e.g. in context of ROS) the library is in the devel space instead of build
-if (BUILD_WITH_CATKIN AND catkin_FOUND AND CATKIN_DEVEL_PREFIX)
+if (WITH_ROS1_INTERFACE AND catkin_FOUND AND CATKIN_DEVEL_PREFIX)
     add_custom_command(TARGET knowrob_py POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         ${CATKIN_DEVEL_PREFIX}/lib/knowrob_py.so
@@ -388,7 +389,7 @@ endif ()
 ########## ROS1
 ##############
 
-if (BUILD_WITH_CATKIN AND catkin_FOUND AND CATKIN_DEVEL_PREFIX)
+if (WITH_ROS1_INTERFACE AND catkin_FOUND AND CATKIN_DEVEL_PREFIX)
 
     include_directories(${catkin_INCLUDE_DIRS})
 

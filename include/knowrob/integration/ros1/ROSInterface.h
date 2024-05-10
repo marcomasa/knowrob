@@ -32,19 +32,19 @@
 #include <mutex>
 
 namespace knowrob {
-    class ROSInterface {
-    private:
-        ros::NodeHandle nh_;
+	class ROSInterface {
+	private:
+		ros::NodeHandle nh_;
 
-        // Action Servers
-        actionlib::SimpleActionServer <AskAllAction> askall_action_server_;
-        actionlib::SimpleActionServer <AskOneAction> askone_action_server_;
-        actionlib::SimpleActionServer <AskIncrementalAction> askincremental_action_server_;
-		actionlib::SimpleActionServer <AskIncrementalNextSolutionAction> askincremental_next_solution_action_server_;
-        actionlib::SimpleActionServer <TellAction> tell_action_server_;
+		// Action Servers
+		actionlib::SimpleActionServer<AskAllAction> askall_action_server_;
+		actionlib::SimpleActionServer<AskOneAction> askone_action_server_;
+		actionlib::SimpleActionServer<AskIncrementalAction> askincremental_action_server_;
+		actionlib::SimpleActionServer<AskIncrementalNextSolutionAction> askincremental_next_solution_action_server_;
+		actionlib::SimpleActionServer<TellAction> tell_action_server_;
 
 		// KnowledgeBase
-        KnowledgeBase kb_;
+		KnowledgeBase kb_;
 
 		// Mutex to protect query_results_
 		std::mutex query_mutex_;
@@ -59,27 +59,27 @@ namespace knowrob {
 		 * Constructor
 		 * @param ptree the property tree containing the configuration
 		 */
-        explicit ROSInterface(const boost::property_tree::ptree& ptree);
+		explicit ROSInterface(const boost::property_tree::ptree &ptree);
 
-        virtual ~ROSInterface();
+		virtual ~ROSInterface();
 
 		/**
 		 * execute the AskAll action
 		 * @param goal AskAllGoalConstPtr
 		 */
-        void executeAskAllCB(const AskAllGoalConstPtr &goal);
+		void executeAskAllCB(const AskAllGoalConstPtr &goal);
 
 		/**
 		 * execute the AskOne action
 		 * @param goal AskOneGoalConstPtr
 		 */
-        void executeAskOneCB(const AskOneGoalConstPtr &goal);
+		void executeAskOneCB(const AskOneGoalConstPtr &goal);
 
 		/**
 		 * execute the AskIncremental action
 		 * @param goal AskIncrementalGoalConstPtr
 		 */
-        void executeAskIncrementalCB(const AskIncrementalGoalConstPtr &goal);
+		void executeAskIncrementalCB(const AskIncrementalGoalConstPtr &goal);
 
 		/**
 		 * execute the AskIncrementalNextSolution action
@@ -100,7 +100,7 @@ namespace knowrob {
 		 * @param query A GraphQueryMessage
 		 * @return Map of key-value pairs
 		 */
-        std::unordered_map<std::string, boost::any> translateGraphQueryMessage(const GraphQueryMessage& query);
+		std::unordered_map<std::string, boost::any> translateGraphQueryMessage(const GraphQueryMessage &query);
 
 		/**
 		 * Translate a answer into a GraphAnswerMessage
@@ -108,8 +108,8 @@ namespace knowrob {
 		 * @param sharedPtr shared pointer to the answer
 		 * @return The GraphAnswerMessage
 		 */
-        GraphAnswerMessage createGraphAnswer(std::shared_ptr<const AnswerYes> sharedPtr);
-    };
+		GraphAnswerMessage createGraphAnswer(std::shared_ptr<const AnswerYes> sharedPtr);
+	};
 }
 
 #endif //KNOWROB_ROSINTERFACE_H
