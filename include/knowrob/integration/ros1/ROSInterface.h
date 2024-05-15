@@ -6,11 +6,9 @@
  * https://github.com/knowrob/knowrob for license details.
  */
 
-
 #ifndef KNOWROB_ROSINTERFACE_H
 #define KNOWROB_ROSINTERFACE_H
 
-#include "knowrob/ros/ROSInterface.h"
 // KnowRob
 #include "knowrob/knowrob.h"
 #include "knowrob/Logger.h"
@@ -24,42 +22,94 @@
 #include <knowrob/GraphAnswerMessage.h>
 #include <knowrob/GraphQueryMessage.h>
 #include <knowrob/KeyValuePair.h>
-#include <knowrob/askallAction.h>
-#include <knowrob/askoneAction.h>
-#include <knowrob/askincrementalAction.h>
-#include <knowrob/tellAction.h>
+#include <knowrob/AskAllAction.h>
+#include <knowrob/AskOneAction.h>
+#include <knowrob/AskIncrementalAction.h>
+#include <knowrob/AskIncrementalNextSolutionAction.h>
+#include <knowrob/TellAction.h>
 #include <actionlib/server/simple_action_server.h>
+// std
+#include <mutex>
 
 namespace knowrob {
-    class ROSInterface {
-    private:
-        ros::NodeHandle nh_;
+	class ROSInterface {
+	private:
+		ros::NodeHandle nh_;
 
-        // Action Servers
-        actionlib::SimpleActionServer <askallAction> askall_action_server_;
-        actionlib::SimpleActionServer <askoneAction> askone_action_server_;
-        actionlib::SimpleActionServer <askincrementalAction> askincremental_action_server_;
-        actionlib::SimpleActionServer <tellAction> tell_action_server_;
-        KnowledgeBase kb_;
-    public:
-        explicit ROSInterface(const boost::property_tree::ptree& ptree);
+		// Action Servers
+		actionlib::SimpleActionServer<AskAllAction> askall_action_server_;
+		actionlib::SimpleActionServer<AskOneAction> askone_action_server_;
+		actionlib::SimpleActionServer<AskIncrementalAction> askincremental_action_server_;
+		actionlib::SimpleActionServer<AskIncrementalNextSolutionAction> askincremental_next_solution_action_server_;
+		actionlib::SimpleActionServer<TellAction> tell_action_server_;
 
-        virtual ~ROSInterface();
+		// KnowledgeBase
+		KnowledgeBase kb_;
 
-        void executeAskAllCB(const askallGoalConstPtr &goal);
+		// Mutex to protect query_results_
+		std::mutex query_mutex_;
+		// Counter to assign unique query IDs
+		uint32_t next_query_id_ = 1;
+		// Stores query results for each query ID
+		std::map<uint32_t, std::shared_ptr<TokenQueue>> query_results_;
 
-        void executeAskOneCB(const askoneGoalConstPtr &goal);
+	public:
 
-        void executeAskIncrementalCB(const askincrementalGoalConstPtr &goal);
+		/**
+		 * Constructor
+		 * @param ptree the property tree containing the configuration
+		 */
+		explicit ROSInterface(const boost::property_tree::ptree &ptree);
 
-        void executeTellCB(const tellGoalConstPtr &goal);
+		virtual ~ROSInterface();
 
-        static FormulaPtr
-        applyModality(const GraphQueryMessage &query,
-                      FormulaPtr ptr);
+		/**
+		 * execute the AskAll action
+		 * @param goal AskAllGoalConstPtr
+		 */
+		void executeAskAllCB(const AskAllGoalConstPtr &goal);
 
-        GraphAnswerMessage createGraphAnswer(std::shared_ptr<const Answer> sharedPtr);
-    };
+		/**
+		 * execute the AskOne action
+		 * @param goal AskOneGoalConstPtr
+		 */
+		void executeAskOneCB(const AskOneGoalConstPtr &goal);
+
+		/**
+		 * execute the AskIncremental action
+		 * @param goal AskIncrementalGoalConstPtr
+		 */
+		void executeAskIncrementalCB(const AskIncrementalGoalConstPtr &goal);
+
+		/**
+		 * execute the AskIncrementalNextSolution action
+		 * @param goal AskIncrementalNextSolutionGoalConstPtr
+		 */
+		void executeAskIncrementalNextSolutionCB(const AskIncrementalNextSolutionGoalConstPtr &goal);
+
+		/**
+		 * execute the Tell action
+		 * @param goal TellGoalConstPtr
+		 */
+		void executeTellCB(const TellGoalConstPtr &goal);
+
+		/**
+		 * Translate a GraphQueryMessage into a map of key-value pairs
+		 * that can be used by applyModality
+		 *
+		 * @param query A GraphQueryMessage
+		 * @return Map of key-value pairs
+		 */
+		std::unordered_map<std::string, boost::any> translateGraphQueryMessage(const GraphQueryMessage &query);
+
+		/**
+		 * Translate a answer into a GraphAnswerMessage
+		 *
+		 * @param sharedPtr shared pointer to the answer
+		 * @return The GraphAnswerMessage
+		 */
+		GraphAnswerMessage createGraphAnswer(std::shared_ptr<const AnswerYes> sharedPtr);
+	};
 }
 
 #endif //KNOWROB_ROSINTERFACE_H

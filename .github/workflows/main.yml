@@ -16,11 +16,11 @@ jobs:
     #  with:
     #    path: 'ros_ws/src/rosprolog'
     #    repository: knowrob/rosprolog
-    - name: Checkout iai_common_msgs
-      uses: actions/checkout@v2
-      with:
-        path: 'ros_ws/src/iai_common_msgs'
-        repository: code-iai/iai_common_msgs
+    # - name: Checkout iai_common_msgs
+    #  uses: actions/checkout@v2
+    #  with:
+    #    path: 'ros_ws/src/iai_common_msgs'
+    #    repository: code-iai/iai_common_msgs
     - name: Setup KnowRob workspace
       uses: betwo/github-setup-catkin@master
       env:

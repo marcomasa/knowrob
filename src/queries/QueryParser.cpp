@@ -1,4 +1,5 @@
-/*
+/*// Define value types for options
+using OptionValue = variant<string, double, int, optional<long long>>;
  * This file is part of KnowRob, please consult
  * https://github.com/knowrob/knowrob for license details.
  */
@@ -10,6 +11,7 @@
 #include "knowrob/queries/parsers/terms.h"
 #include "knowrob/queries/parsers/formula.h"
 #include "knowrob/integration/python/utils.h"
+#include "knowrob/formulas/ModalFormula.h"
 
 using namespace knowrob;
 
@@ -29,11 +31,13 @@ static inline ResultType parse_(const std::string &queryString, const RuleType &
 }
 
 FormulaPtr QueryParser::parse(const std::string &queryString) {
-	return parse_<FormulaPtr, knowrob::parsers::formula::FormulaRule>(queryString, knowrob::parsers::formula::formula());
+	return parse_<FormulaPtr, knowrob::parsers::formula::FormulaRule>(queryString,
+																	  knowrob::parsers::formula::formula());
 }
 
 PredicatePtr QueryParser::parsePredicate(const std::string &queryString) {
-	return parse_<PredicatePtr, knowrob::parsers::formula::PredicateRule>(queryString, knowrob::parsers::formula::predicate());
+	return parse_<PredicatePtr, knowrob::parsers::formula::PredicateRule>(queryString,
+																		  knowrob::parsers::formula::predicate());
 }
 
 FunctionPtr QueryParser::parseFunction(const std::string &queryString) {

@@ -55,6 +55,7 @@ namespace knowrob {
 		 * @return the parsed raw atom.
 		 */
 		static std::string parseRawAtom(const std::string &queryString);
+
 	};
 
 } // knowrob

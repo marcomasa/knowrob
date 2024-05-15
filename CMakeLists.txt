@@ -5,9 +5,9 @@ if (POLICY CMP0148)
     cmake_policy(SET CMP0148 OLD)
 endif ()
 
-option(BUILD_ROS1_INTERFACE "Build the interface for ROS1 systems" OFF)
+option(WITH_ROS1_INTERFACE "Build the interface for ROS1 systems" ON)
 
-project(KnowRob
+project(knowrob
         DESCRIPTION "A Knowledge Base System for Cognition-enabled Robots")
 
 IF (NOT WIN32)
@@ -79,35 +79,23 @@ add_definitions(-DKNOWROB_BUILD_DIR=\"${CMAKE_BINARY_DIR}\")
 add_definitions(-DBOOST_ALLOW_DEPRECATED_HEADERS)
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
-##############
-########## ROS1
-##############
 # NOTE: seems catkin_package must be called *before* any library is build.
-
-find_package(catkin QUIET COMPONENTS
-        roscpp roslib tests/urdf message_generation
-        geometry_msgs message_generation json_prolog_msgs actionlib actionlib_msgs)
-
-if (false)
-    message(STATUS "Building with ROS1 support.")
-
-    add_definitions(-DKNOWROB_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\")
-
-    include_directories(${catkin_INCLUDE_DIRS})
-
-    catkin_python_setup()
-
-    # build messages
-    add_action_files(
-            DIRECTORY action
-            FILES
-            askall.action
-            askone.action
-            askincremental.action
-            tell.action
+if (WITH_ROS1_INTERFACE)
+    find_package(catkin REQUIRED COMPONENTS
+        roscpp
+        rospy
+        std_msgs
+        message_generation
+        actionlib
+        actionlib_msgs
     )
 
+endif()
+if (WITH_ROS1_INTERFACE AND catkin_FOUND)
+    message(STATUS "Building with ROS1 support.")
+
     add_message_files(
+            DIRECTORY ros1/msg
             FILES
             KeyValuePair.msg
             GraphQueryMessage.msg
@@ -115,18 +103,25 @@ if (false)
             EventToken.msg
     )
 
+    add_action_files(
+            DIRECTORY ros1/action
+            FILES
+            AskAll.action
+            AskOne.action
+            AskIncremental.action
+            AskIncrementalNextSolution.action
+            Tell.action
+    )
+
     generate_messages(DEPENDENCIES
             std_msgs
-            geometry_msgs
             actionlib_msgs)
 
     catkin_package(
-            CATKIN_DEPENDS roscpp roslib
-            CFG_EXTRAS ontologies.cmake
+        CATKIN_DEPENDS roscpp roslib
+        CFG_EXTRAS ontologies.cmake
     )
-else ()
-    message(STATUS "Building without ROS1 support.")
-endif ()
+endif()
 
 ##############
 #### MONGO DB
@@ -211,6 +206,7 @@ add_library(knowrob SHARED
         src/reasoner/ReasonerManager.cpp
         src/PropertyTree.cpp
         src/integration/prolog/PrologEngine.cpp
+        src/integration/InterfaceUtils.cpp
         src/reasoner/prolog/PrologReasoner.cpp
         src/reasoner/prolog/PrologTests.cpp
         src/integration/prolog/logging.cpp
@@ -342,15 +338,25 @@ target_link_libraries(knowrob_py PRIVATE
         Boost::serialization
         ${Boost_Python_COMPONENT}
         knowrob)
+
 # Rename the library to knowrob.so such that it can be loaded by the
 # Python interpreter through the "import knowrob" statement.
 # NOTE: The library needs to be copied into site-packages directory of Python, or
 #       the PYTHONPATH needs to be set to include the build directory.
-add_custom_command(TARGET knowrob_py POST_BUILD
+# If catkin is used (e.g. in context of ROS) the library is in the devel space instead of build
+if (WITH_ROS1_INTERFACE AND catkin_FOUND AND CATKIN_DEVEL_PREFIX)
+    add_custom_command(TARGET knowrob_py POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CATKIN_DEVEL_PREFIX}/lib/knowrob_py.so
+        ${CMAKE_BINARY_DIR}/knowrob.so
+        COMMAND_EXPAND_LISTS)
+else()
+    add_custom_command(TARGET knowrob_py POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_BINARY_DIR}/knowrob_py.so
         ${CMAKE_BINARY_DIR}/knowrob.so
         COMMAND_EXPAND_LISTS)
+endif()
 # install the Python module into the site-packages directory
 install(FILES ${CMAKE_BINARY_DIR}/knowrob.so
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
@@ -383,55 +389,37 @@ endif ()
 ########## ROS1
 ##############
 
-if (false)
+if (WITH_ROS1_INTERFACE AND catkin_FOUND AND CATKIN_DEVEL_PREFIX)
 
-    # install into ROS workspace
-    #add_dependencies(mongo_kb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-    add_dependencies(knowrob ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-    add_dependencies(knowrob-terminal ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+    include_directories(${catkin_INCLUDE_DIRS})
 
-    #	### TF messages ###
-    #	add_library(tf_knowrob SHARED
-    #		src/ros/tf/tf.cpp
-    #		src/ros/tf/memory.cpp
-    #		src/ros/tf/logger.cpp
-    #		src/ros/tf/publisher.cpp
-    #		src/ros/tf/republisher.cpp)
-    #	target_link_libraries(tf_knowrob
-    #		${SWIPL_LIBRARIES}
-    #		${MONGOC_LIBRARIES}
-    #		${catkin_LIBRARIES})
-    #		#mongo_kb
-    #	add_dependencies(tf_knowrob
-    #		${${PROJECT_NAME}_EXPORTED_TARGETS}
-    #		${catkin_EXPORTED_TARGETS})
-    #
-    #	## RViz marker ###
-    #	add_library(marker_knowrob SHARED src/ros/marker/publisher.cpp)
-    #	target_link_libraries(marker_knowrob
-    #		${SWIPL_LIBRARIES} ${catkin_LIBRARIES})
-    #	add_dependencies(marker_knowrob
-    #		${${PROJECT_NAME}_EXPORTED_TARGETS}
-    #		${catkin_EXPORTED_TARGETS})
-    #
-    #	## URDf ###
-    #	add_library(urdf_parser SHARED src/ros/urdf/parser.cpp)
-    #	target_link_libraries(urdf_parser ${SWIPL_LIBRARIES} ${catkin_LIBRARIES})
-    #	add_dependencies(urdf_parser
-    #		${${PROJECT_NAME}_EXPORTED_TARGETS}
-    #		${catkin_EXPORTED_TARGETS})
+    add_definitions(-DKNOWROB_SOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")
+
+    # catkin_python_setup()
+
+    include_directories(
+      ${catkin_INCLUDE_DIRS}
+    )
 
     ## ROS Interface ###
     add_executable(knowrob-ros
-            src/ros/ROSInterface.cpp
+            src/integration/ros1/ROSInterface.cpp
     )
     add_dependencies(knowrob-ros
             ${catkin_EXPORTED_TARGETS})
     target_link_libraries(knowrob-ros
             Boost::program_options
+            ${KNOWROB_LIBRARIES}
             knowrob
-            ${catkin_LIBRARIES})
+            ${catkin_LIBRARIES}
+            ${Boost_INCLUDE_DIRS}
+            ${PYTHON_INCLUDE_DIRS}
+            ${Boost_Python_COMPONENT})
     install(TARGETS knowrob-ros RUNTIME DESTINATION bin)
+
+
+else ()
+    message(STATUS "Building without ROS1 support.")
 endif ()
 
 ##############
