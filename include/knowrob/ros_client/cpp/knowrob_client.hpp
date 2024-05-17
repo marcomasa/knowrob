@@ -19,15 +19,20 @@
 #include <knowrob/GraphAnswerMessage.h>
 #include <knowrob/GraphQueryMessage.h>
 
-#include <knowrob/askoneAction.h>
-#include <knowrob/askincrementalAction.h>
-#include <knowrob/askallAction.h>
-#include <knowrob/tellAction.h>
+#include <knowrob/AskOneAction.h>
+#include <knowrob/AskAllAction.h>
+#include <knowrob/TellAction.h>
 
-typedef actionlib::SimpleActionClient<knowrob::askoneAction> askOneClient;
-typedef actionlib::SimpleActionClient<knowrob::askincrementalAction> askIncrementalClient;
-typedef actionlib::SimpleActionClient<knowrob::askallAction> askAllClient;
-typedef actionlib::SimpleActionClient<knowrob::tellAction> tellClient;
+// not supported yet
+#include <knowrob/AskIncrementalAction.h>
+#include <knowrob/AskIncrementalNextSolutionAction.h>
+
+typedef actionlib::SimpleActionClient<knowrob::AskOneAction> askOneClient;
+typedef actionlib::SimpleActionClient<knowrob::AskAllAction> askAllClient;
+typedef actionlib::SimpleActionClient<knowrob::TellAction> tellClient;
+
+typedef actionlib::SimpleActionClient<knowrob::AskIncrementalAction> askIncrementalClient;
+typedef actionlib::SimpleActionClient<knowrob::AskIncrementalNextSolutionAction> askIncrementalNextSolutionClient;
 
 typedef knowrob::GraphAnswerMessage KnowrobAnswer;
 typedef knowrob::GraphQueryMessage KnowrobQuery;

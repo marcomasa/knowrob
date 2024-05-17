@@ -1,0 +1,6 @@
+<launch>
+
+  <node name="knowrob_ros_client_node" pkg="knowrob" type="client-node" cwd="node" output="screen" />
+
+
+</launch>

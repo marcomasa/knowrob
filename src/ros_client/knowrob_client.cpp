@@ -217,7 +217,7 @@ bool KnowrobClient::askOne(const KnowrobQuery &knowrob_query,
     m_actCli_ask_one->cancelAllGoals();
 
     // build the action goal
-    knowrob::askoneGoal action_goal;
+    knowrob::AskOneGoal action_goal;
     action_goal.query = knowrob_query;
  
     // send the goal and wait for an answer
@@ -234,7 +234,7 @@ bool KnowrobClient::askOne(const KnowrobQuery &knowrob_query,
     }
 
     // inspect the result
-    knowrob::askoneResultConstPtr action_result = m_actCli_ask_one->getResult();
+    knowrob::AskOneResultConstPtr action_result = m_actCli_ask_one->getResult();
 
     knowrob_answer = action_result->answer;
 
@@ -263,7 +263,7 @@ bool KnowrobClient::askAll(const KnowrobQuery &knowrob_query,
     m_actCli_ask_all->cancelAllGoals();
 
     // build the action goal
-    knowrob::askallGoal action_goal;
+    knowrob::AskAllGoal action_goal;
     action_goal.query = knowrob_query;
  
     // send the goal and wait for an answer
@@ -280,7 +280,7 @@ bool KnowrobClient::askAll(const KnowrobQuery &knowrob_query,
     }
 
     // inspect the result
-    knowrob::askallResultConstPtr action_result = m_actCli_ask_all->getResult();
+    knowrob::AskAllResultConstPtr action_result = m_actCli_ask_all->getResult();
 
     knowrob_answers = action_result->answer;
 
@@ -316,7 +316,7 @@ bool KnowrobClient::tell(const KnowrobQuery &knowrob_query)
     m_actCli_tell->cancelAllGoals();
 
     // build the action goal
-    knowrob::tellGoal action_goal;
+    knowrob::TellGoal action_goal;
     action_goal.query = knowrob_query;
  
     // send the goal and wait for an answer
@@ -333,7 +333,7 @@ bool KnowrobClient::tell(const KnowrobQuery &knowrob_query)
     }
 
     // inspect the result
-    knowrob::tellResultConstPtr action_result = m_actCli_tell->getResult();
+    knowrob::TellResultConstPtr action_result = m_actCli_tell->getResult();
 
     if(action_result->status == action_result->TELL_FAILED)
     {
