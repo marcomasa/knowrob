@@ -3,7 +3,6 @@
 	  mongolog_call(t,+),
 	  mongolog_assert(t),
 	  mongolog_assert(t,t),			% +Statement, +Scope
-	  mongolog_project(t),
 	  mongolog_retract(t),        % +Statement
 	  mongolog_retract(t,t),      % +Statement, +Scope
 	  mongolog_retract(t,t,t),    % +Statement, +Scope, +Options
@@ -25,13 +24,14 @@
 	      rdf_global_term/2 ]).
 :- use_module('client').
 :- use_module(library('scope')).
-:- use_module(library('blackboard'),
+:- use_module(library('reasoner'),
         [ reasoner_setting/4,
           reasoner_setting/2,
-          current_reasoner_module/1 ]).
+          current_reasoner_module/1,
+          reasoner_define_relation/2 ]).
 
 %% set of registered query commands.
-:- dynamic step_command/2.
+:- dynamic step_command/3.
 % optionally implemented by query commands.
 :- multifile step_expand/2.
 %% implemented by query commands to compile query documents
@@ -43,8 +43,6 @@
 
 %% operators for tell/ask rules
 :- op(1100, xfx, user:(?>)).
-:- op(1100, xfx, user:(+>)).
-:- op(1100, xfx, user:(?+>)).
 
 :- rdf_meta(step_compile(t,t,t)).
 :- rdf_meta(step_compile(t,t,t,-)).
@@ -69,23 +67,17 @@ mongolog_current_predicate(PredicateIndicator, PredicateType) :-
 	mongolog_current_predicate1(CommandModule, Functor, Arity, PredicateType).
 
 %%
-mongolog_current_predicate1(_Module, Functor, _Arity, built_in) :-
-	% TODO: take arity into account
-    step_command(user, Functor), !.
+mongolog_current_predicate1(_Module, Functor, Arity, built_in) :-
+    step_command(user, Functor, Arity), !.
 
-mongolog_current_predicate1(Module, Functor, _Arity, relation) :-
-	% TODO: take arity into account
-    step_command(Module, Functor), !.
-
-mongolog_current_predicate1(Module, Functor, 2, relation) :-
-	current_reasoner_manager(Manager),
-	mng_rdf_current_property_cpp(Manager, Module, Functor), !.
+mongolog_current_predicate1(Module, Functor, Arity, idb_relation) :-
+    step_command(Module, Functor, Arity), !.
 
 mongolog_current_predicate1(_Module, Functor, Arity, built_in) :-
     mongolog_rule(user, Functor, Args, _),
     length(Args, Arity),!.
 
-mongolog_current_predicate1(Module, Functor, Arity, relation) :-
+mongolog_current_predicate1(Module, Functor, Arity, idb_relation) :-
     mongolog_rule(Module, Functor, Args, _),
     length(Args, Arity),!.
 
@@ -95,7 +87,7 @@ mongolog_current_predicate1(Module, Functor, Arity, relation) :-
 %
 % @param Command a command term.
 %
-add_command(Command) :- add_command(Command, user).
+add_command(Command, Arity) :- add_command(Command, Arity, user).
 
 %% add_command(+Command, +CommandModule) is det.
 %
@@ -104,30 +96,32 @@ add_command(Command) :- add_command(Command, user).
 % @param Command a command term.
 % @param CommandModule the module in which the command is registered.
 %
-add_command(Command, _CommandModule) :-
-    step_command(user,Command), !.
-add_command(Command, CommandModule) :-
-    step_command(CommandModule,Command), !.
-add_command(Command, CommandModule) :-
-    assertz(step_command(CommandModule,Command)).
+add_command(Command, Arity, _CommandModule) :-
+    step_command(user,Command,Arity), !.
+add_command(Command, Arity, CommandModule) :-
+    step_command(CommandModule,Command,Arity), !.
+add_command(Command, Arity, CommandModule) :-
+    assertz(step_command(CommandModule,Command,Arity)).
 
 %%
-is_step_command(CommandModule, (/(Functor,_Arity))) :-
-	!, step_command1(CommandModule,Functor).
+is_step_command(CommandModule, (/(Functor,Arity))) :-
+	!, step_command1(CommandModule,Functor,Arity).
 
 is_step_command(CommandModule, Goal) :-
 	compound(Goal),!,
-	Goal =.. [Functor|_Args],
-	step_command1(CommandModule,Functor).
+	Goal =.. [Functor|Args],
+	length(Args, Arity),
+	step_command1(CommandModule,Functor,Arity).
 
 is_step_command(CommandModule, Functor) :-
 	atom(Functor),!,
-	step_command1(CommandModule,Functor).
+	once(step_command1(CommandModule,Functor,_)).
 
 %%
-step_command1(ReasonerModule, Functor) :-
-    step_command(RealReasonerModule, Functor),
-    once((RealReasonerModule==user ; RealReasonerModule==ReasonerModule)).
+step_command1(ReasonerModule, Functor, Arity) :-
+    step_command(RealReasonerModule, Functor, Arity),
+    once((RealReasonerModule==user ; RealReasonerModule==ReasonerModule)),
+    !.
 
 %% mongolog_add_rule(+Head, +Body) is semidet.
 %
@@ -151,7 +145,10 @@ mongolog_add_rule(Head, Body, ReasonerModule) :-
 	(	mongolog_expand(Body, Expanded) -> true
 	;	log_error_and_fail(mongolog(expansion_failed(Functor)))
 	),
-	assertz(mongolog_rule(ReasonerModule, Functor, Args, Expanded)).
+	assertz(mongolog_rule(ReasonerModule, Functor, Args, Expanded)),
+	%% define the relation with the reasoner
+	length(Args, Arity),
+	reasoner_define_relation(Functor, Arity).
 
 %% mongolog_drop_rule(+Head) is semidet.
 %
@@ -192,9 +189,6 @@ mongolog_consult(URL) :-
 
 mongolog_consult(URL, _Options) :-
     % skip consultation if the file was consulted already for the current reasoner.
-    % TODO: handle the case that only a subset of predicates was imported before,
-    %  i.e. via use_module(FileSpec, ImportList). Currently ImportList is ignored and
-    %  all predicates are loaded in any case.
 	current_reasoner_module(Module),
 	mongolog_source_file(URL, RealModule),
 	(RealModule==user ; RealModule==Module),
@@ -276,10 +270,6 @@ mongolog_consult3((:- Goal), _) :-
 mongolog_consult3((Head :- Body), Options) :-
 	!, mongolog_consult3('?>'(Head,Body), Options).
 
-mongolog_consult3('?+>'(Head,Body), Options) :-
-    !, mongolog_consult3('?>'(Head,Body), Options),
-       mongolog_consult3('+>'(Head,Body), Options).
-
 mongolog_consult3('?>'(Head,Body), _Options) :-
     !, % "ask" rule
 	% expand rdf terms Prefix:Local to IRI atom
@@ -288,19 +278,6 @@ mongolog_consult3('?>'(Head,Body), _Options) :-
 	strip_module_(HeadGlobal,_Module,Term),
 	% add the rule to the DB backend
 	mongolog_add_rule(Term, BodyGlobal).
-
-mongolog_consult3('+>'(Head,Body), _Options) :-
-    !, % "tell" rule
-	% expand rdf terms Prefix:Local to IRI atom
-	rdf_global_term(Head, HeadGlobal),
-	rdf_global_term(Body, BodyGlobal),
-	strip_module_(HeadGlobal,_Module,Term),
-	% rewrite functor
-	Term =.. [Functor|Args],
-	atom_concat('project_',Functor,Functor0),
-	Head0 =.. [Functor0|Args],
-	% add the rule to the DB backend
-	mongolog_add_rule(Head0, project(BodyGlobal)).
 
 % consult a fact
 mongolog_consult3(Fact, Options) :-
@@ -386,9 +363,6 @@ mongolog_call(Goal) :-
 % @param Goal A compound term expanding into an aggregation pipeline
 % @param Options Additional options
 %
-mongolog_call(reasoner_defined_predicate(Indicator,PredicateType), _Ctx) :-
-    !, mongolog_current_predicate(Indicator,PredicateType).
-
 mongolog_call(current_predicate(Predicate), _Ctx) :-
 	!, mongolog_current_predicate(Predicate).
 
@@ -397,15 +371,6 @@ mongolog_call(consult(File), _Ctx) :-
     (   var(File)
     ->  throw(error(instantiation_error(File), mongolog_call(consult(File))))
     ;   mongolog_consult(File)
-    ).
-
-mongolog_call(load_rdf_xml(File,ParentGraph), _Ctx) :-
-    !,
-    current_reasoner_manager(ReasonerManager),
-    current_reasoner_module(ReasonerModule),
-    (   var(File)
-    ->  throw(error(instantiation_error(File), mongolog_call(load_rdf_xml(File,ParentGraph))))
-    ;   mng_load_triples_cpp(ReasonerManager, ReasonerModule, File, ParentGraph)
     ).
 
 mongolog_call(Goal, ContextIn) :-
@@ -425,11 +390,11 @@ mongolog_call(Goal, ContextIn) :-
 	(   option(predicates(_),ContextIn) -> (
 	        % add trace_predicate/1 calls where appropriate
 	        expand_instantiations(Goal, GoalWithInstantiations),
-	        blackboard:expand_rdf_predicates(GoalWithInstantiations, RDFExpanded),
+	        reasoner:expand_rdf_predicates(GoalWithInstantiations, RDFExpanded),
 	        mongolog_compile(RDFExpanded, pipeline(Doc0,Vars), Context),
 	        Doc=[['$set',['v_predicates',array([])]] | Doc0]
 	    )
-	;   (   blackboard:expand_rdf_predicates(Goal, RDFExpanded),
+	;   (   reasoner:expand_rdf_predicates(Goal, RDFExpanded),
 	        mongolog_compile(RDFExpanded, pipeline(Doc,Vars), Context)
 	    )
 	),
@@ -532,8 +497,6 @@ assert_documents1(array(Docs), Coll) :-
 	current_reasoner_manager(ReasonerManager),
 	current_reasoner_module(ReasonerModule),
 
-	% TODO: rather provide array of triples to cpp instead of
-	%       calling pl_assert_triple_cpp9 for each.
 	forall(member(StatementData, Docs), (
 		dict_pairs(TripleDict,_,StatementData),
 		get_dict(s, TripleDict, string(Subject)),
@@ -560,7 +523,6 @@ assert_documents1(array(Docs), Coll) :-
 assert_documents1(array(Docs), Key) :-
 	% NOTE: the mongo client currently returns documents as pairs A-B instead of
 	%       [A,B] which is required as input.
-	% TODO: make mongo return docs in a format that it accepts as input.
 	maplist(format_doc, Docs, Docs0),
 	maplist(bulk_operation, Docs0, BulkOperations),
 	mongolog_get_db(DB, Coll, Key),
@@ -694,29 +656,39 @@ mongolog_assert(triple(S,P,O)) :-
 	current_reasoner_manager(ReasonerManager),
 	current_reasoner_module(ReasonerModule),
 	sw_default_graph(G),
-	mng_assert_triple_cpp(ReasonerManager, ReasonerModule, S, P, O, G, _, _, _).
+	triple_value(O, OValue),
+	mng_assert_triple_cpp(ReasonerManager, ReasonerModule, S, P, OValue, G, _, _, _).
+
+mongolog_assert(Term) :-
+	throw(error(mongolog_error, assert(Term))).
 
 mongolog_assert(Fact) :-
 	mongolog_universal_scope(QScope),
 	mongolog_call(assert(Fact),[query_scope(QScope)]).
 
 mongolog_assert(triple(S,P,O), Scope) :-
+	is_list(Scope),!,
 	option(query_scope(QS), Scope),
-	mongolog_time_scope(QS, SinceValue0, UntilValue0),
+	mongolog_assert(triple(S,P,O), QS).
+
+mongolog_assert(triple(S,P,O), Scope) :-
+	is_dict(Scope),
+	mongolog_time_scope(Scope, SinceValue0, UntilValue0),
 	mng_strip_type(SinceValue0, _, SinceValue),
 	mng_strip_type(UntilValue0, _, UntilValue),
 	current_reasoner_manager(ReasonerManager),
 	current_reasoner_module(ReasonerModule),
 	sw_default_graph(G),
-	% TODO: include other fields of modal frame!
+	triple_value(O, OValue),
 	mng_assert_triple_cpp(ReasonerManager, ReasonerModule,
-			S, P, O, G,
+			S, P, OValue, G,
 			SinceValue, UntilValue, _).
 
-%%
-mongolog_project(Fact) :-
-	mongolog_universal_scope(QScope),
-	mongolog_call(project(Fact),[query_scope(QScope)]).
+triple_value(Value,BaseUnitValue) :-
+	mongolog_holds:strip_unit(Value, 'is', Multiplier, Offset, Stripped),
+	% convert to base unit
+	BaseUnitValue is ((Stripped * Multiplier) + Offset), !.
+triple_value(Value,Value).
 
 %% mongolog_retract(+Statement) is nondet.
 %
@@ -764,7 +736,6 @@ mongolog_retract(Statements, Scope, Options) :-
 	       mongolog_retract(Statement, Scope, Options)).
 
 mongolog_retract(triple(S,P,O), Scope, Options) :-
-	% TODO: support retraction of other predicates
 	% ensure there is a graph option
 	set_graph_option(Options, Options0),
 	% append scope to options
@@ -901,10 +872,10 @@ step_compile(trace_predicate(Predicate), Ctx,
 	])]]]]) :-
 	var_key_or_val(Predicate, Ctx, Predicate0).
 
-step_command(user,ask).
-step_command(user,pragma).
-step_command(user,stepvars).
-step_command(user,trace_predicate).
+step_command(user,ask,1).
+step_command(user,pragma,1).
+step_command(user,stepvars,1).
+step_command(user,trace_predicate,1).
 
 %%
 match_equals(X, Exp, ['$match', ['$expr', ['$eq', array([X,Exp])]]]).
@@ -1140,9 +1111,6 @@ get_var(Term, Ctx, [Key,Var]) :-
 %
 var_key(Var, Ctx, Key) :-
 	var(Var),
-	% TODO: can this be done better than iterating over all variables?
-	%		- i.e. by testing if some variable is element of a list
-	%		- member/2 cannot be used as it would unify each array element
 	(	option(global_vars(Vars), Ctx)
 	;	option(outer_vars(Vars), Ctx)
 	;	option(step_vars(Vars), Ctx)
@@ -1266,35 +1234,8 @@ user:term_expansion((?>(Head,Body)), Export) :-
     % note: expansion happens only the first time the file is loaded e.g. via use_module.
     %   a consequitive loading does not trigger expansion again but only makes the predicates
     %   created here available in the module that loads the file again.
-    % FIXME: behavior described above may cause problems in case file is loaded multiple
-    %    times with different reasoner contexts
+    % FIXME: The behavior described above may cause problems in case file is loaded multiple times with different reasoner contexts.
 	expand_ask_rule_(SourceURL, ReasonerModule, Head, Body, Export).
-
-%%
-% Term expansion for *project* rules using the (+>) operator.
-% The rules are only asserted into mongo DB and expanded into
-% empty list.
-%
-user:term_expansion((+>(Head,Body)), Export) :-
-    prolog_load_context(source, SourceURL),
-	current_reasoner_module(ReasonerModule),
-	expand_tell_rule_(SourceURL, ReasonerModule, Head, Body, Export).
-
-%%
-% Term expansion for *query+project* rules using the (?+>) operator.
-% These are basically clauses that can be used in both contexts.
-%
-% Consider for example following rule:
-%
-%     is_event(Entity) ?+>
-%       has_type(Entity, dul:'Event').
-%
-% This is valid because, in this case, has_type/2 has
-% clauses for querying and projection.
-%
-user:term_expansion((?+>(Head,Goal)), X1) :-
-	user:term_expansion((?>(Head,Goal)),X1),
-	user:term_expansion((+>(Head,Goal)),_X2).
 
 %%
 expand_ask_rule_(SourceFile, ReasonerModule, _Head, _Body, []) :-
@@ -1316,13 +1257,6 @@ expand_ask_rule_(SourceFile, ReasonerModule, Head, Body, Export) :-
 		    Export=[(:-(Term1, mongolog:mongolog_call(Term1, [query_scope(QScope)])))]
 	    )
 	).
-
-%%
-expand_tell_rule_(SourceFile, ReasonerModule, _Head, _Body, []) :-
-    is_expanded_(SourceFile, ReasonerModule), !.
-expand_tell_rule_(SourceFile, ReasonerModule, Head, Body, []) :-
-    expand_assert_source_(SourceFile, ReasonerModule),
-    mongolog:mongolog_consult3((+>(Head,Body)), []).
 
 %%
 expand_assert_source_(SourceFile, ReasonerModule) :-
@@ -1347,7 +1281,7 @@ expand_instantiations(not(Goal), not(Goal)) :- !.
 expand_instantiations(forall(Cond,Action), forall(Cond,Action)) :- !.
 % meta predicates like `,/2`, `call/1`, `once/1`, `->\2` that receive a goal as an argument,
 % and where the goal argument can be expanded.
-% FIXME: findall-family of predicates and instantiations in their goal argument (see blackboard.pl)
+% TODO: findall-family of predicates and instantiations in their goal argument are not well supported here.
 expand_instantiations(Head, Expanded) :-
 	user:predicate_property(Head, meta_predicate(MetaSpecifier)), !,
 	Head =.. [HeadFunctor|Args],
@@ -1357,7 +1291,7 @@ expand_instantiations(Head, Expanded) :-
 % user defined relations
 expand_instantiations(Head, (Head, trace_predicate(Head))) :-
     Head =.. [Functor|Args], length(Args,Arity),
-    mongolog_current_predicate(Functor/Arity, relation), !.
+    mongolog_current_predicate(Functor/Arity, idb_relation), !.
 % builtins
 expand_instantiations(Head, Head).
 
@@ -1407,10 +1341,6 @@ mongolog_expand(Terms, Expanded) :-
 	% It is important that this is done _after_ expansion because
 	% the cut within the call would yield an infinite recursion
 	% otherwhise.
-	% TODO: it is not so nice doing it here. would be better if it could be
-	%       done in control.pl where cut operator is implemented but current
-	%       interfaces don't allow to do the following operation in control.pl.
-	%		(without special handling of ',' it could be done, I think)
 	expand_cut(Expanded1, Expanded2),
 	%%
 	(	Expanded2=[One] -> Expanded=One
@@ -1427,7 +1357,6 @@ expand_term_0([X|Xs], [X_expanded|Xs_expanded]) :-
 	).
 
 expand_term_1(Goal, Expanded) :-
-	% FIXME: seems nested terms sometimes not properly flattened, how does it happen?
 	is_list(Goal),!,
 	expand_term_0(Goal, Expanded).
 

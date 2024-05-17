@@ -15,25 +15,13 @@ The following predicates are supported:
 :- use_module('mongolog').
 
 %% register query commands
-:- mongolog:add_command(findall).
-% TODO: support bagof (then, setof := bagof o sort)
-%:- mongolog:add_command(bagof).
-%:- mongolog:add_command(setof).
+:- mongolog:add_command(findall,3).
 
 %%
 mongolog:step_expand(
 		findall(Template, Goal, List),
 		findall(Template, Expanded, List)) :-
 	mongolog_expand(Goal, Expanded).
-
-%% setof(+Template, +Goal, -Set)
-% Equivalent to bagof/3, but sorts the result using sort/2 to
-% get a sorted list of alternatives without duplicates.
-%
-%mongolog:step_expand(
-%		setof(Template, Goal, Set),
-%		','(bagof(Template, Expanded, List), sort(List, Set))) :-
-%	mongolog:kb_expand(Goal, Expanded).
 
 %% findall(+Template, :Goal, -Bag)
 % Create a list of the instantiations Template gets successively on
@@ -52,7 +40,6 @@ mongolog:step_compile(
 	% note that the vars should not be added to the "outer_vars"
 	% array as variables in template are _not_ exposed to the outside.
 	mongolog:step_vars(Template, Ctx, TemplateVars),
-	% TODO: redundant, make an interface in query compiler
 	once((select(disj_vars(DisjVars), Ctx, Ctx0);(DisjVars=[],Ctx0=Ctx))),
 	append(DisjVars, TemplateVars, DisjVars0),
 	list_to_set(DisjVars0,DisjVars1),

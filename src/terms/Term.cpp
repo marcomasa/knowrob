@@ -1,38 +1,113 @@
 /*
- * Copyright (c) 2022, Daniel Beßler
- * All rights reserved.
- *
  * This file is part of KnowRob, please consult
  * https://github.com/knowrob/knowrob for license details.
  */
 
+#include "sstream"
 #include "knowrob/terms/Term.h"
-#include "knowrob/formulas/Bottom.h"
-#include "knowrob/formulas/Top.h"
+#include "knowrob/terms/Atomic.h"
+#include "knowrob/terms/Function.h"
+#include "knowrob/terms/Variable.h"
+#include "knowrob/integration/python/utils.h"
+#include "knowrob/knowrob.h"
 
 using namespace knowrob;
 
-const VariableSet Term::noVariables_ = {};
+const std::set<std::string_view> Term::noVariables_ = {};
 
-Term::Term(TermType type)
-: type_(type)
-{}
-
-bool Term::operator==(const Term& other) const
-{
-	// note: isEqual can safely perform static cast as type id's do match
-	return typeid(*this) == typeid(other) && isEqual(other);
+bool Term::isAtom() const {
+	return termType() == TermType::ATOMIC && ((Atomic *) this)->atomicType() == AtomicType::ATOM;
 }
 
-bool VariableComparator::operator()(const Variable* const &v0, const Variable* const &v1) const
-{
-	return *v0 < *v1;
+bool Term::isVariable() const {
+	return termType() == TermType::VARIABLE;
+}
+
+bool Term::isFunction() const {
+	return termType() == TermType::FUNCTION;
+}
+
+bool Term::isNumeric() const {
+	return termType() == TermType::ATOMIC && ((Atomic *) this)->atomicType() == AtomicType::NUMERIC;
+}
+
+bool Term::isString() const {
+	return termType() == TermType::ATOMIC && ((Atomic *) this)->atomicType() == AtomicType::STRING;
+}
+
+size_t Term::hash() const {
+	size_t val = 0;
+	hashCombine(val, uint8_t(termType()));
+	switch (termType()) {
+		case TermType::ATOMIC:
+			hashCombine(val, ((Atomic *) this)->hashOfAtomic());
+			break;
+		case TermType::FUNCTION:
+			hashCombine(val, ((Function *) this)->hashOfFunction());
+			break;
+		case TermType::VARIABLE:
+			hashCombine(val, std::hash<std::string_view>{}(((Variable *) this)->name()));
+			break;
+	}
+	return val;
+}
+
+bool Term::operator==(const Term &other) const {
+	if (this == &other) return true;
+	if (termType() != other.termType()) return false;
+	switch (termType()) {
+		case TermType::ATOMIC:
+			return ((Atomic *) this)->isSameAtomic(*((Atomic *) &other));
+		case TermType::VARIABLE:
+			return ((Variable *) this)->isSameVariable(*((Variable *) &other));
+		case TermType::FUNCTION:
+			return ((Function *) this)->isSameFunction(*((Function *) &other));
+	}
+	return false;
 }
 
 namespace std {
-	std::ostream& operator<<(std::ostream& os, const Term& t) //NOLINT
-	{
-		t.write(os);
+	ostream &operator<<(ostream &os, const knowrob::Term &t) { //NOLINT
+		knowrob::TermWriter(t, os);
 		return os;
+	}
+}
+
+namespace knowrob::py {
+	// this struct is needed because Term has pure virtual methods
+	struct TermWrap : public Term, boost::python::wrapper<Term> {
+		explicit TermWrap(PyObject *p, TermType termType) : self(p), Term(termType) {}
+
+		const std::set<std::string_view> &
+		variables() const override { return knowrob::py::call_method<std::set<std::string_view> &>(self, "variables"); }
+
+	private:
+		PyObject *self;
+	};
+
+	template<>
+	void createType<Term>() {
+		using namespace boost::python;
+		enum_<TermType>("TermType")
+				.value("FUNCTION", TermType::FUNCTION)
+				.value("ATOMIC", TermType::ATOMIC)
+				.value("VARIABLE", TermType::VARIABLE)
+				.export_values();
+		class_<Term, std::shared_ptr<TermWrap>, boost::noncopyable>
+				("Term", no_init)
+				.def("__eq__", &Term::operator==)
+				.def("__repr__", +[](Term &t) { return readString(t); })
+				.def("__hash__", &Term::hash)
+				.def("termType", &Term::termType)
+				.def("isAtomic", &Term::isAtomic)
+				.def("isAtom", &Term::isAtom)
+				.def("isVariable", &Term::isVariable)
+				.def("isFunction", &Term::isFunction)
+				.def("isNumeric", &Term::isNumeric)
+				.def("isString", &Term::isString)
+				.def("isIRI", &Term::isIRI)
+				.def("isBlank", &Term::isBlank)
+				.def("isGround", &Term::isGround)
+				.def("variables", pure_virtual(&Term::variables), return_value_policy<copy_const_reference>());
 	}
 }

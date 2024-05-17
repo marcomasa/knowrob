@@ -17,9 +17,9 @@ The following predicates are supported:
 :- use_module('mongolog').
 
 %% mongolog:add_command
-:- mongolog:add_command(=).
-:- mongolog:add_command(\=).
-:- mongolog:add_command(assign).
+:- mongolog:add_command(=,2).
+:- mongolog:add_command(\=,2).
+:- mongolog:add_command(assign,2).
 
 %% @Term1 \= @Term2
 %
@@ -49,7 +49,6 @@ mongolog:step_compile(=(Term1, Term2), _, _) :-
 mongolog:step_compile(=(Term1, Term2), Ctx, Pipeline) :-
 	mongolog:var_key_or_val(Term1,Ctx,Term1_val),
 	mongolog:var_key_or_val(Term2,Ctx,Term2_val),
-	% TODO: if var(Term1) then $set key(Term1) <- t_term1
 	findall(Step,
 		(	mongolog:set_if_var(Term1, Term2_val, Ctx, Step)
 		;	mongolog:set_if_var(Term2, Term1_val, Ctx, Step)
@@ -114,10 +113,12 @@ unify_list(List1Val, List2Val, MapList) :-
 			['if', ['$ne', array([string('$$this.type'), string('var')])]],
 			% then use $$this
 			['then', string('$$this')],
-			% else use argument of other term
-			% FIXME: $indexOfArray only return first occurence, we need to call $range to
-			%        iterate over every index!!
-			%        TODO: Is there a way to get index from $map context?
+			% else use argument of other term.
+			% Note: afaik there is no built-in way to access the index of the mapped element.
+			%    Here we use $indexOfArray to find the index of the element in List1 in List2, but this is
+			%    not very efficient, and could cause problems when the list holds multiple identical elements.
+			%    Another option would be to use $zip to combine the list with $range list, but not so sure about
+			%    if possible
 			['else', ['$arrayElemAt', array([
 				string(List2Val),
 				['$indexOfArray', array([string(List1Val),string('$$this')])]
@@ -242,73 +243,6 @@ test('variables may appear multiple times in terms'):-
 	mongolog:test_call(=(f(g(X),X),f(Y,Z)), Z, a),
 	assert_equals(X,a),
 	assert_equals(Y,g(a)).
-
-% ask-rule with partially instantiated arg and multiple clauses
-/*
-test_shape1(mesh(X))   ?> =(X,foo).
-test_shape1(sphere(X)) ?> =(X,5.0).
-test_shape2(X)         ?> ( =(X,mesh(foo)) ; =(X,sphere(5.0)) ).
-test_shape3(X)         ?> ( test_shape1(X) ; =(X,mesh(bar)) ).
-
-tests('test_shape1(mesh(foo))') :-
-	assert_true(kb_call(test_shape1(mesh(foo)))).
-
-tests('test_shape1(mesh(X))') :-
-	findall(X, kb_call(test_shape1(mesh(X))), Xs),
-	assert_true(length(Xs,1)),
-	assert_true(ground(Xs)),
-	assert_true(memberchk(foo, Xs)).
-
-tests('test_shape1(X)') :-
-	findall(X, kb_call(test_shape1(X)), Xs),
-	assert_true(length(Xs,2)),
-	assert_true(ground(Xs)),
-	assert_true(memberchk(mesh(foo), Xs)),
-	assert_true(memberchk(sphere(5.0), Xs)).
-
-tests('test_shape2(mesh(foo))') :-
-	assert_true(kb_call(test_shape2(mesh(foo)))).
-
-tests('test_shape2(mesh(X))') :-
-	findall(X, kb_call(test_shape2(mesh(X))), Xs),
-	assert_true(length(Xs,1)),
-	assert_true(ground(Xs)),
-	assert_true(memberchk(foo, Xs)).
-
-tests('test_shape2(X)') :-
-	findall(X, kb_call(test_shape2(X)), Xs),
-	assert_true(length(Xs,2)),
-	assert_true(ground(Xs)),
-	assert_true(memberchk(mesh(foo), Xs)),
-	assert_true(memberchk(sphere(5.0), Xs)).
-
-tests('test_shape3(mesh(foo))') :-
-	assert_true(kb_call(test_shape3(mesh(foo)))).
-
-tests('test_shape3(mesh(X))') :-
-	findall(X, kb_call(test_shape3(mesh(X))), Xs),
-	assert_true(length(Xs,2)),
-	assert_true(ground(Xs)),
-	assert_true(memberchk(foo, Xs)),
-	assert_true(memberchk(bar, Xs)).
-
-tests('test_shape3(X)') :-
-	findall(X, kb_call(test_shape3(X)), Xs),
-	assert_true(length(Xs,3)),
-	assert_true(ground(Xs)),
-	assert_true(memberchk(mesh(bar), Xs)),
-	assert_true(memberchk(mesh(foo), Xs)),
-	assert_true(memberchk(sphere(5.0), Xs)).
-
-test_nested_rule1(A) ?> assign(A,2).
-test_nested_rule1(A) ?> assign(A,3).
-test_nested_rule(B)  ?> test_nested_rule1(A), B is A + 2.
-
-tests('test_nested_rule(-)') :-
-	assert_true(kb_call(test_nested_rule(_))),
-	findall(X, kb_call(test_nested_rule(X)), Xs),
-	assert_equals(Xs, [4.0,5.0]).
-*/
 
 :- end_tests('mongolog_unification').
 

@@ -23,15 +23,15 @@ The following predicates are supported:
 :- use_module('mongolog').
 
 %% query commands
-:- mongolog:add_command(length).
-:- mongolog:add_command(max_list).
-:- mongolog:add_command(min_list).
-:- mongolog:add_command(sum_list).
-:- mongolog:add_command(member).
-:- mongolog:add_command(memberchk).
-:- mongolog:add_command(nth0).
-:- mongolog:add_command(list_to_set).
-:- mongolog:add_command(sort).
+:- mongolog:add_command(length,2).
+:- mongolog:add_command(max_list,2).
+:- mongolog:add_command(min_list,2).
+:- mongolog:add_command(sum_list,2).
+:- mongolog:add_command(member,2).
+:- mongolog:add_command(memberchk,2).
+:- mongolog:add_command(nth0,3).
+:- mongolog:add_command(list_to_set,2).
+:- mongolog:add_command(sort,2).
 
 %% member(?Elem, +List)
 % True if Elem is a member of List. 
@@ -107,8 +107,6 @@ mongolog:step_compile(list_to_set(List, Set), _, []) :-
 mongolog:step_compile(
 		list_to_set(List, Set), Ctx,
 		[Step]) :-
-	% FIXME: SWI Prolog allows ground(Set)
-	% FIXME: Set and List have same ordering in SWI Prolog, but mongo does not ensure this.
 	mongolog:var_key_or_val(List,Ctx,List0),
 	mongolog:var_key(Set,Ctx,SetKey),
 	Step=['$set', [SetKey, ['$setUnion', array([List0])]]].
@@ -155,9 +153,6 @@ mongolog:step_compile(
 mongolog:step_compile(
 		nth0(Index, List, Elem),
 		Ctx, Pipeline) :-
-	% TODO: below is a bit redundant with unification.pl
-	%		- it also does not handle var-var bindings!
-	%
 	mongolog:var_key_or_val(Index,Ctx,Index0),
 	mongolog:var_key_or_val(List,Ctx,List0),
 	mongolog:var_key_or_val(Elem,Ctx,Elem0),

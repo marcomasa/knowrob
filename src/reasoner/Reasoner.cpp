@@ -1,59 +1,72 @@
 /*
- * Copyright (c) 2022, Daniel Beßler
- * All rights reserved.
- *
  * This file is part of KnowRob, please consult
  * https://github.com/knowrob/knowrob for license details.
  */
 
 #include "knowrob/Logger.h"
 #include "knowrob/reasoner/Reasoner.h"
+#include "knowrob/reasoner/ReasonerManager.h"
+#include "knowrob/reasoner/ReasonerError.h"
+#include "knowrob/reasoner/GoalDrivenReasoner.h"
+#include "knowrob/reasoner/DataDrivenReasoner.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 
-Reasoner::Reasoner()
-: reasonerManagerID_(0)
-{
-}
-
-void Reasoner::setReasonerManager(uint32_t managerID)
-{
-    reasonerManagerID_ = managerID;
-}
-
-bool Reasoner::hasCapability(ReasonerCapability capability) const
-{
-    return (getCapabilities() & capability);
-}
-
-bool Reasoner::canEvaluate(const RDFLiteral &literal)
-{
-	if(literal.propertyTerm()->type() == TermType::VARIABLE) {
-		// TODO: maybe some reasoner can infer relations between given entities
-		return false;
-	}
-	else if(literal.propertyTerm()->type() == TermType::STRING) {
-		auto p = std::static_pointer_cast<StringTerm>(literal.propertyTerm());
-		return getPredicateDescription(std::make_shared<PredicateIndicator>(p->value(), 2)) != nullptr;
-	}
-	else {
-		// TODO: print message
-		return false;
+ReasonerManager &Reasoner::reasonerManager() const {
+	if (reasonerManager_) {
+		return *reasonerManager_;
+	} else {
+		throw ReasonerError("No ReasonerManager has been assigned to the reasoner.");
 	}
 }
 
-void Reasoner::addDataSourceHandler(const std::string &format, const DataSourceLoader &fn)
-{
-	dataSourceHandler_[format] = fn;
+namespace knowrob {
+	class ReasonerTask : public ThreadPool::Runner {
+	public:
+		explicit ReasonerTask(const std::function<void()> &fn) : fn_(fn) {}
+
+		void run() override { fn_(); }
+
+	protected:
+		std::function<void()> fn_;
+	};
 }
 
-bool Reasoner::loadDataSource(const DataSourcePtr &dataSource)
-{
-	if(dataSource->dataFormat().empty()) {
-		return loadDataSourceWithUnknownFormat(dataSource);
-	}
-	else {
-		auto it = dataSourceHandler_.find(dataSource->dataFormat());
-		return (it != dataSourceHandler_.end()) && it->second(dataSource);
+void Reasoner::pushWork(const std::function<void(void)> &fn) {
+	auto runner = std::make_shared<ReasonerTask>(fn);
+	DefaultThreadPool()->pushWork(runner, [](const std::exception &e) {
+		KB_ERROR("Error in reasoner worker thread: {}", e.what());
+	});
+}
+
+namespace knowrob::py {
+	// this struct is needed because Reasoner has pure virtual methods
+	struct ReasonerWrap : public Reasoner, boost::python::wrapper<Reasoner> {
+		explicit ReasonerWrap(PyObject *p) : self(p), Reasoner() {}
+
+		void setDataBackend(const StoragePtr &backend) override {
+			call_method<void>(self, "setDataBackend", backend);
+		}
+
+		bool initializeReasoner(const PropertyTree &config) override {
+			return call_method<bool>(self, "initializeReasoner", config);
+		}
+
+	private:
+		PyObject *self;
+	};
+
+	template<>
+	void createType<Reasoner>() {
+		using namespace boost::python;
+		class_<Reasoner, std::shared_ptr<ReasonerWrap>, bases<DataSourceHandler>, boost::noncopyable>
+				("Reasoner", init<>())
+				.def("pushWork", +[](Reasoner &x, object &fn) { x.pushWork(fn); })
+						// methods that must be implemented by reasoner plugins
+				.def("initializeReasoner", &ReasonerWrap::initializeReasoner)
+				.def("setDataBackend", &ReasonerWrap::setDataBackend);
+		py::createType<DataDrivenReasoner>();
+		py::createType<GoalDrivenReasoner>();
 	}
 }

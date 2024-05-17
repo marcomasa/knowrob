@@ -1,505 +1,613 @@
 /*
- * Copyright (c) 2022, Daniel Beßler
- * All rights reserved.
- *
  * This file is part of KnowRob, please consult
  * https://github.com/knowrob/knowrob for license details.
  */
 
 #include <thread>
-#include <utility>
-
+#include <boost/property_tree/json_parser.hpp>
 #include <knowrob/Logger.h>
 #include <knowrob/KnowledgeBase.h>
+#include <knowrob/URI.h>
+#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include "knowrob/queries/QueryPipeline.h"
 #include "knowrob/semweb/PrefixRegistry.h"
-#include "knowrob/queries/QueryParser.h"
-#include "knowrob/queries/QueryTree.h"
-#include "knowrob/queries/AnswerCombiner.h"
-#include "knowrob/queries/IDBStage.h"
-#include "knowrob/queries/EDBStage.h"
+#include "knowrob/semweb/rdf.h"
+#include "knowrob/semweb/owl.h"
+#include "knowrob/semweb/rdfs.h"
+#include "knowrob/semweb/OntologyLanguage.h"
+#include "knowrob/reasoner/ReasonerManager.h"
+#include "knowrob/ontologies/OntologyFile.h"
+#include "knowrob/ontologies/GraphTransformation.h"
+#include "knowrob/ontologies/TransformedOntology.h"
+#include "knowrob/integration/python/utils.h"
+
+#define KB_SETTING_REASONER "reasoner"
+#define KB_SETTING_DATA_BACKENDS "data-backends"
+#define KB_SETTING_DATA_SOURCES "data-sources"
+#define KB_SETTING_DATA_TRANSFORMATION "transformation"
+#define KB_SETTING_SEMWEB "semantic-web"
+#define KB_SETTING_PREFIXES "prefixes"
+#define KB_SETTING_PREFIX_ALIAS "alias"
+#define KB_SETTING_PREFIX_URI "uri"
 
 using namespace knowrob;
 
-namespace knowrob
-{
-    struct EDBComparator
-    {
-        inline bool operator() (const RDFLiteralPtr& l1, const RDFLiteralPtr& l2)
-        {
-            // note: using ">" in return statements means that smaller element appears before larger.
-            // note: this heuristic ignores dependencies.
-
-            // (1) prefer evaluation of literals with fewer variables
-            auto numVars1 = l1->numVariables();
-            auto numVars2 = l2->numVariables();
-            if(numVars1 < numVars2) return (numVars1 > numVars2);
-
-            // TODO: (2) prefer evaluation of literals with less EDB assertions
-
-            return (l1 < l2);
-        }
-    };
-
-    // used to sort nodes in a priority queue.
-    // the priority value is used to determine which nodes should be evaluated first.
-    struct CompareNodes
-    {
-        bool operator()(const DependencyNodePtr &a, const DependencyNodePtr &b) const
-        {
-            // note: using ">" in return statements means that smaller element appears before larger.
-            if (a->numVariables() != b->numVariables()) {
-                // prefer node with less variables
-                return a->numVariables() > b->numVariables();
-            }
-            if(a->numNeighbors() != b->numNeighbors()) {
-                // prefer node with less neighbors
-                return a->numNeighbors() > b->numNeighbors();
-            }
-            return a<b;
-        }
-    };
-
-    // represents a possible step in the query pipeline
-    struct QueryPipelineNode
-    {
-        explicit QueryPipelineNode(const DependencyNodePtr &node)
-        : node_(node)
-        {
-            // add all nodes to a priority queue
-            for(auto &neighbor : node->neighbors()) {
-                neighbors_.push(neighbor);
-            }
-        }
-        const DependencyNodePtr node_;
-        std::priority_queue<DependencyNodePtr, std::vector<DependencyNodePtr>, CompareNodes> neighbors_;
-    };
-    using QueryPipelineNodePtr = std::shared_ptr<QueryPipelineNode>;
-
-    class AnswerBuffer_WithReference : public AnswerBuffer {
-    public:
-        explicit AnswerBuffer_WithReference(const std::shared_ptr<QueryPipeline> &pipeline)
-        : AnswerBuffer(), pipeline_(pipeline) {}
-    protected:
-        std::shared_ptr<QueryPipeline> pipeline_;
-    };
+KnowledgeBase::KnowledgeBase()
+		: isInitialized_(false) {
+	vocabulary_ = std::make_shared<Vocabulary>();
+	// use "system" as default origin until initialization completed
+	vocabulary_->importHierarchy()->setDefaultGraph(ImportHierarchy::ORIGIN_SYSTEM);
+	backendManager_ = std::make_shared<StorageManager>(vocabulary_);
+	reasonerManager_ = std::make_shared<ReasonerManager>(this, backendManager_);
+	edb_ = std::make_shared<StorageInterface>(backendManager_);
 }
 
-KnowledgeBase::KnowledgeBase(const boost::property_tree::ptree &config)
-: threadPool_(std::make_shared<ThreadPool>(std::thread::hardware_concurrency()))
-{
-	backendManager_ = std::make_shared<KnowledgeGraphManager>(threadPool_);
-	reasonerManager_ = std::make_shared<ReasonerManager>(threadPool_, backendManager_);
-	loadConfiguration(config);
+KnowledgeBase::KnowledgeBase(const boost::property_tree::ptree &config) : KnowledgeBase() {
+	configure(config);
+	init();
 }
 
-void KnowledgeBase::loadConfiguration(const boost::property_tree::ptree &config)
-{
-    auto semwebTree = config.get_child_optional("semantic-web");
-    if(semwebTree) {
-        // load RDF URI aliases
-        auto prefixesList = semwebTree.value().get_child_optional("prefixes");
-        for(const auto &pair : prefixesList.value()) {
-            auto alias = pair.second.get("alias","");
-            auto uri = pair.second.get("uri","");
-            if(!alias.empty() && !uri.empty()) {
-                semweb::PrefixRegistry::get().registerPrefix(alias, uri);
-            }
-            else {
-                KB_WARN("Invalid entry in semantic-web::prefixes, 'alias' and 'uri' must be defined.");
-            }
-        }
-    }
+KnowledgeBase::KnowledgeBase(std::string_view configFile) : KnowledgeBase() {
+	boost::property_tree::ptree config;
+	boost::property_tree::read_json(URI::resolve(configFile), config);
+	configure(config);
+	init();
+}
 
-    // initialize RDF data backends from configuration
-	auto backendList = config.get_child_optional("data-backends");
-	if(backendList) {
-		for(const auto &pair : backendList.value()) {
-			try {
-                backendManager_->loadKnowledgeGraph(pair.second);
+KnowledgeBase::~KnowledgeBase() {
+	stopReasoner();
+}
+
+void KnowledgeBase::init() {
+	isInitialized_ = true;
+	vocabulary_->importHierarchy()->setDefaultGraph(ImportHierarchy::ORIGIN_USER);
+	initBackends();
+	synchronizeBackends();
+	initVocabulary();
+	startReasoner();
+}
+
+void KnowledgeBase::initBackends() {
+	for (auto &pair: backendManager_->plugins()) {
+		auto definedBackend = pair.second;
+		definedBackend->value()->setVocabulary(vocabulary_);
+	}
+}
+
+void KnowledgeBase::synchronizeBackends() {
+	// find all non-persistent backends, which we assume to be empty at this point
+	std::vector<std::shared_ptr<NamedBackend>> nonPersistent;
+	for (auto &it: backendManager_->plugins()) {
+		auto backend = it.second->value();
+		auto queryable = backendManager_->queryable().find(it.first);
+		if (queryable == backendManager_->queryable().end() || !queryable->second->isPersistent()) {
+			nonPersistent.push_back(it.second);
+		}
+	}
+
+	// synchronize persistent backends with each other
+	if (backendManager_->persistent().size() > 1) {
+		// find versions of persisted origins
+		using BackendOriginVersion = std::pair<std::shared_ptr<QueryableStorage>, VersionedOriginPtr>;
+		std::map<std::string_view, std::vector<BackendOriginVersion>> origins;
+		for (auto &it: backendManager_->persistent()) {
+			auto persistentBackend = it.second;
+			for (auto &origin: persistentBackend->getOrigins()) {
+				origins[origin->value()].emplace_back(it.second, origin);
 			}
-			catch(std::exception& e) {
-				KB_ERROR("failed to load a knowledgeGraph: {}", e.what());
+		}
+
+		// drop all persisted origins with an outdated version
+		for (auto &origin_pair: origins) {
+			auto &v = origin_pair.second;
+			if (v.size() < 2) continue;
+			// find the maximum version
+			std::string_view maxVersion;
+			for (auto &version: v) {
+				if (!maxVersion.empty() && version.second->version() > maxVersion) {
+					maxVersion = version.second->version();
+				}
+			}
+			// drop origin for backends with outdated version, also remove such backends from "origins" array
+			v.erase(std::remove_if(v.begin(), v.end(),
+								   [&maxVersion](const BackendOriginVersion &bov) {
+									   if (bov.second->version() != maxVersion) {
+										   bov.first->removeAllWithOrigin(bov.second->value());
+										   return true;
+									   } else {
+										   return false;
+									   }
+								   }), v.end());
+		}
+
+		// At this point, origins contains only the backends with the latest version.
+		// So data can be copied from any of them into all other persistent backends that do
+		// not have the data yet.
+		for (auto &origin_pair: origins) {
+			// First find all persistent backends that do not appear in origin_pair.
+			// These are the ones without the data.
+			std::vector<std::shared_ptr<NamedBackend>> included;
+			for (auto &it: backendManager_->persistent()) {
+				auto &persistentBackend = it.second;
+				if (std::find_if(origin_pair.second.begin(), origin_pair.second.end(),
+								 [&persistentBackend](const BackendOriginVersion &bov) {
+									 return bov.first == persistentBackend;
+								 }) == origin_pair.second.end()) {
+					included.push_back(backendManager_->getPluginWithID(it.first));
+				}
+			}
+			if (included.empty()) continue;
+
+			// Now copy the data from one of the backends in origin_pair to all backends in included.
+			auto &persistedBackend = origin_pair.second.begin()->first;
+			auto transaction = edb_->createTransaction(
+					persistedBackend,
+					StorageInterface::Insert,
+					StorageInterface::Including,
+					included);
+			persistedBackend->batchOrigin(origin_pair.first, [&](const TripleContainerPtr &triples) {
+				transaction->commit(triples);
+			});
+		}
+	}
+
+	// insert from first persistent backend into all non-persistent backends.
+	// persistent backends are synchronized before, so we can just take the first one.
+	if (!backendManager_->persistent().empty() && !nonPersistent.empty()) {
+		KB_DEBUG("Synchronizing persistent triples into {} non-persistent backends.", nonPersistent.size());
+		auto &persistedBackend = *backendManager_->persistent().begin();
+		auto transaction = edb_->createTransaction(
+				getBackendForQuery(),
+				StorageInterface::Insert,
+				StorageInterface::Including,
+				nonPersistent);
+		persistedBackend.second->batch([&](const TripleContainerPtr &triples) { transaction->commit(triples); });
+	}
+}
+
+void KnowledgeBase::initVocabulary() {
+	auto v_s = std::make_shared<Variable>("?s");
+	auto v_o = std::make_shared<Variable>("?o");
+
+	for (auto &it: backendManager_->persistent()) {
+		auto backend = it.second;
+
+		// initialize the import hierarchy
+		for (auto &origin: backend->getOrigins()) {
+			vocabulary_->importHierarchy()->addDirectImport(vocabulary_->importHierarchy()->ORIGIN_SYSTEM,
+															origin->value());
+		}
+		
+		// iterate over all rdf:type assertions and add them to the vocabulary
+		backend->match(FramedTriplePattern(v_s, rdf::type, v_o),
+					   [this](const FramedTriplePtr &triple) {
+						   vocabulary_->addResourceType(triple->subject(), triple->valueAsString());
+						   vocabulary_->increaseFrequency(rdf::type->stringForm());
+					   });
+		// iterate over all rdfs::subClassOf assertions and add them to the vocabulary
+		backend->match(FramedTriplePattern(v_s, rdfs::subClassOf, v_o),
+					   [this](const FramedTriplePtr &triple) {
+						   vocabulary_->addSubClassOf(triple->subject(), triple->valueAsString());
+						   vocabulary_->increaseFrequency(rdfs::subClassOf->stringForm());
+					   });
+		// iterate over all rdfs::subPropertyOf assertions and add them to the vocabulary
+		backend->match(FramedTriplePattern(v_s, rdfs::subPropertyOf, v_o),
+					   [this](const FramedTriplePtr &triple) {
+						   vocabulary_->addSubPropertyOf(triple->subject(), triple->valueAsString());
+						   vocabulary_->increaseFrequency(rdfs::subPropertyOf->stringForm());
+					   });
+		// iterate over all owl::inverseOf assertions and add them to the vocabulary
+		backend->match(FramedTriplePattern(v_s, owl::inverseOf, v_o),
+					   [this](const FramedTriplePtr &triple) {
+						   vocabulary_->setInverseOf(triple->subject(), triple->valueAsString());
+						   vocabulary_->increaseFrequency(owl::inverseOf->stringForm());
+					   });
+
+		// query number of assertions of each property/class.
+		// this is useful information for optimizing the query planner.
+		std::vector<semweb::PropertyPtr> reifiedProperties;
+		backend->count([this, &reifiedProperties](std::string_view resource, uint64_t count) {
+			// special handling for reified relations: they are concepts, but do also increase the relation counter
+			auto reifiedProperty = vocabulary_->getDefinedReification(resource);
+			if (reifiedProperty) reifiedProperties.push_back(reifiedProperty);
+			vocabulary_->setFrequency(resource, count);
+		});
+		for (auto &p: reifiedProperties) {
+			vocabulary_->increaseFrequency(p->iri());
+		}
+	}
+}
+
+void KnowledgeBase::configure(const boost::property_tree::ptree &config) {
+	configurePrefixes(config);
+	// initialize data backends from configuration
+	configureBackends(config);
+	// load reasoners from configuration
+	configureReasoner(config);
+	// share vocabulary and import hierarchy with backends
+	initBackends();
+	// load common ontologies
+	loadCommon();
+	// load the "global" data sources.
+	// these are data sources that are loaded into all backends, however
+	// the backends may decide to ignore some of the data sources.
+	configureDataSources(config);
+}
+
+void KnowledgeBase::configurePrefixes(const boost::property_tree::ptree &config) {
+	auto semwebTree = config.get_child_optional(KB_SETTING_SEMWEB);
+	if (semwebTree) {
+		// load RDF URI aliases
+		auto prefixesList = semwebTree.value().get_child_optional(KB_SETTING_PREFIXES);
+		for (const auto &pair: prefixesList.value()) {
+			auto alias = pair.second.get(KB_SETTING_PREFIX_ALIAS, "");
+			auto uri = pair.second.get(KB_SETTING_PREFIX_URI, "");
+			if (!alias.empty() && !uri.empty()) {
+				PrefixRegistry::registerPrefix(alias, uri);
+			} else {
+				KB_WARN("Invalid entry in semantic-web::prefixes, 'alias' and 'uri' must be defined.");
 			}
 		}
 	}
-	else {
+}
+
+void KnowledgeBase::configureBackends(const boost::property_tree::ptree &config) {
+	auto backendList = config.get_child_optional(KB_SETTING_DATA_BACKENDS);
+	if (backendList) {
+		for (const auto &pair: backendList.value()) {
+			KB_LOGGED_TRY_CATCH(pair.first, "load", { backendManager_->loadPlugin(pair.second); });
+		}
+	} else {
 		KB_ERROR("configuration has no 'backends' key.");
 	}
+}
 
-	auto reasonerList = config.get_child_optional("reasoner");
-	if(reasonerList) {
-		for(const auto &pair : reasonerList.value()) {
-			try {
-				reasonerManager_->loadReasoner(pair.second);
-			}
-			catch(std::exception& e) {
-				KB_ERROR("failed to load a reasoner: {}", e.what());
+void KnowledgeBase::configureReasoner(const boost::property_tree::ptree &config) {
+	auto reasonerList = config.get_child_optional(KB_SETTING_REASONER);
+	if (reasonerList) {
+		for (const auto &pair: reasonerList.value()) {
+			KB_LOGGED_TRY_CATCH(pair.first, "load", {
+				auto definedReasoner = reasonerManager_->loadPlugin(pair.second);
+				// if reasoner implements DataBackend class, add it to the backend manager
+				auto reasonerBackend = std::dynamic_pointer_cast<Storage>(definedReasoner->value());
+				if (reasonerBackend) {
+					backendManager_->addPlugin(definedReasoner->name(), reasonerBackend);
+				}
+			});
+		}
+	} else {
+		KB_ERROR("configuration has no 'reasoner' key.");
+	}
+}
+
+void KnowledgeBase::loadCommon() {
+	for (auto &ontoPath: {"owl/rdf-schema.xml", "owl/owl.rdf"}) {
+		loadDataSource(std::make_shared<OntologyFile>(vocabulary_, URI(ontoPath), "rdf-xml"));
+	}
+}
+
+void KnowledgeBase::startReasoner() {
+	std::vector<std::string_view> failedToStartReasoner;
+	for (auto &pair: reasonerManager_->dataDriven()) {
+		KB_LOGGED_TRY_EXCEPT(pair.first.data(), "start",
+							 { pair.second->start(); },
+							 { failedToStartReasoner.push_back(pair.first); });
+	}
+	// remove reasoner that failed to start
+	for (auto &reasonerName: failedToStartReasoner) {
+		reasonerManager_->removePlugin(reasonerName);
+	}
+}
+
+void KnowledgeBase::stopReasoner() {
+	for (auto &pair: reasonerManager_->dataDriven()) {
+		KB_LOGGED_TRY_CATCH(pair.first.data(), "stop", { pair.second->stop(); });
+	}
+}
+
+QueryableBackendPtr KnowledgeBase::getBackendForQuery() const {
+	auto &queryable = backendManager_->queryable();
+	if (queryable.empty()) {
+		KB_WARN("No queryable backends available.");
+		return nullptr;
+	} else {
+		return queryable.begin()->second;
+	}
+}
+
+TokenBufferPtr KnowledgeBase::submitQuery(const FirstOrderLiteralPtr &literal, const QueryContextPtr &ctx) {
+	auto rdfLiteral = std::make_shared<FramedTriplePattern>(
+			literal->predicate(), literal->isNegated());
+	rdfLiteral->setTripleFrame(ctx->selector);
+	return submitQuery(std::make_shared<GraphPathQuery>(
+			GraphPathQuery({rdfLiteral}, ctx)));
+}
+
+TokenBufferPtr KnowledgeBase::submitQuery(const GraphPathQueryPtr &graphQuery) {
+	auto pipeline = std::make_shared<QueryPipeline>(this, graphQuery);
+	// Wrap output into AnswerBuffer_WithReference object.
+	// Note that the AnswerBuffer_WithReference object is used such that the caller can
+	// destroy the whole pipeline by de-referencing the returned AnswerBufferPtr.
+	auto out = std::make_shared<AnswerBuffer_WithReference>(pipeline);
+	*pipeline >> out;
+	pipeline->stopBuffering();
+	return out;
+}
+
+TokenBufferPtr KnowledgeBase::submitQuery(const FormulaPtr &phi, const QueryContextPtr &ctx) {
+	auto pipeline = std::make_shared<QueryPipeline>(this, phi, ctx);
+	auto out = std::make_shared<AnswerBuffer_WithReference>(pipeline);
+	*pipeline >> out;
+	pipeline->stopBuffering();
+	return out;
+}
+
+bool KnowledgeBase::insertOne(const FramedTriple &triple) {
+	auto sourceBackend = findSourceBackend(triple);
+	auto transaction = edb_->createTransaction(
+			getBackendForQuery(),
+			StorageInterface::Insert,
+			StorageInterface::Excluding,
+			{sourceBackend});
+	return transaction->commit(triple);
+}
+
+bool KnowledgeBase::insertAll(const TripleContainerPtr &triples) {
+	auto sourceBackend = findSourceBackend(**triples->begin());
+	auto transaction = edb_->createTransaction(
+			getBackendForQuery(),
+			StorageInterface::Insert,
+			StorageInterface::Excluding,
+			{sourceBackend});
+	return transaction->commit(triples);
+}
+
+bool KnowledgeBase::removeOne(const FramedTriple &triple) {
+	auto sourceBackend = findSourceBackend(triple);
+	auto transaction = edb_->createTransaction(
+			getBackendForQuery(),
+			StorageInterface::Remove,
+			StorageInterface::Excluding,
+			{sourceBackend});
+	return transaction->commit(triple);
+}
+
+bool KnowledgeBase::removeAll(const TripleContainerPtr &triples) {
+	auto sourceBackend = findSourceBackend(**triples->begin());
+	auto transaction = edb_->createTransaction(
+			getBackendForQuery(),
+			StorageInterface::Remove,
+			StorageInterface::Excluding,
+			{sourceBackend});
+	return transaction->commit(triples);
+}
+
+bool KnowledgeBase::insertAll(const std::vector<FramedTriplePtr> &triples) {
+	// Note: insertAll blocks until the triples are inserted, so it is safe to use the triples vector as a pointer.
+	return insertAll(std::make_shared<ProxyTripleContainer>(&triples));
+}
+
+bool KnowledgeBase::removeAll(const std::vector<FramedTriplePtr> &triples) {
+	return removeAll(std::make_shared<ProxyTripleContainer>(&triples));
+}
+
+bool KnowledgeBase::removeAllWithOrigin(std::string_view origin) {
+	return edb_->removeAllWithOrigin(origin);
+}
+
+std::shared_ptr<NamedBackend> KnowledgeBase::findSourceBackend(const FramedTriple &triple) {
+	if (!triple.graph()) return {};
+
+	auto definedBackend_withID = backendManager_->getPluginWithID(triple.graph().value());
+	if (definedBackend_withID) return definedBackend_withID;
+
+	auto definedReasoner = reasonerManager_->getPluginWithID(triple.graph().value());
+	if (definedReasoner) {
+		auto reasonerBackend = reasonerManager_->getReasonerBackend(definedReasoner);
+		if (reasonerBackend) {
+			for (auto &it: backendManager_->plugins()) {
+				auto &definedBackend_ofReasoner = it.second;
+				if (definedBackend_ofReasoner->value() == reasonerBackend) {
+					return definedBackend_ofReasoner;
+				}
 			}
 		}
 	}
-	else {
-		KB_ERROR("configuration has no 'reasoner' key.");
+
+	return {};
+}
+
+void KnowledgeBase::configureDataSources(const boost::property_tree::ptree &config) {
+	auto dataSourcesList = config.get_child_optional(KB_SETTING_DATA_SOURCES);
+	if (!dataSourcesList) return;
+
+	for (const auto &pair: dataSourcesList.value()) {
+		auto &subtree = pair.second;
+		auto dataSource = DataSource::create(vocabulary_, subtree);
+		if (!dataSource) {
+			KB_ERROR("Failed to create data source \"{}\".", pair.first);
+			continue;
+		}
+		bool has_error;
+		auto transformationConfig = config.get_child_optional(KB_SETTING_DATA_TRANSFORMATION);
+		if (transformationConfig) {
+			if (dataSource->dataSourceType() != DataSourceType::ONTOLOGY) {
+				KB_ERROR("Transformations can only be applied on ontology data sources.");
+				continue;
+			}
+			auto ontology = std::static_pointer_cast<OntologySource>(dataSource);
+			// apply a transformation to the data source if "transformation" key is present
+			auto transformation = GraphTransformation::create(transformationConfig.value());
+			auto transformed = std::make_shared<TransformedOntology>(URI(ontology->uri()), ontology->format());
+			transformation->apply(*ontology, [&transformed](const TripleContainerPtr &triples) {
+				transformed->storage()->insertAll(triples);
+			});
+			has_error = !loadDataSource(transformed);
+		} else {
+			has_error = !loadDataSource(dataSource);
+		}
+		if (has_error) {
+			KB_ERROR("Failed to load data source from \"{}\".", dataSource->uri());
+		}
+	}
+}
+
+bool KnowledgeBase::loadDataSource(const DataSourcePtr &source) {
+	switch (source->dataSourceType()) {
+		case DataSourceType::ONTOLOGY:
+			return loadOntologySource(std::static_pointer_cast<OntologySource>(source));
+		case DataSourceType::UNSPECIFIED:
+			return loadNonOntologySource(source);
+	}
+	return false;
+}
+
+std::optional<std::string> KnowledgeBase::getVersionOfOrigin(
+		const std::shared_ptr<NamedBackend> &definedBackend, std::string_view origin) const {
+	// check if the origin was loaded before in this session
+	auto runtimeVersion = definedBackend->value()->getVersionOfOrigin(origin);
+	if (runtimeVersion) return runtimeVersion;
+	// otherwise check if the backend is persistent and if so, ask the persistent backend
+	auto persistentBackend = backendManager_->persistent().find(definedBackend->name());
+	if (persistentBackend != backendManager_->persistent().end()) {
+		return persistentBackend->second->getVersionOfOrigin(origin);
+	}
+	return {};
+}
+
+std::vector<std::shared_ptr<NamedBackend>>
+KnowledgeBase::prepareLoad(std::string_view origin, std::string_view newVersion) const {
+	std::vector<std::shared_ptr<NamedBackend>> backendsToLoad;
+	for (auto &it: backendManager_->plugins()) {
+		// check if the ontology is already loaded by the backend,
+		// and if so whether it has the right version.
+		auto definedBackend = it.second;
+		auto currentVersion = getVersionOfOrigin(definedBackend, origin);
+		if (currentVersion.has_value()) {
+			if (currentVersion.value() != newVersion) {
+				backendsToLoad.emplace_back(it.second);
+				definedBackend->value()->removeAllWithOrigin(origin);
+			}
+		} else {
+			backendsToLoad.emplace_back(it.second);
+		}
+	}
+	return backendsToLoad;
+}
+
+void KnowledgeBase::finishLoad(const std::shared_ptr<OntologySource> &source, std::string_view origin,
+							   std::string_view newVersion) {
+	// update the version triple
+	for (auto &it: backendManager_->plugins()) {
+		it.second->value()->setVersionOfOrigin(origin, newVersion);
+	}
+	for (auto &it: backendManager_->persistent()) {
+		auto persistentBackend = it.second;
+		persistentBackend->setVersionOfOrigin(origin, newVersion);
 	}
 
-	auto dataSourcesList = config.get_child_optional("data-sources");
-	if(dataSourcesList) {
-	    static const std::string formatDefault = {};
+	// add direct import
+	if (source->parentOrigin().has_value()) {
+		vocabulary_->importHierarchy()->addDirectImport(source->parentOrigin().value(), origin);
+	} else {
+		vocabulary_->importHierarchy()->addDirectImport(vocabulary_->importHierarchy()->defaultGraph(), origin);
+	}
+}
 
-		for(const auto &pair : dataSourcesList.value()) {
-			auto &subtree = pair.second;
-			auto dataFormat = subtree.get("format",formatDefault);
-			auto source = std::make_shared<DataSource>(dataFormat);
-			source->loadSettings(subtree);
+bool KnowledgeBase::loadOntologySource(const std::shared_ptr<OntologySource> &source) { // NOLINT(misc-no-recursion)
+	auto uri = URI::resolve(source->uri());
+	// Some ontologies may encode version in the URI which we try to extract
+	// below. Otherwise, we just use the current day as version causing a re-load every day.
+	auto newVersion = DataSource::getVersionFromURI(uri);
 
-			for(auto &kg_pair : backendManager_->knowledgeGraphPool()) {
-			    // FIXME: handle format specified in settings file
-			    kg_pair.second->knowledgeGraph()->loadFile(source->uri(), TripleFormat::RDF_XML);
+	// get all backends that do not have the data loaded yet
+	auto backendsToLoad = prepareLoad(source->origin(), newVersion);
+	if (backendsToLoad.empty()) {
+		// data is already loaded
+		KB_DEBUG("Ontology at \"{}\" already loaded.", uri);
+		return true;
+	}
+
+	auto result = source->load([this, &backendsToLoad](const TripleContainerPtr &triples) {
+		auto transaction = edb_->createTransaction(
+				getBackendForQuery(),
+				StorageInterface::Insert,
+				StorageInterface::Including,
+				backendsToLoad);
+		transaction->commit(triples);
+	});
+	if (!result) {
+		KB_WARN("Failed to load ontology \"{}\".", uri);
+		return false;
+	}
+	finishLoad(source, source->origin(), newVersion);
+
+	for (auto &imported: source->imports()) {
+		auto importedSource = std::make_shared<OntologyFile>(vocabulary_, URI(imported), source->format());
+		if (!loadOntologySource(importedSource)) {
+			KB_WARN("Failed to load imported ontology \"{}\".", imported);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool KnowledgeBase::loadNonOntologySource(const DataSourcePtr &source) const {
+	bool hasHandler = false;
+	bool allSucceeded = true;
+
+	for (auto &kg_pair: backendManager_->plugins()) {
+		auto backend = kg_pair.second->value();
+		if (backend->hasDataHandler(source)) {
+			if (!backend->loadDataSource(source)) {
+				allSucceeded = false;
+				KB_WARN("backend '{}' failed to load data source '{}'", kg_pair.first, source->uri());
 			}
-        }
-    }
+			hasHandler = true;
+		}
+	}
+
+	if (!hasHandler) {
+		KB_WARN("no data handler for data source format '{}'", source->format());
+	}
+
+	return hasHandler && allSucceeded;
 }
 
-std::shared_ptr<KnowledgeGraph> KnowledgeBase::centralKG()
-{
-    auto knowledgeGraphs_ = backendManager_->knowledgeGraphPool();
-    std::shared_ptr<KnowledgeGraph> centralKG;
-    if(knowledgeGraphs_.empty()) {
-        return {};
-    }
-    else {
-        // TODO: flag one of the KGs as "preferred" in settings
-        return (*knowledgeGraphs_.begin()).second->knowledgeGraph();
-    }
-}
+namespace knowrob::py {
+	template<>
+	void createType<KnowledgeBase>() {
+		using namespace boost::python;
 
-AnswerBufferPtr KnowledgeBase::submitQuery(const FormulaPtr &phi, int queryFlags)
-{
-    auto outStream = std::make_shared<AnswerBuffer>();
+		// these typedefs are necessary to resolve functions with duplicate names which is
+		// fine in C++ but not in Python, so they need special handling here.
+		// The typedefs are used to explicitly select the mapped method.
+		using QueryPredicate = TokenBufferPtr (KnowledgeBase::*)(const FirstOrderLiteralPtr &, const QueryContextPtr &);
+		using QueryFormula = TokenBufferPtr (KnowledgeBase::*)(const FormulaPtr &, const QueryContextPtr &);
+		using QueryGraph = TokenBufferPtr (KnowledgeBase::*)(const GraphPathQueryPtr &);
+		using ContainerAction = bool (KnowledgeBase::*)(const TripleContainerPtr &);
+		using ListAction = bool (KnowledgeBase::*)(const std::vector<FramedTriplePtr> &);
 
-    auto pipeline = std::make_shared<QueryPipeline>();
-    pipeline->addStage(outStream);
+		createType<Vocabulary>();
+		createType<GraphQuery>();
 
-    // convert into DNF and submit a query for each conjunction.
-    // note that the number of conjunctions can get pretty high for
-    // queries using several disjunctions.
-    // e.g. (p|~q)&(r|q) would create 4 paths (p&r, p&q, ~q&r and ~q&q).
-    // it is assumed here that queries are rather simple and that
-    // the number of path's in the query tree is rather low.
-    QueryTree qt(phi);
-    for(auto &path : qt)
-    {
-        auto &literals = path.literals();
-        std::vector<RDFLiteralPtr> rdfLiterals(literals.size());
-        uint32_t literalIndex=0;
-        for(auto &l : literals) {
-            rdfLiterals[literalIndex++] = RDFLiteral::fromLiteral(l);
-        }
-        auto pathQuery = std::make_shared<GraphQuery>(rdfLiterals, queryFlags);
-
-        auto pathOutput = submitQuery(pathQuery);
-        pathOutput >> outStream;
-        pathOutput->stopBuffering();
-        pipeline->addStage(pathOutput);
-    }
-
-    auto out = std::make_shared<AnswerBuffer_WithReference>(pipeline);
-    outStream >> out;
-    outStream->stopBuffering();
-    return out;
-}
-
-std::vector<RDFComputablePtr> KnowledgeBase::createComputationSequence(
-        const std::list<DependencyNodePtr> &dependencyGroup)
-{
-    // Pick a node to start with.
-    // For now the one with minimum number of neighbors is picked.
-    DependencyNodePtr first;
-    unsigned long minNumNeighbors = 0;
-    for(auto &n : dependencyGroup) {
-        if(!first || n->numNeighbors() < minNumNeighbors) {
-            minNumNeighbors = n->numNeighbors();
-            first = n;
-        }
-    }
-
-    // remember visited nodes, needed for circular dependencies
-    // all nodes added to the queue should also be added to this set.
-    std::set<DependencyNode*> visited;
-    visited.insert(first.get());
-
-    std::vector<RDFComputablePtr> sequence;
-    sequence.push_back(std::static_pointer_cast<RDFComputable>(first->literal()));
-
-    // start with a FIFO queue only containing first node
-    std::deque<QueryPipelineNodePtr> queue;
-    auto qn0 = std::make_shared<QueryPipelineNode>(first);
-    queue.push_front(qn0);
-
-    // loop until queue is empty and process exactly one successor of
-    // the top element in the FIFO in each step. If an element has no
-    // more successors, it can be removed from queue.
-    // Each successor creates an additional node added to the top of the FIFO.
-    while(!queue.empty()) {
-        auto front = queue.front();
-
-        // get top successor node that has not been visited yet
-        DependencyNodePtr topNext;
-        while(!front->neighbors_.empty()) {
-            auto topNeighbor = front->neighbors_.top();
-            front->neighbors_.pop();
-
-            if(visited.count(topNeighbor.get()) == 0) {
-                topNext = topNeighbor;
-                break;
-            }
-        }
-        // pop element from queue if all neighbors were processed
-        if(front->neighbors_.empty()) {
-            queue.pop_front();
-        }
-
-        if(topNext) {
-            // push a new node onto FIFO
-            auto qn_next = std::make_shared<QueryPipelineNode>(topNext);
-            queue.push_front(qn_next);
-            sequence.push_back(std::static_pointer_cast<RDFComputable>(topNext->literal()));
-            visited.insert(topNext.get());
-        }
-    }
-
-    return sequence;
-}
-
-void KnowledgeBase::createComputationPipeline(
-    const std::shared_ptr<QueryPipeline> &pipeline,
-    const std::vector<RDFComputablePtr> &computableLiterals,
-    const std::shared_ptr<AnswerBroadcaster> &pipelineInput,
-    const std::shared_ptr<AnswerBroadcaster> &pipelineOutput,
-    int queryFlags)
-{
-    // This function generates a query pipeline for literals that
-    // can be computed (EDB-only literals are processed separately).
-    // The literals are part of one dependency group.
-    // They are sorted, and also evaluated in this order.
-    // For each computable literal there is at least one reasoner
-    // that can compute the literal.
-    // However, instances of the literal may also occur in the EDB.
-    // Hence, computation results must be combined with results of
-    // an EDB query for each literal.
-    // There are more sophisticated strategies that could be employed
-    // to reduce number of EDB calls.
-    // For the moment we rather use a simple implementation
-    // where a parallel query step is created for each computable literal.
-    // In this step, an EDB query and computations run in parallel.
-    // The results are then given to the next step if any.
-
-    auto lastOut = pipelineInput;
-    auto edb = centralKG();
-
-    for(auto &lit : computableLiterals) {
-        auto stepInput = lastOut;
-        auto stepOutput = std::make_shared<AnswerBroadcaster>();
-        pipeline->addStage(stepOutput);
-
-        auto edbStage = std::make_shared<EDBStage>(edb, lit, queryFlags);
-        edbStage->selfWeakRef_ = edbStage;
-        stepInput >> edbStage;
-        edbStage >> stepOutput;
-        pipeline->addStage(edbStage);
-
-        for(auto &r : lit->reasonerList()) {
-            auto idbStage = std::make_shared<IDBStage>(r, lit, threadPool_, queryFlags);
-            idbStage->selfWeakRef_ = idbStage;
-            stepInput >> idbStage;
-            idbStage >> stepOutput;
-            pipeline->addStage(idbStage);
-        }
-
-        lastOut = stepOutput;
-    }
-
-    lastOut >> pipelineOutput;
-}
-
-AnswerBufferPtr KnowledgeBase::submitQuery(const GraphQueryPtr &graphQuery)
-{
-    auto allLiterals = graphQuery->literals();
-
-    // --------------------------------------
-    // Construct a pipeline that holds references to stages.
-    // --------------------------------------
-    auto pipeline = std::make_shared<QueryPipeline>();
-
-    // --------------------------------------
-    // Pick a Knowledge Graph for EDB queries
-    // --------------------------------------
-    std::shared_ptr<KnowledgeGraph> kg = centralKG();
-
-    // --------------------------------------
-    // split input literals into positive and negative literals.
-    // negative literals are evaluated in parallel after all positive literals.
-    // --------------------------------------
-    std::vector<RDFLiteralPtr> positiveLiterals, negativeLiterals;
-    for(auto &l : allLiterals) {
-        if(l->isNegated()) negativeLiterals.push_back(l);
-        else               positiveLiterals.push_back(l);
-    }
-
-    // --------------------------------------
-    // sort positive literals. the EDB might evaluate literals in the given order.
-    // --------------------------------------
-    std::sort(positiveLiterals.begin(), positiveLiterals.end(), EDBComparator());
-
-    // --------------------------------------
-    // split positive literals into edb-only and computable.
-    // also associate list of reasoner to computable literals.
-    // --------------------------------------
-    std::vector<RDFLiteralPtr> edbOnlyLiterals;
-    std::vector<RDFComputablePtr> computableLiterals;
-    for(auto &l : positiveLiterals) {
-        std::vector<std::shared_ptr<Reasoner>> l_reasoner;
-        for(auto &pair : reasonerManager_->reasonerPool()) {
-            auto &r = pair.second->reasoner();
-            if(r->canEvaluate(*l)) l_reasoner.push_back(r);
-        }
-        if(l_reasoner.empty()) edbOnlyLiterals.push_back(l);
-        else computableLiterals.push_back(std::make_shared<RDFComputable>(*l, l_reasoner));
-    }
-
-    std::shared_ptr<AnswerBuffer> edbOut;
-    // --------------------------------------
-    // run EDB query with all edb-only literals.
-    // --------------------------------------
-
-    if(edbOnlyLiterals.empty()) {
-        edbOut = std::make_shared<AnswerBuffer>();
-        auto channel = AnswerStream::Channel::create(edbOut);
-        channel->push(AnswerStream::bos());
-        channel->push(AnswerStream::eos());
-    }
-    else {
-        auto edbOnlyQuery = std::make_shared<GraphQuery>(
-                    edbOnlyLiterals,
-                    graphQuery->flags());
-        edbOut = kg->submitQuery(edbOnlyQuery);
-    }
-    pipeline->addStage(edbOut);
-
-    std::shared_ptr<AnswerBroadcaster> idbOut;
-    if(computableLiterals.empty())
-    {
-        idbOut = edbOut;
-    }
-    else
-    {
-        idbOut = std::make_shared<AnswerBroadcaster>();
-        pipeline->addStage(idbOut);
-        // --------------------------------------
-        // Compute dependency groups of computable literals.
-        // --------------------------------------
-        DependencyGraph dg;
-        dg.insert(computableLiterals.begin(), computableLiterals.end());
-
-        if(dg.numGroups()==1) {
-            auto &literalGroup = *dg.begin();
-            // --------------------------------------
-            // Construct a pipeline for each dependency group.
-            // --------------------------------------
-            createComputationPipeline(
-                    pipeline,
-                    createComputationSequence(literalGroup.member_),
-                    edbOut,
-                    idbOut,
-                    graphQuery->flags());
-        }
-        else {
-            // there are multiple dependency groups. They can be evaluated in parallel.
-
-            // combines answers computed in different parallel steps
-            auto answerCombiner = std::make_shared<AnswerCombiner>();
-            // create a parallel step for each dependency group
-            for(auto &literalGroup : dg)
-            {
-                // --------------------------------------
-                // Construct a pipeline for each dependency group.
-                // --------------------------------------
-                createComputationPipeline(
-                        pipeline,
-                        createComputationSequence(literalGroup.member_),
-                        edbOut,
-                        answerCombiner,
-                        graphQuery->flags());
-            }
-            answerCombiner >> idbOut;
-            pipeline->addStage(answerCombiner);
-        }
-    }
-
-    // --------------------------------------
-    // Evaluate all negative literals in parallel.
-    // --------------------------------------
-    std::shared_ptr<AnswerBroadcaster> lastStage;
-    if(!negativeLiterals.empty()) {
-        // append a parallel step for each negative literal and reasoner that can compute it.
-        // FIXME: maybe every possible source must report that a negated literal cannot be grounded?
-        //xxx;
-        KB_WARN("todo: submitQuery negations");
-        lastStage = idbOut;
-    }
-    else {
-        lastStage = idbOut;
-    }
-
-    /*
-            // optionally add a stage to the pipeline that drops all redundant result.
-            if(graphQuery->flags() & QUERY_FLAG_UNIQUE_SOLUTIONS) {
-                auto filterStage = std::make_shared<RedundantAnswerFilter>();
-                lastStage >> filterStage;
-                lastStage = filterStage;
-            }
-
-            // TODO: optionally persist top-down inferences in data backend(s)
-            if(graphQuery->flags() & QUERY_FLAG_PERSIST_SOLUTIONS) {
-                //auto persistStage = std::make_shared<XXX>();
-                //lastStage >> persistStage;
-                //lastStage = persistStage;
-            }
-    */
-
-    auto out = std::make_shared<AnswerBuffer_WithReference>(pipeline);
-    lastStage >> out;
-    edbOut->stopBuffering();
-    return out;
-}
-
-AnswerBufferPtr KnowledgeBase::submitQuery(const LiteralPtr &literal, int queryFlags)
-{
-    auto rdfLiteral = RDFLiteral::fromLiteral(literal);
-    return submitQuery(std::make_shared<GraphQuery>(
-        GraphQuery({rdfLiteral}, queryFlags)));
-}
-
-bool KnowledgeBase::insert(const std::vector<StatementData> &propositions)
-{
-    bool status = true;
-    for(auto &kg : backendManager_->knowledgeGraphPool()) {
-        if(!kg.second->knowledgeGraph()->insert(propositions)) {
-            KB_WARN("assertion of triple data failed!");
-            status = false;
-        }
-    }
-    return status;
-}
-
-bool KnowledgeBase::insert(const StatementData &proposition)
-{
-    bool status = true;
-    // assert each statement into each knowledge graph backend
-    for(auto &kg : backendManager_->knowledgeGraphPool()) {
-        if(!kg.second->knowledgeGraph()->insert(proposition)) {
-            KB_WARN("assertion of triple data failed!");
-            status = false;
-        }
-    }
-    return status;
+		class_<KnowledgeBase, std::shared_ptr<KnowledgeBase>, boost::noncopyable>
+				("KnowledgeBase", init<>())
+				.def(init<std::string_view>())
+				.def("init", &KnowledgeBase::init)
+				.def("loadCommon", &KnowledgeBase::loadCommon)
+				.def("loadDataSource", &KnowledgeBase::loadDataSource)
+				.def("vocabulary", &KnowledgeBase::vocabulary, return_value_policy<reference_existing_object>())
+				.def("submitQueryFormula", static_cast<QueryFormula>(&KnowledgeBase::submitQuery))
+				.def("submitQueryPredicate", static_cast<QueryPredicate>(&KnowledgeBase::submitQuery))
+				.def("submitQueryGraph", static_cast<QueryGraph>(&KnowledgeBase::submitQuery))
+				.def("insertOne", &KnowledgeBase::insertOne)
+				.def("insertAllFromContainer", static_cast<ContainerAction>(&KnowledgeBase::insertAll))
+				.def("insertAllFromList", static_cast<ListAction>(&KnowledgeBase::insertAll))
+				.def("removeOne", &KnowledgeBase::removeOne)
+				.def("removeAllFromContainer", static_cast<ContainerAction>(&KnowledgeBase::removeAll))
+				.def("removeAllFromList", static_cast<ListAction>(&KnowledgeBase::removeAll))
+				.def("removeAllWithOrigin", &KnowledgeBase::removeAllWithOrigin);
+	}
 }

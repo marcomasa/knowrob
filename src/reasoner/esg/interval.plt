@@ -3,6 +3,7 @@
 
 :- use_module('interval.pl').
 
+:- use_module(library('unittest')).
 :- use_module(library('semweb'), [ sw_register_prefix/2 ]).
 :- sw_register_prefix(test, 'http://knowrob.org/kb/test_events.owl#').
 
@@ -54,7 +55,6 @@ test('<(Short1,Short3)') :-
 test('<(Short3,Short4)') :-
 	assert_false(interval_before(test:'Short3', test:'Short4')).
 % NOTE: below fails because the events meet each other
-% TODO: I think it is a bit counter-intuitive that < does not include m.
 test('<(Short1,Short2)') :-
 	assert_false(interval_before(test:'Short1', test:'Short2')).
 
@@ -65,10 +65,9 @@ test('>(Short3,Short1)') :-
 test('>(Short4,Short3)') :-
 	assert_false(interval_after(test:'Short2', test:'Short3')).
 
-
-/********************************
- *	    QUALITATIVE INPUT     	*
- ********************************/
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% QUALITATIVE INPUT
+%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 test('s(Event0,Event1)') :-
 	assert_true(interval_starts(test:'Event0', test:'Event1')).
@@ -122,9 +121,9 @@ test('<(Event1,Event2)') :-
 test('<(Event1,Event3)') :-
 	assert_false(interval_before(test:'Event1', test:'Event3')).
 
-/********************************
- *	    MIXED INPUT	     		*
- ********************************/
+%%%%%%%%%%%%%%%%%%%
+%% MIXED INPUT
+%%%%%%%%%%%%%%%%%%%
 
 test('<(Event6,Short3)') :-
 	assert_true(interval_before(test:'Event6', test:'Short3')).
@@ -135,13 +134,5 @@ test('<(Event6,Short4)', [ fixme('support mixing of quantitative+qualitative inp
 	interval_before(test:'Event6', test:'Short4').
 test('<(Event7,Short4)', [ fixme('support mixing of quantitative+qualitative input') ]) :-
 	interval_before(test:'Event7', test:'Short4').
-
-/********************************
- *	    DYNAMIC ASSERTIONS     	*
- ********************************/
-
-% TODO: tests adding axioms, connect to pre-loaded events
-%         that won't work at the moment! because ESGs are
-%         not updated
 
 :- end_tests(time_interval).

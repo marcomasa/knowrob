@@ -12,15 +12,12 @@
 
       sw_assert_triple(r,t,t),     % +Subject, +Predicate, +Object
       sw_assert_triple(r,t,t,r),   % +Subject, +Predicate, +Object, +Graph
-      sw_assert_triple(r,t,t,r,t), % +Subject, +Predicate, +Object, +Graph, +Scope
       sw_assert_type(r,t),         % +Resource, +Class
       sw_assert_type(r,t,r),       % +Resource, +Class, +Graph
-      sw_assert_type(r,t,r,t),     % +Resource, +Class, +Graph, +Scope
 
       sw_url/4,                    % +URL, ?ResolvedURL, ?OntologyGraph, ?OntologyVersion
       sw_url_graph/2,              % +URL, ?OntologyGraph
       sw_url_version/2,            % +URL, ?OntologyVersion
-      sw_url_read/2,
       sw_register_prefix/2,
       sw_url_register_ns/2,
 
@@ -31,8 +28,22 @@
       sw_default_graph/1,          % ?Graph
       sw_current_graph/2,
 
-      load_rdf_xml/2,              % +URL, +ParentGraph
-      load_json_rdf/1
+      sw_literal_compare/3,     % +Operator, +Literal1, +Literal2
+      sw_literal_max/3,         % +Literal1, +Literal2, ?Max
+      sw_literal_min/3,         % +Literal1, +Literal2, ?Min
+
+      sw_resource_frequency/2,  % ?Resource, ?Frequency
+      sw_class_frequency/2,     % ?Cls, ?Frequency
+      sw_property_frequency/2,  % ?Property, ?Frequency
+
+      sw_origin_any/1,          % ?Origin
+      sw_origin_system/1, 		% ?Origin
+      sw_origin_session/1, 		% ?Origin
+      sw_origin_user/1, 		% ?Origin
+      sw_origin_reasoner/1, 	% ?Origin
+      sw_origin_test/1, 		% ?Origin
+
+      load_rdf_xml/2               % +URL, +ParentGraph
     ]).
 /** <module> Extensions around the semweb modules of Prolog.
 
@@ -66,7 +77,7 @@
 		  rdfs_subproperty_of/2 ]).
 :- use_module(library('http/http_open'),
 		[ http_open/3 ]).
-:- use_module(library('xsd'),
+:- use_module(library('ext/xsd'),
 		[ xsd_data_basetype/2 ]).
 :- use_module(library('scope'),
 		[ query_scope_now/1 ]).
@@ -77,12 +88,6 @@ annotation_property('http://www.w3.org/2000/01/rdf-schema#comment').
 annotation_property('http://www.w3.org/2000/01/rdf-schema#seeAlso').
 annotation_property('http://www.w3.org/2000/01/rdf-schema#label').
 annotation_property('http://www.w3.org/2002/07/owl#versionInfo').
-
-% TODO: support temporally scoped predicates
-% TODO: support fuzzy predicates
-% TODO: set predicate properties, rdf_db supports some
-%   - rdf_predicate_property(?Predicate, ?Property)
-%       - symmetric(Bool), inverse_of(Inverse), transitive(Bool)
 
 		 /*******************************
 		  *          QUERYING           *
@@ -104,16 +109,19 @@ sw_triple(Subject, Predicate, Object) :-
 %
 sw_triple(Subject, Predicate, Object, _Context) :-
     atom(Object),!,
-    % TODO: better check if it is datatype property, and query literal in this case?
-    rdf_has(Subject, Predicate, Object, RealPredicate),
-    post_graph(Subject, RealPredicate, Object).
+    rdf_has(Subject, Predicate, Object).
 
 sw_triple(Subject, Predicate, Object, _Context) :-
     var(Object),!,
-    rdf_has(Subject, Predicate, Value, RealPredicate),
-    post_graph(Subject, RealPredicate, Value),
+    rdf_has(Subject, Predicate, Value),
     % convert XSD atom value into native type
-    ( atom(Value) -> Object=Value ; rdf_literal_value(Value,Object) ).
+    once( atom(Value) -> Object=Value
+    	; rdf_literal_value(Value,Object)
+    	% rdf_literal_value does not handle boolean.
+    	% So in case it fails, we just strip the type
+    	; Value=literal(type(_,Object))
+    	; Value=literal(Object)
+    ).
 
 sw_triple(Subject, Predicate, Object, _Context) :-
     compound(Object),!,
@@ -123,30 +131,105 @@ sw_triple(Subject, Predicate, Object, _Context) :-
     xsd_data_basetype(XSDType, Type),
     % typed triple lookup
     LiteralValue = literal(type(XSDType, Value)),
-    rdf_has(Subject, Predicate, LiteralValue, RealPredicate),
-    post_graph(Subject, RealPredicate, LiteralValue).
+    rdf_has(Subject, Predicate, LiteralValue).
 
 sw_triple(Subject, Predicate, Number, _Context) :-
     number(Number),!,
     atom_number(ValueAtom, Number),
     LiteralValue = literal(type(_XSDType, ValueAtom)),
-    rdf_has(Subject, Predicate, LiteralValue, RealPredicate),
-    post_graph(Subject, RealPredicate, LiteralValue).
+    rdf_has(Subject, Predicate, LiteralValue).
 
 sw_triple(Subject, Predicate, Object, _Context) :-
     throw(error(type_error(resource, Object),
                 sw_triple(Subject,Predicate,Object))).
 
+%% sw_literal_compare(+Operator, +Literal1, +Literal2) is nondet.
+%
+% Comparison of typed literals using the given operator.
+% Operator can be one of: ==, !=, >, <, >=, <=, eq, gt, lt, ge, le.
+%
+sw_literal_compare(_Operator, Literal1, Literal2) :-
+	(\+ ground(Literal1) ; \+ ground(Literal2)),
+	% pass through if one of the literals is not ground
+	!.
+sw_literal_compare(Operator, Literal1, Literal2) :-
+	% convert literals to native types
+	(rdf_literal_value(Literal1, Value1) -> true ; Value1=Literal1),
+	(rdf_literal_value(Literal2, Value2) -> true ; Value2=Literal2),
+	% compare values
+	once(sw_literal_compare_(Operator, Value1, Value2)).
+
+sw_literal_compare_('==', Value1, Value2) :- Value1 == Value2.
+sw_literal_compare_('!=', Value1, Value2) :- Value1 \= Value2.
+sw_literal_compare_('>', Value1, Value2) :- Value1 > Value2.
+sw_literal_compare_('<', Value1, Value2) :- Value1 < Value2.
+sw_literal_compare_('>=', Value1, Value2) :- Value1 >= Value2.
+sw_literal_compare_('<=', Value1, Value2) :- Value1 =< Value2.
+sw_literal_compare_('=<', Value1, Value2) :- Value1 =< Value2.
+sw_literal_compare_('eq', Value1, Value2) :- Value1 == Value2.
+sw_literal_compare_('gt', Value1, Value2) :- Value1 > Value2.
+sw_literal_compare_('lt', Value1, Value2) :- Value1 < Value2.
+sw_literal_compare_('ge', Value1, Value2) :- Value1 >= Value2.
+sw_literal_compare_('le', Value1, Value2) :- Value1 =< Value2.
+
+%% sw_literal_min(+Literal1, +Literal2, ?Min) is nondet.
+%
+% Bind the miminum of two literals to Min.
+% A unbound literal is assumed to be the maximum.
+%
+sw_literal_min(Literal1, Min, Min) :- \+ ground(Literal1), !.
+sw_literal_min(Min, Literal2, Min) :- \+ ground(Literal2), !.
+sw_literal_min(Literal1, Literal2, Min) :-
+	(rdf_literal_value(Literal1, Value1) -> true ; Value1=Literal1),
+	(rdf_literal_value(Literal2, Value2) -> true ; Value2=Literal2),
+	(   Value1 < Value2
+	->  Min=Literal1
+	;   Min=Literal2
+	).
+
+%% sw_literal_max(+Literal1, +Literal2, ?Max) is nondet.
+%
+% Bind the maximum of two literals to Max.
+% A unbound literal is assumed to be the minimum.
+%
+sw_literal_max(Literal1, Max, Max) :- \+ ground(Literal1), !.
+sw_literal_max(Max, Literal2, Max) :- \+ ground(Literal2), !.
+sw_literal_max(Literal1, Literal2, Max) :-
+	(rdf_literal_value(Literal1, Value1) -> true ; Value1=Literal1),
+	(rdf_literal_value(Literal2, Value2) -> true ; Value2=Literal2),
+	(   Value1 > Value2
+	->  Max=Literal1
+	;   Max=Literal2
+	).
+
+%% sw_resource_frequency(?Resource, -Frequency) is nondet.
+%
+sw_resource_frequency(Resource, Frequency) :-
+	sw_class_frequency(Resource, Frequency) ;
+	sw_property_frequency(Resource, Frequency).
+
+%% sw_class_frequency(?Cls, -Frequency) is nondet.
+%
+sw_class_frequency(Cls, Frequency) :-
+	rdf_has(Cls, rdf:type, owl:'Class'),
+	findall([S,P], rdf_has(S, P, Cls), Xs),
+	length(Xs, Frequency).
+
+%% sw_property_frequency(?Property, -Frequency) is nondet.
+%
+sw_property_frequency(Property, Frequency) :-
+	( rdf_has(Property, rdf:type, owl:'ObjectProperty')
+	; rdf_has(Property, rdf:type, owl:'DatatypeProperty')
+	),
+	findall([S,O], rdf_has(S, Property, O), Xs),
+	length(Xs, Frequency).
+
 %%
-post_graph(Subject, RealPredicate, Object) :-
-    current_reasoner_module(Reasoner),
-    % NOTE: rdf_has does not have a graph parameter.
-    %       so the only option is to call rdf_has/4 followed by rdf/4 with the real predicate
-    %       to obtain the graph where the fact is asserted, and to check then if it is a defined
-    %       graph for the current reasoner.
-    rdf(Subject, RealPredicate, Object, Graph:_),
-    sw_current_graph(Reasoner, Graph),
-    !.
+%post_graph(Subject, RealPredicate, Object) :-
+%    current_reasoner_module(Reasoner),
+%    rdf(Subject, RealPredicate, Object, Graph:_),
+%    sw_current_graph(Reasoner, Graph),
+%    !.
 
 %% sw_instance_of(?Resource, ?Class) is nondet.
 %
@@ -309,7 +392,6 @@ sw_instance_of_expr1(Resource, class(Cls)) :-
 
 sw_instance_of_expr1(Resource, one_of(ExprList)) :-
     !,
-    % TODO: take into account sameAs
     member(individual(Resource), ExprList).
 
 sw_instance_of_expr1(Resource, union_of(ExprList)) :-
@@ -434,32 +516,34 @@ subclass_expr2(min(Card1,Property1), min(Card2,Property2)) :-
 
 %% sw_assert_triple(+Subject, +Predicate, +Object) is det.
 %
-% Same as sw_assert_triple/5 but asserts a universal (unscoped) fact
-% into the default graph (see sw_default_graph/1).
+% Same as sw_assert_triple/4 but asserts into the default graph (see sw_default_graph/1).
 %
 sw_assert_triple(Subject, Predicate, Object) :-
     sw_default_graph(Graph),
-    sw_assert_triple(Subject, Predicate, Object, Graph).
+    sw_assert_triple(Subject, Predicate, Object, Graph),
+    sw_set_predicate(Subject, Predicate, Object).
 
 %% sw_assert_triple(+Subject, +Predicate, +Object, +Graph) is det.
 %
-% Same as sw_assert_triple/5 but asserts a universal (unscoped) fact.
-%
-sw_assert_triple(Subject, Predicate, Object, Graph) :-
-    %sw_universal_scope(Scope),
-    sw_assert_triple(Subject, Predicate, Object, Graph, _).
-
-%% sw_assert_triple(+Subject, +Predicate, +Object, +Graph, +Scope) is det.
-%
 % Assert a new triple into the database.
 %
-sw_assert_triple(Subject, Predicate, Object, Graph, _Scope) :-
+sw_assert_triple(Subject, Predicate, Object, Graph) :-
     atom(Subject), atom(Predicate), ground(Object),!,
-    % todo: support scoped assertions
     (  rdfs_individual_of(Predicate,owl:'DatatypeProperty')
     -> sw_assert_dataproperty(Subject, Predicate, Object, Graph)
     ;  sw_assert_objectproperty(Subject, Predicate, Object, Graph)
     ).
+
+%%
+% Define a property of a predicate.
+%
+sw_set_predicate(P, owl:inverseOf, P_inv) :-
+	!, rdf_set_predicate(P, inverse_of(P_inv)).
+sw_set_predicate(P, rdf:type, owl:'TransitiveProperty') :-
+	!, rdf_set_predicate(P, transitive(true)).
+sw_set_predicate(P, rdf:type, owl:'SymmetricProperty') :-
+	!, rdf_set_predicate(P, symmetric(true)).
+sw_set_predicate(_, _, _).
 
 %%
 sw_assert_objectproperty(Subject, Predicate, Object, Graph) :-
@@ -492,8 +576,7 @@ sw_assert_dataproperty(Subject, Predicate, Atomic, Graph) :-
 
 %% sw_assert_type(+Resource, +Class) is semidet.
 %
-% Same as sw_assert_type/4 but only asserts universal (unscoped) facts
-% into see default graph (see sw_default_graph/1).
+% Same as sw_assert_type/3 but asserts into see default graph (see sw_default_graph/1).
 %
 sw_assert_type(Resource, Class) :-
     sw_default_graph(Graph),
@@ -501,23 +584,12 @@ sw_assert_type(Resource, Class) :-
 
 %% sw_assert_type(+Resource, +Class, +Graph) is semidet.
 %
-% Same as sw_assert_type/4 but only asserts universal (unscoped) facts.
-%
-sw_assert_type(Resource, Class, Graph) :-
-    %sw_universal_scope(Scope),
-    sw_assert_type(Resource, Class, Graph, _).
-
-%% sw_assert_type(+Resource, +Class, +Graph, +Scope) is semidet.
-%
 % Assert a new triple into the database that uses the rdf:type predicate.
 %
-sw_assert_type(Resource, Class, Graph, _Scope) :-
-    % todo: support class expressions
-    % todo: support scoped classification
+sw_assert_type(Resource, Class, Graph) :-
     atom(Class),
     atom(Resource),!,
     rdf_assert(Resource, rdf:type, Class, Graph).
-
 
 		 /*******************************
 		  *       ONTOLOGY URLs         *
@@ -577,47 +649,6 @@ sw_url_register_ns(URL, Opts) :-
 	->	sw_register_prefix(NS, Prefix)
 	;	true
 	).
-
-%%
-sw_url_stream(URL, QueryStage) :-
-	sub_string(URL,0,4,_,'http'),!,
-	http_open(URL, QueryStage, []).
-
-sw_url_stream(URL, QueryStage) :-
-    open(URL, read, QueryStage).
-
-%%
-%
-%
-% TODO: reconsider this predicate
-sw_url_read(URL, Opts) :-
-	rdf_equal(owl:'Ontology',OWL_Ontology),
-	rdf_equal(rdf:'type',RDF_Type),
-	% load RDF data and ookup ontology URL
-	setup_call_cleanup(
-	    sw_url_stream(URL, QueryStage),
-	    load_rdf(QueryStage, Triples, [blank_nodes(noshare)]),
-	    close(QueryStage)
-	),
-	% get AssertedURL
-	(	member(rdf(AssertedURL,RDF_Type,OWL_Ontology), Triples) -> true
-	;	log_error_and_fail(type_error(ontology,URL))
-	),
-	% convert to triple/3 and annotation/3 terms
-	maplist(convert_rdf_(AssertedURL), Triples, Terms),
-	% NOTE: annotations are stored in a separate collection.
-	%       the reason is that we create a search index over the value
-	%       of a triple, and that mongo cannot generate such an index
-	%       over values with special characters.
-	% TODO: move into mongolog
-	partition(is_annotation_triple(Terms), Terms,
-		AnnotationTriples, TripleTerms),
-	maplist([triple(S,P,O),annotation(S,P,O)]>>true,
-		AnnotationTriples, AnnotationTerms),
-	% unify options
-	ignore(option(asserted_url(AssertedURL), Opts)),
-	ignore(option(triples(TripleTerms), Opts)),
-	ignore(option(annotations(AnnotationTerms), Opts)).
 
 %%
 is_annotation_triple(_, triple(_,P,_)) :-
@@ -711,7 +742,7 @@ sw_unload_graph(Graph) :-
 sw_default_graph(Graph) :-
     current_reasoner_manager(ReasonerManager),
     current_reasoner_module(Reasoner),
-	sw_default_graph_cpp(ReasonerManager, Reasoner, Graph).
+	semweb:sw_default_graph_cpp(ReasonerManager, Reasoner, Graph).
 
 %%
 % Set the name of the graph where facts are asserted and retrieved
@@ -736,109 +767,9 @@ load_rdf_xml(URL, ParentGraph) :-
     load_rdf_xml1(URL, ParentGraph).
 
 load_rdf_xml1(URL, ParentGraph) :-
-	rdf_equal(owl:'imports', OWL_Imports),
-	rdf_equal(owl:'Ontology',OWL_Ontology),
-	rdf_equal(rdf:'type',RDF_Type),
-	% resolve URL, and read ontology graph name and version
-	sw_url(URL, Resolved, OntologyGraph, OntologyVersion),
-	% include ontology when parent graph is queried
-	sw_graph_include(ParentGraph, OntologyGraph),
-	% load RDF data
-	setup_call_cleanup(
-	    sw_url_stream(Resolved, QueryStage),
-	    rdf_load(QueryStage, [graph(OntologyGraph), silent(true)]),
-	    close(QueryStage)
-	),
-	% remember reasoner to graph association
-	current_reasoner_module(Reasoner),
-	sw_set_current_graph(Reasoner, OntologyGraph),
-	% lookup ontology URL
-	(	rdf(AssertedURL, RDF_Type, OWL_Ontology, OntologyGraph) -> true
-	;	log_error_and_fail(type_error(ontology,URL))
-	),
-	% load RDF data of imported ontologies
-	forall(
-		rdf(AssertedURL, OWL_Imports, ImportedURL, OntologyGraph),
-		load_rdf_xml1(ImportedURL, ParentGraph)
-	),
-	!,
-	log_debug(prolog(ontology_loaded(OntologyGraph,OntologyVersion))).
-
-     /*******************************
-     *          JSON DATA          *
-     *******************************/
-
-%% load_json_rdf(FilePath) is semidet.
-%
-% Load JSON-encoded triple data into the knowledge base.
-% Each triple document in the JSON file must have the keys
-% "s","p","o" for the subject, property, and value of the triple.
-% In addition a scope document can be provided optionally.
-% If this is not the case, it is assumed that the facts universally hold.
-%
-% @param FilePath - Path to the json file
-%
-load_json_rdf(FilePath) :-
-	open(FilePath,read,QueryStage),
-	read_data(QueryStage,_Triples),
-	close(QueryStage).
-
-read_data(QueryStage,[]):-
-	at_end_of_stream(QueryStage).
-
-read_data(QueryStage,[TriplesDict | Rest]):-
-	json:json_read_dict(QueryStage, TriplesDict),
-	assert_triple_data(TriplesDict),
-	read_data(QueryStage,Rest).
-
-assert_triple_data(Triples) :-
-	is_dict(Triples),!,
-	get_dict(s, Triples, S),
-	get_dict(p, Triples, P),
-	get_dict(o, Triples, O),
-	triple_json_scope(Triples,Scope),
-	triple_json_object(O,O_value),
-	atom_string(S_atom, S),
-	atom_string(P_atom, P),
-	% TODO: it would be faster to call assert only once with
-	% array of triples
-	kb_call(assert(triple(S_atom, P_atom, O_value)), Scope, _).
-
-assert_triple_data(TriplesList) :-
-	%handle case when given triples are list
-	is_list(TriplesList),!,
-	forall(member(X,TriplesList), assert_triple_data(X)).
-
-%% triple_json_object(+Dict,-Obj) is semidet.
-triple_json_object(Dict,Obj) :-
-	% if the argument is a dictionary
-	is_dict(Dict),!,
-	get_dict('$numberDecimal', Dict, Json_Object),
-	(	atom(Json_Object)   -> atom_number(Json_Object,Obj)
-	;	string(Json_Object) -> number_string(Obj,Json_Object)
-	;	Obj is Json_Object
-	).
-
-triple_json_object(O,O).
-
-triple_json_scope(Triples,Scope) :-
-    % check if 'since' and 'until' are part of triple, if not then create universal scope(0 to Inf)
-    get_dict(since, Triples, Since),
-	get_dict(until, Triples, Until),!,
-	% check if given 'Since' and 'Until' are numbers if they are not
-	% then convert them into numbers first and then use them into scope
-	(	number(Since) -> Since_number = Since
-	;	atom_number(Since, Since_number)
-	),
-	(	number(Until) -> Until_number = Until
-	;	atom_number(Until, Until_number)
-	),
-	time_scope(Since_number, Until_number, Scope).
-
-triple_json_scope(_Triples,_Scope) :-
-	% create universal scope when either of 'since' or 'until' are not provided in triple
-	%sw_universal_scope(Scope)
-	true.
+    current_reasoner_manager(ReasonerManager),
+    current_reasoner_module(Reasoner),
+    sw_load_rdf_xml_cpp(ReasonerManager, Reasoner, URL, ParentGraph).
 
      /*******************************
      *          UNIT TESTS          *

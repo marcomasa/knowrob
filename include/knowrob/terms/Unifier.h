@@ -9,18 +9,18 @@
 #ifndef KNOWROB_UNIFIER_H_
 #define KNOWROB_UNIFIER_H_
 
-#include "Substitution.h"
+#include "Bindings.h"
 
 namespace knowrob {
 	/**
 	 * A substitution that unifies some terms.
 	 */
-	class Unifier : public Substitution {
+	class Unifier : public Bindings {
 	public:
 		/**
 		 * Compute a unifier of two terms.
-		 * @t0 a term.
-		 * @t1 a term.
+		 * @param t0 a term.
+		 * @param t1 a term.
 		 */
 		Unifier(const TermPtr &t0, const TermPtr &t1);
 		
@@ -41,7 +41,7 @@ namespace knowrob {
 		bool exists_;
 		
 		bool unify(const TermPtr &t0, const TermPtr &t1);
-		bool unify(const Variable *var, const TermPtr &t);
+		bool unify(const std::shared_ptr<Variable> &var, const TermPtr &t);
 	};
 }
 

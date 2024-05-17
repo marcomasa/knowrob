@@ -45,7 +45,7 @@ To this end, Prolog datastructures are translated from and into BSON format.
 
 :- use_module(library('logging')).
 :- use_module(library('http/json')).
-:- use_module(library('filesystem'), [ path_concat/3 ]).
+:- use_module(library('ext/filesystem'), [ path_concat/3 ]).
 
 %:- use_foreign_library('libmongo_kb.so').
 
@@ -282,7 +282,6 @@ mng_dump(DB,Dir) :-
 	mng_dump(DB,Dir,_).
 
 mng_dump(DB,Dir,Output) :-
-    % TODO should be moved into mongolog
 	mongolog_database:mongolog_uri(URI),
 	process_create(path(mongodump),
 		[ '--uri', URI, '--db', DB, '--out', Dir ],
@@ -319,7 +318,6 @@ mng_restore(DB,Dir) :-
 	mng_restore(DB,Dir,_).
 
 mng_restore(DB,Dir,Output) :-
-    % TODO should be moved into mongolog
 	mongolog_database:mongolog_uri(URI),
 	process_create(path(mongorestore),
 		[ '--uri', URI, '--db', DB, '--dir', Dir, '--quiet' ],
@@ -524,7 +522,7 @@ mng_strip_type(Term, term, Term) :-
 mng_strip_type(X, double, X) :-
 	number(X),
 	!.
-% FIXME: below makes it impossible to ask for string values true/false
+
 mng_strip_type(X, bool, X) :-
 	ground(X),
 	(	X=true
@@ -532,7 +530,6 @@ mng_strip_type(X, bool, X) :-
 	),
 	!.
 
-% FIXME var(X) always ends in string, better do not require type in query!
 mng_strip_type(X, string, X).
 
 %%

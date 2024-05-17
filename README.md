@@ -3,10 +3,12 @@ KnowRob
 
 ![CI](https://github.com/knowrob/knowrob/workflows/CI/badge.svg)
 
+
 [KnowRob](http://www.knowrob.org) is a knowledge processing system designed for robots.
 Its purpose is to equip robots with the capability to organize information in re-usable
 knowledge chunks, and to perform reasoning in an expressive logic.
-It further provides a set of tools for visualization and acquisition of knowledge.
+It further provides a set of tools for visualization and acquisition of knowledge,
+aswell as a ROS interface for easy integration into custom projects.
 
 ## Outline
 
@@ -20,187 +22,74 @@ It further provides a set of tools for visualization and acquisition of knowledg
 
 ## Functionality
 
-Knowledge is stored in a graph using a given ontology and ... .
-Users can query this graph using KnowRobs interfaces from their own applications. 
+Originally, KnowRob was implemented using the Prolog programming language.
+In its second iteration, KnowRob is implemented in C++, but still supports Prolog
+for rule-based reasoning.
 
+The core of KnowRob is a shared library that implements a *hybrid* knowledge base.
+With *hybrid*, we mean that different reasoning engines can be combined in
+KowRob's query evaluation process. To this end, KnowRob defines a querying language
+and manages which parts of a query are evaluated by which reasoner or storage backend.
+Both reasoners and storage backends are configurable, and can be extended by plugins
+either in written in C++ or Python.
+There are a few applications shipped with this repository including a terminal application
+that allows to interact with KnowRob using a command line interface, and a ROS node
+that exposes KnowRob's querying interface to the ROS ecosystem.
 
-### Querying (Outdated)
+For further information and details about how Knowrob functions, you can refer to the following pages:
 
-The core of KnowRob is an extendible querying interface that
-provides basic operations *ask*, *tell*, *forget*, and *remember*.
-Their argument is some statement written in the [KnowRob Querying Language](src/README.md).
-Language phrases are terms whose semantics is defined
-in form of Prolog rules using special operators such as *?>* (the ask operator),
-or *+>* (the tell operator).
-
-One useful CLI for queries is launched with `rosrun rosprolog rosprolog_commandline.py`
-
-### Model
-
-KnowRob structures knowledge according to models represented using RDF.
-Some models are very basic and domain-independent such as the OWL model
-that e.g. distinguishes between object and datatype properties, or the
-toplevel ontology SOMA which is supported by KnowRob.
-[KnowRob Models](src/model/README.md) is a collection of such models
-that are explicitely supported by KnowRob.
-However, support for other models may be added through plugins.
-
-### Triple Store and Data Access
-
-Knowledge is represented in form of temporalized triples --
-each subject-predicate-object triple has an additional field
-that restricts the temporal scope in which the statement
-represented by the triple is true.
-A configurable knowledgeGraph is used to store and retrieve temporalized triples --
-as a falback implementation, KnowRob provides a simple MongoDB
-implementation of a temporalized triple store.
-
-One important aspect in knowledge representation for robots is that
-a lot of knowledge is *implicitly* encoded in the control structures
-of the robot. Hence, one goal is to make the knowledge in robot
-control structures *explicit*.
-KnowRob does that through *Ontology-based Data Access* (OBDA).
-So called, *semantic data accessors* are used to map data to symbols in
-an ontology, often by accessing some database, or by reading from
-a message queue, etc.
-
-For more information on database backends in KnowRob, please have a look
-[here](src/db/README.md).
-
-### Reasoning
-
-KnowRob uses an ensemble of reasoners approach where inferences
-of different reasoners are combined into correlated knowledge pieces.
-The reason for choosing this approach is that there is no single
-formalism that is suited for every reasoning tasks.
-Instead, given a problem, one should decide what the most suitable
-formalism is to tackle it.
-Consequently, KnowRob can be configured to solve specific problems
-by loading corresponding reasoning modules that implement a common interface.
-KnowRob also ships with a set of reasoning modules including
-an (incomplete) OWL reasoner, a SWRL reasoner, and some specialized
-reasoning modules that handle domain-specific problems
-such as reasoning about time intervals using Allen's interval
-calculus.
-More complete information about reasoning in KnowRob can be found
-[here](src/reasoning/README.md).
-
+- [Terms](src/terms/README.md)
+- [Formulas](src/formulas/README.md)
+- [Triples](src/triples/README.md)
+- [Ontologies](src/ontologies/README.md)
+- [Querying](src/queries/README.md)
+- [Backends](src/storage/README.md)
+- [Reasoner](src/reasoner/README.md)
 
 ## Dependencies
 
+### Required
+
+The following list of software is required to build KnowRob:
+
 - [SWI Prolog](https://www.swi-prolog.org/) >= 8.2.4
 - [mongo DB server](https://www.mongodb.com/de-de) >= 4.4 and libmongoc
+- [Redland and Raptor2](https://librdf.org)
 - [spdlog](https://github.com/gabime/spdlog.git)
-- [Raptor2](https://librdf.org/raptor/)
 - [fmt](https://github.com/fmtlib/fmt)
+- [Eigen 3](https://eigen.tuxfamily.org/index.php?title=Main_Page)
+- [Boost](https://www.boost.org/) with the following components:
+  - python
+  - program options
+  - serialization
+- [GTest](https://github.com/google/googletest)
 
-### ROS Version only
+### Optional
 
-- [ROS](http://wiki.ros.org/noetic/Installation/Ubuntu) (*ROS noetic* for the master branch)
+Some features will only be conditionally compiled if the following dependencies are found:
 
-## Install Instructions
+- [ROS1](https://www.ros.org/) >= Melodic, ROS2 is not supported yet
 
-These instructions will get you a copy of KnowRob up and running on your local machine.
+### Install instructions
 
-### Installing SWI Prolog
-
-KnowRob requires SWI Prolog's latest stable version 8.2.4 or higher. 
-The latest version shipped with Ubuntu 20.04 or older is 7.6.4,
-so you might need to manually update the library.
-
-```bash
-# Install from apt
-sudo apt install swi-prolog
-
-# Check the version
-swipl --version
-
-# If it's under 8.2.4, add the ppa of the latest stable version and update
-sudo apt-add-repository -y ppa:swi-prolog/stable
-sudo apt update
-
-# upgrade
-sudo apt install swi-prolog
-```
-
-### Installing MongoDB
-
-KnowRob requires version 4.4 or higher.
-If your version is lower you will need to update.
-
-Newer versions are **not** compatible with old DBs and won't allow the mongodb service to start.
-To avoid issues later, a complete re-installation of the newer version is performed, 
-which requires wiping, dumping or restoring all existing DBs.
-As this will delete all previous deps, settings and DBs, 
-you should store them **before** starting the update.
-Instructions partly taken from [here](https://www.digitalocean.com/community/tutorials/how-to-install-mongodb-on-ubuntu-20-04).
-
-```bash
-# Install mongodb
-sudo apt install libmongoc-dev libmongoc-1.0-0
-
-# Check the mongodb version
-mongod --version
-
-# If below 4.4, an update is needed.
-# ! Store your DBs before proceeding !
-
-
-# Stop the service
-sudo systemctl stop mongod.service
-# Remove all DBs
-sudo rm -r /var/log/mongodb
-sudo rm -r /var/lib/mongodb
-# Uninstall all mongo packages
-# Be aware that this also removes unrelated packages starting with 'mongo*'
-sudo apt purge mongo*
-
-## Install version 4.4
-# Add the source, should return 'OK'
-curl -fsSL https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -
-
-echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list
-
-# Update references and install mongodb
-sudo apt update
-sudo apt install mongodb-org
-
-# Troubleshoot: If dpkg errors occurr, the deps still refer to old versions. Force the new version
-# Replace the <version> with your own new version. To this day it is '4.4.25'. 
-sudo dpkg -i --force-overwrite /var/cache/apt/archives/mongodb-org-tools_4.4.<version>_amd64.deb
-
-# Try to run the mongodb service
-sudo systemctl start mongod.service
-# Check if the service is running properly
-sudo systemctl status mongod.service
-# Refer to the mongodb error code explaination for further insight: 
-# https://github.com/mongodb/mongo/blob/master/src/mongo/util/exit_code.h
-# Status 62 identifies old DBs in /var/log and /var/lib, so delete them.
-# To instead keep them, you'll need to downgrade mongo, dump DBs, upgrade mongo, recreate DBs.
-# When it fails to open /var/log/mongodb/mongod.log the permissons for that file are incorrect.
-# Either set owner and group of these two paths to mongodb, or reinstall mongodb.
-```
-
-
-
-### Installing Raptor2, spdlog and fmt
-
-(Tested using a WSL2 and Windows 11)
-
-```
-sudo apt update
-sudo apt install libspdlog-dev raptor2-utils libraptor2-dev libfmt-dev
-```
-
-### Installing ROS Noetic
-
-Follow [these instructions](http://wiki.ros.org/noetic/Installation/Ubuntu) to install ROS Noetic on your machine.
-Only required if you want to use catkin and ROS tools.
+For more help during the installation of all dependencies, please refer to [these instructions](src/docs/install_instrutions.md).
 
 
 ## Building Knowrob
 
 ### Standalone Package
+
+KnowRob uses *CMake* as build system. The following steps will guide you through the installation process.
+Assuming you have cloned the repository to `~/knowrob`:
+
+```Bash
+cd ~/knowrob
+mkdir build
+cd build
+cmake ..
+make
+sudo make install
+```
 
 ### ROS Package
 
@@ -225,14 +114,49 @@ Your build process might still be compromised by old errors and this restarts th
 
 ## Starting Knowrob
 
-### Launch command
+Being a shared library, KnowRob cannot be launched directly but only in the context
+of a program that uses it. We currently provide a standalone terminal application and a ROS1 node.
+
+
+### Terminal Application
+
+The terminal application allows the user to interact with KnowRob using a command line interface.
+
+
+#### Launch command
+
+To start the TA, use this command:
+
+```
+knowrob-terminal --config-file ~/knowrob/settings/default.json
+```
+
+The configuration file is a required argument, there is no fallback configuration file.
+If you installed Knowrob anywhere else than under ~/knowrob,
+please adjust your filepath in the command above.
+
+#### Expected output
+
+Once the terminal is up and running, you should see a greeting message and a prompt
+which looks like this:
+
+```
+Welcome to KnowRob.
+For online help and background, visit http://knowrob.org/
+
+?- 
+```
+
+### ROS Node
+
+#### Launch command
 To launch the basic example, type
 
 ```bash
  roslaunch knowrob knowrob.launch
  ```
 
-### Expected Output
+#### Expected Output
 
 You should see something like
 
@@ -288,13 +212,62 @@ sudo mkdir -p ~/data/db
 sudo mongod --dbpath ~/data/db
  ```
 
-If you now re-launch [this example](https://github.com/marcomasa/knowrob#launch-command),
+If you now re-launch [this example](#launch-command),
 you should see the [expected output](https://github.com/marcomasa/knowrob#expected-output).
 
 
 ## Using Knowrob
 
-### Provided interfaces
+### Configuring your knowledge base
+
+KnowRob uses a configuration file to set up the knowledge base.
+Internally, boost's property tree is used to parse the configuration file.
+Hence, JSON is one of the supported formats.
+The configuration file specifies the storage backends,
+the reasoner, and the ontologies that are loaded into the knowledge base.
+
+An example configuration file is provided in `settings/default.json`:
+
+```json
+  "data-sources": [
+    {
+      "path": "owl/test/swrl.owl",
+      "language": "owl",
+      "format": "xml"
+    }
+  ],
+  "data-backends": [
+    {
+      "type": "MongoDB",
+      "name": "mongodb",
+      "host": "localhost",
+      "port": 27017,
+      "db": "mongolog1",
+      "read-only": false
+    }
+  ],
+  "reasoner": [
+    {
+      "type": "Mongolog",
+      "name": "mongolog",
+      "data-backend": "mongodb"
+    }
+  ]
+```
+
+For more information about storage backends, please refer to the [Backends](src/storage/README.md) documentation,
+and for more information about reasoners, please refer to the [Reasoner](src/reasoner/README.md) documentation.
+
+
+### Using the terminal application
+
+Please refer to the [CLI](src/queries/README.md) for documentation about the syntax of queries
+that can be typed into the terminal. Limited auto-completion is available. `exit/0` will
+terminate the terminal.
+
+### Using the ROS interface
+
+#### Provided Action interfaces
 
 Once knowrob is launched, it provides four actions to ask queries:
 - askone
@@ -302,149 +275,19 @@ Once knowrob is launched, it provides four actions to ask queries:
 - askall
 - tell
 
-### Client Interface libraries
+#### Client Interface libraries
 
-We provide both a C++ (and Python) library for you to include in your own project.
-They implement the action client interface to access knowrob data.
-
-#### C++ Interface
-
-To include the library in your own project, just add 'knowrob' to your CMakeLists.txt.
-Remember to also include the 'target_link_libraries' tag for your executable.
-
-```bash
-find_package(catkin REQUIRED COMPONENTS
-roscpp
-...
-knowrob)
-```
-
-Then you should be able to create a KnowrobClient instance and use the provided functions:
-
-```cpp
-// include the library
-#include "knowrob/ros_client/cpp/knowrob_client.hpp"
-
-// create the KnowrobClient instance
-ros::Nodehandle nh;
-KnowrobClient m_kc;
-kc.initialize(nh);  
-
-// prepare a query
-KnowrobQuery single_query = kc.getDefaultQueryMessage();
-single_query.queryString = std::string("test:hasSon(A,B)");
-
-// send and get the answer
-std::vector<KnowrobAnswer> multi_answer;
-bool com_success = kc.askAll(single_query, multi_answer);
-
-// inspect the answer
-...
-```
-
-To retrieve the answer from knowrob, you should use the type tag to identify 
-the correct value field. See this example implementation from the KnowrobClient:
-
-```cpp
-std::string KnowrobClient::getAnswerText(const KnowrobAnswer& answer) const
-{
-    std::stringstream ss;
-
-    int i = 0;
-    for(auto& elem : answer.substitution)
-    {
-        ss << "[" << i << "]" << "\t" 
-           << "[Key]=" << elem.key << "\t"
-           << "[Value]=";
-
-        switch(elem.type)
-        {
-            case knowrob::KeyValuePair::TYPE_STRING:
-            {
-                ss << elem.value_string;
-            }
-            break;
-            case knowrob::KeyValuePair::TYPE_FLOAT:
-            {
-                ss << elem.value_float;
-            }
-            break;
-            case knowrob::KeyValuePair::TYPE_INT:
-            {
-                ss << elem.value_int;
-            }
-            break;
-            case knowrob::KeyValuePair::TYPE_LONG:
-            {
-                ss << elem.value_long;
-            }
-            break;
-            case knowrob::KeyValuePair::TYPE_VARIABLE:
-            {
-                ss << elem.value_variable;
-            }
-            break;
-            case knowrob::KeyValuePair::TYPE_PREDICATE:
-            {
-                ss << elem.value_predicate;
-            }
-            break;
-            case knowrob::KeyValuePair::TYPE_LIST:
-            {
-                ss << elem.value_list;
-            }
-            break;    
-            default:
-                ROS_ERROR_STREAM(m_logger_prefix << "Unknown Answer Substitution Type!");
-                return std::string("ERROR");
-                break;
-        }
-    
-        ss << std::endl;
-    }
-    
-    return ss.str();
-}
-
-```
-
-### Example Client Node
-
-We also provide an [example node](src/ros_client/client_node.cpp) that asks and tells queries to knowrob.
-This demonstrates how the client interface can and should be used.
-With [knowrob launched](https://github.com/marcomasa/knowrob#launch-command),
-you should receive the following output when starting the client node.
-
-```
-user@machine: rosrun knowrob client-node 
-[ INFO] [1701440166.477513145]: [KCN]   Starting the knowrob client node..
-[ INFO] [1701440167.479320945]: [KR-RC] Verbose enabled!
-[ INFO] [1701440167.479469534]: [KR-RC] Initializing client interfaces..
-[ INFO] [1701440167.479821324]: [KR-RC] Query timeout is set to 0s
-[ INFO] [1701440167.488575257]: [KR-RC] Waiting for actionserver to start.. Topic = knowrob/askone
-[ INFO] [1701440167.739357113]: [KR-RC] Server is ready!
-[ INFO] [1701440167.747524053]: [KR-RC] Waiting for actionserver to start.. Topic = knowrob/askall
-[ INFO] [1701440168.032018335]: [KR-RC] Server is ready!
-[ INFO] [1701440168.042977031]: [KR-RC] Waiting for actionserver to start.. Topic = knowrob/tell
-[ INFO] [1701440168.316651395]: [KR-RC] Server is ready!
-[ INFO] [1701440168.316746464]: [KR-RC] Init complete!
-[ INFO] [1701440168.316788252]: [KCN]   Sending AskAll Query: test:hasSon(A,B)
-[ INFO] [1701440168.318804522]: [KR-RC] Action finished!
-[ WARN] [1701440168.318879392]: [KR-RC] Ask All - Answers vector is empty!
-[ERROR] [1701440168.318955555]: [KCN]   AskAll false!
-[ INFO] [1701440168.319020356]: [KCN]   Sending Tell Query: test:hasSon(a,b)
-[ INFO] [1701440169.320373169]: [KR-RC] Action finished!
-[ INFO] [1701440169.320440014]: [KCN]   Tell true!
-[ INFO] [1701440169.320481001]: [KCN]   Sending AskAll Query: test:hasSon(A,B)
-[ INFO] [1701440170.322107486]: [KR-RC] Action finished!
-[ INFO] [1701440170.322165765]: [KCN]   AskAll true!
-[ INFO] [1701440170.322221109]: [KCN]   Best Answer is: [0]     [Key]=A [Value]=a
-[1]     [Key]=B [Value]=b
-```
-
-
+For easier integration into your own project, we provide [client libraries](src/ros_client/README.md)
+that you can use in your own C++ or Python application.
 
 
 ## Further Information
 
-- Sourcecode documentation is available [here](https://knowrob.github.io/knowrob/)
+More documentation can be found in the following pages:
+
+- [Python Integration](src/integration/python/README.md)
+- [ROS Integration](src/integration/ros1/README.md)
+
+In addition, the following resources are available:
+- [API Documentation](https://knowrob.github.io/knowrob/)
+- A blog and more wiki pages are available at [knowrob.org](http://www.knowrob.org)

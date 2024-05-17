@@ -1,39 +1,41 @@
 /*
- * Copyright (c) 2022, Daniel Beßler
- * All rights reserved.
- *
  * This file is part of KnowRob, please consult
  * https://github.com/knowrob/knowrob for license details.
  */
 
-// STD
 #include <utility>
-// GTEST
 #include <gtest/gtest.h>
-// KnowRob
-#include "knowrob/Logger.h"
 #include "knowrob/terms/Variable.h"
+#include "knowrob/integration/python/utils.h"
 
 using namespace knowrob;
 
-Variable::Variable(std::string name)
-: Term(TermType::VARIABLE),
-  name_(std::move(name)),
-  variables_({ this })
-{
+Variable::Variable(std::string_view name)
+		: Term(TermType::VARIABLE),
+		  nameAtom_(Atom::Tabled(name)),
+		  variables_({nameAtom_->stringForm()}) {
 }
 
-bool Variable::isEqual(const Term& other) const
-{
-    return name_ == static_cast<const Variable&>(other).name_; // NOLINT
+bool Variable::isSameVariable(const Variable &other) const {
+	return *nameAtom_ == *other.nameAtom_;
 }
 
-bool Variable::operator< (const Variable& other) const
-{
-	return (this->name_ < other.name_);
+bool Variable::operator<(const Variable &other) const {
+	return (this->nameAtom_->stringForm() < other.nameAtom_->stringForm());
 }
 
-void Variable::write(std::ostream& os) const
-{
-	os << name_;
+void Variable::write(std::ostream &os) const {
+	os << nameAtom_->stringForm();
+}
+
+namespace knowrob::py {
+	template<>
+	void createType<Variable>() {
+		using namespace boost::python;
+		class_<Variable, std::shared_ptr<Variable>, bases<Term>>
+				("Variable", init<std::string>())
+				.def(self < self)
+				.def("name", &Variable::name)
+				.def("isSameVariable", &Variable::isSameVariable);
+	}
 }

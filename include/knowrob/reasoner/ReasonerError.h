@@ -1,7 +1,4 @@
 /*
- * Copyright (c) 2022, Daniel Beßler
- * All rights reserved.
- *
  * This file is part of KnowRob, please consult
  * https://github.com/knowrob/knowrob for license details.
  */
@@ -10,12 +7,13 @@
 #define KNOWROB_REASONER_ERROR_H_
 
 #include <fmt/core.h>
+#include <knowrob/KnowRobError.h>
 
 namespace knowrob {
 	/**
 	 * A reasoner-related runtime error.
 	 */
-	class ReasonerError : public std::runtime_error {
+	class ReasonerError : public KnowRobError {
 	public:
 		/**
 		 * @tparam Args fmt-printable arguments.
@@ -23,8 +21,8 @@ namespace knowrob {
 		 * @param args list of arguments used to instantiate the pattern.
 		 */
 		template<typename ... Args>
-		explicit ReasonerError(const char *fmt, Args&& ... args)
-		: std::runtime_error(fmt::format(fmt, args...)) {}
+		explicit ReasonerError(const char *fmt, Args &&... args)
+				: KnowRobError("ReasonerError", fmt::format(fmt, args...)) {}
 	};
 }
 

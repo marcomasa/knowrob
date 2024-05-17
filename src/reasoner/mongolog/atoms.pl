@@ -22,17 +22,14 @@ The following predicates are supported:
 :- use_module('mongolog').
 
 %% query commands
-:- mongolog:add_command(atom_number).
-:- mongolog:add_command(atom_length).
-:- mongolog:add_command(atom_prefix).
-:- mongolog:add_command(atom_concat).
-:- mongolog:add_command(atomic_list_concat).
-:- mongolog:add_command(upcase_atom).
-:- mongolog:add_command(downcase_atom).
-% TODO: support term_to_atom
-% - atom parsing is a bit difficult
-% - $split can be used, but then e.g. string "7" would need to be mapped to number 7 somehow.
-%:- mongolog:add_command(term_to_atom).
+:- mongolog:add_command(atom_number,2).
+:- mongolog:add_command(atom_length,2).
+:- mongolog:add_command(atom_prefix,2).
+:- mongolog:add_command(atom_concat,3).
+:- mongolog:add_command(atomic_list_concat,2).
+:- mongolog:add_command(atomic_list_concat,3).
+:- mongolog:add_command(upcase_atom,2).
+:- mongolog:add_command(downcase_atom,2).
 
 %% query compilation
 mongolog:step_compile(
@@ -123,8 +120,6 @@ mongolog:step_compile(atom_concat(Left,Right,Atom), _, []) :-
 mongolog:step_compile(
 		atom_concat(Left,Right,Atom),
 		Ctx, Pipeline) :-
-	% FIXME: SWI Prolog allows var(Left), var(Right), atom(Atom), and then
-	%         yields all possible concatenations.
 	mongolog:var_key_or_val(Left,Ctx,Left0),
 	mongolog:var_key_or_val(Right,Ctx,Right0),
 	mongolog:var_key_or_val(Atom,Ctx,Atom0),

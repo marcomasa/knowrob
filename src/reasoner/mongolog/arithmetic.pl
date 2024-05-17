@@ -23,14 +23,14 @@ The following set of basic and special purpose predicates are supported:
 :- use_module('client', [ mng_strip_operator/3 ]).
 
 %% query commands
-:- mongolog:add_command(is).
-:- mongolog:add_command(>).
-:- mongolog:add_command(<).
-:- mongolog:add_command(=<).
-:- mongolog:add_command(>=).
-:- mongolog:add_command(=\=).
-:- mongolog:add_command(=:=).
-:- mongolog:add_command(between).
+:- mongolog:add_command(is,2).
+:- mongolog:add_command(>,2).
+:- mongolog:add_command(<,2).
+:- mongolog:add_command(=<,2).
+:- mongolog:add_command(>=,2).
+:- mongolog:add_command(=\=,2).
+:- mongolog:add_command(=:=,2).
+:- mongolog:add_command(between,3).
 
 %% query compilations
 %
@@ -53,8 +53,6 @@ mongolog:step_compile(
 	mongolog:var_key_or_val(High,Ctx,High0),
 	mongolog:var_key_or_val(Value,Ctx,Value0),
 	findall(Step,
-		% TODO: conditional $set to array holding only Value if Value is given
-		%       this would avoid iteration between Low and High for faster between checking.
 		(	Step=['$set', ['t_index', ['$range',
 				array([ Low0, ['$add', array([High0, integer(1)]) ]])
 			]]]

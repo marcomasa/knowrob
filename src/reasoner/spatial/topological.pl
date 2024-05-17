@@ -7,16 +7,6 @@
 @license BSD
 */
 
-%% shape_equal(+A,?B) is nondet
-% TODO
-%shape_equal(A,B) :-
-  %fail.
-
-%% shape_disjoint(+A,?B) is nondet
-% TODO
-%shape_disjoint(A,B) :-
-  %fail.
-
 %% shape_contains(?InnerObj, ?OuterObj) is nondet.
 %
 % Check if InnerObj is contained by OuterObj. Currently does not take the orientation
@@ -28,9 +18,9 @@
 shape_contains(InnerObj, OuterObj) :-
   ground(InnerObj),
   ground(OuterObj),
-  % FIXME: hardcoded map
-  is_at(InnerObj, [map, [IX,IY,IZ], _]),
-  is_at(OuterObj, [map, [OX,OY,OZ], _]),
+  map_origin_frame(MapFrame),
+  is_at(InnerObj, [MapFrame, [IX,IY,IZ], _]),
+  is_at(OuterObj, [MapFrame, [OX,OY,OZ], _]),
   InnerObj \== OuterObj,
   %
   object_dimensions(InnerObj, ID, IW, IH),
@@ -43,28 +33,3 @@ shape_contains(InnerObj, OuterObj) :-
   =<( (IY + 0.5*IW), (OY + 0.5*OW)+0.05 ),
   >=( (IZ - 0.5*IH), (OZ - 0.5*OH)-0.05 ),
   =<( (IZ + 0.5*IH), (OZ + 0.5*OH)+0.05 ).
-
-%% shape_within(+A,?B) is nondet
-% TODO
-%shape_within(A,B) :-
-  %shape_contains(B,A).
-
-%% shape_intersects(+A,?B) is nondet
-% TODO
-%shape_intersects(A,B) :-
-  %fail.
-
-%% shape_touches(+A,?B) is nondet
-% TODO
-%shape_touches(A,B) :-
-  %fail.
-
-%% shape_covers(+A,?B) is nondet
-% TODO
-%shape_covers(A,B) :-
-  %fail.
-
-%% shape_covered_by(+A,?B) is nondet
-% TODO
-%shape_covered_by(A,B) :-
-  %shape_covers(B,A).

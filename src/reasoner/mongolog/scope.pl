@@ -1,7 +1,7 @@
 :- module(mongolog_scope,
 	[ mongolog_universal_scope/1,
 	  mongolog_scope_doc/2,
-	  mongolog_scope_intersect/5,
+	  mongolog_scope_intersect/6,
 	  mongolog_scope_is_valid/1,
 	  mongolog_scope_match/2,
 	  mongolog_time_scope/3,
@@ -47,7 +47,6 @@ mongolog_scope_is_valid(['$match',
 mongolog_scope_doc(QScope, [Key,Value]) :-
 	scope_doc1(QScope, [Key,Value]),
 	% do not proceed for variables in scope these are handled later
-	% FIXME: not sure about below, how can variables be identified?
 	(( Value=array([_,[_,[_,string(VarKey)]]]),
 	   atom_concat('$',_,VarKey) ) -> fail ; true).
 
@@ -103,7 +102,6 @@ mongolog_scope_match(Ctx, ['$expr', ['$and', array(List)]]) :-
 		])],
 		% only include variables, constants are handled earlier
 		(	scope_doc1(Scope, [ScopeKey,[Operator,string(Val0)]]),
-			% FIXME: not sure about below, how can variables be identified?
 			atom_concat('$',_,Val0),
 			atom_concat('$',ScopeKey,ScopeValue),
 			atom_concat('$',Val0,Val)
@@ -112,21 +110,22 @@ mongolog_scope_match(Ctx, ['$expr', ['$and', array(List)]]) :-
 	),
 	List \== [].
 
-%% mongolog_scope_intersect(+VarKey, +Since1, +Until1, +Options, -Step) is nondet.
+%% mongolog_scope_intersect(+VarKey, +Since1, +Until1, +Uncertain1, +Options, -Step) is nondet.
 %
 % The step expects input documents with VarKey field, and another field Since1/Until1.
 % The step uses these field to compute an intersection beteween both scopes.
 % It will fail in case the intersection is empty.
 %
-mongolog_scope_intersect(VarKey, Since1, Until1, Options, Step) :-
-	% TODO: remember if the solution is uncertain
+mongolog_scope_intersect(VarKey, Since1, Until1, Uncertain1, Options, Step) :-
 	atomic_list_concat(['$',VarKey,'.time.since'], '', Since0),
 	atomic_list_concat(['$',VarKey,'.time.until'], '', Until0),
+	atomic_list_concat(['$',VarKey,'.uncertain'], '', Uncertain0),
 	atomic_list_concat(['$',VarKey], '', VarKey0),
 	%
 	Intersect = ['time', [
 		['since', ['$max', array([string(Since0), Since1])]],
-		['until', ['$min', array([string(Until0), Until1])]]
+		['until', ['$min', array([string(Until0), Until1])]],
+		['uncertain', ['$or', array([string(Uncertain0), Uncertain1])]]
 	]],
 	% check if ignore flag if set, if so use a conditional step
 	(	memberchk(ignore, Options)
@@ -155,6 +154,7 @@ mongolog_time_scope(Scope, SinceValue, UntilValue) :-
 	time_scope_value1(Since, SinceValue),
 	time_scope_value1(Until, UntilValue).
 
+time_scope_value1(V, V) :- var(V),!.
 time_scope_value1(V0, Value) :-
 	mng_strip_operator(V0, _, V1),
 	once(time_scope_value2(V1, Value)).
@@ -170,16 +170,14 @@ time_scope_value2(Val, Typed) :- mng_typed_value(Val, Typed).
 % not known.
 %
 time_scope_data(Scope,[Since,Until]) :-
-	get_dict(since,Scope,Since),
-	get_dict(until,Scope,Until).
+	ignore(get_dict(since,Scope,Since)),
+	ignore(get_dict(until,Scope,Until)).
 
 %%
 % variables maybe used in the scope.
 % if this is the case, they must be replaced by variable keys to be referred to in queries.
 %
 mongolog_resolve_scope(In, Ctx, [query_scope(Scope1)|Rest]) :-
-    % TODO: is it sufficient to do this only for call_with_context/2? maybe it should also be
-    %       done by mongolog_call predicate?
 	select_option(query_scope(Scope0),In,Rest),!,
 	resolve_scope1(Scope0, Ctx, Scope1).
 

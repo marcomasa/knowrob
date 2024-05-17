@@ -12,9 +12,9 @@
 // STD
 #include <iostream>
 // KnowRob
-#include "knowrob/mongodb/MongoInterface.h"
+#include "knowrob/storage/mongo/MongoInterface.h"
 #include "knowrob/reasoner/mongolog/bson_pl.h"
-#include "knowrob/mongodb/Document.h"
+#include "knowrob/storage/mongo/Document.h"
 
 using namespace knowrob;
 using namespace knowrob::mongo;
@@ -22,16 +22,18 @@ using namespace knowrob::mongo;
 #define PREDICATE_COLLECTION MongoInterface::get().connect(PL_A1, (char*)PL_A2)
 #define PREDICATE_CURSOR MongoInterface::get().cursor((char*)PL_A1)
 
-class MongoPLException : public PlException, std::exception {
-public:
-    explicit MongoPLException(const MongoException &exc)
-    : PlException(PlCompound(
-        "mng_error", PlCompound(exc.contextMessage_.c_str(), PlTerm(exc.bsonMessage_.c_str()))
-    )) {}
+namespace knowrob {
+	class MongoPLException : public PlException, std::exception {
+	public:
+		explicit MongoPLException(const MongoException &exc)
+				: PlException(PlCompound(
+				"mng_error", PlCompound(exc.contextMessage_.c_str(), PlTerm(exc.bsonMessage_.c_str()))
+		)) {}
 
-    explicit MongoPLException(const std::exception &exc)
-    : PlException(PlCompound("mng_error", PlTerm(exc.what()))) {}
-};
+		explicit MongoPLException(const std::exception &exc)
+				: PlException(PlCompound("mng_error", PlTerm(exc.what()))) {}
+	};
+}
 
 static inline bson_t* termToDocument(const PlTerm &term) {
     bson_error_t err;
@@ -82,7 +84,22 @@ PREDICATE(mng_distinct_values_json,4) {
 }
 
 PREDICATE(mng_index_create_core, 3) {
-	return MongoInterface::get().connect(PL_A1)->create_index((char*)PL_A2,PL_A3);
+	static const PlAtom ATOM_minus("-");
+
+	std::vector<mongo::IndexKey> indexes;
+	PlTail pl_list(PL_A3);
+	PlTerm pl_member;
+	while (pl_list.next(pl_member)) {
+		const PlAtom mode_atom(pl_member.name());
+		const PlTerm &pl_value = pl_member[1];
+		if (mode_atom == ATOM_minus) {
+			indexes.emplace_back((char *) pl_value, mongo::IndexType::DESCENDING);
+		} else {
+			indexes.emplace_back((char *) pl_value, mongo::IndexType::ASCENDING);
+		}
+	}
+
+	return MongoInterface::get().connect(PL_A1)->create_index((char*)PL_A2,indexes);
 }
 
 

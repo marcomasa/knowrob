@@ -1,113 +1,91 @@
 /*
- * Copyright (c) 2022, Daniel Beßler
- * All rights reserved.
- *
  * This file is part of KnowRob, please consult
  * https://github.com/knowrob/knowrob for license details.
  */
 
-#ifndef KNOWROB_IREASONER_H_
-#define KNOWROB_IREASONER_H_
+#ifndef KNOWROB_REASONER_H_
+#define KNOWROB_REASONER_H_
 
 #include <memory>
-#include <filesystem>
-#include <fmt/core.h>
-
-#include "knowrob/terms/Term.h"
-#include "knowrob/reasoner/ReasonerConfiguration.h"
-#include "knowrob/DataSource.h"
-#include "knowrob/queries/AnswerBuffer.h"
-#include "knowrob/formulas/Literal.h"
-#include "knowrob/queries/GraphQuery.h"
-#include "knowrob/semweb/KnowledgeGraph.h"
+#include "knowrob/PropertyTree.h"
+#include "knowrob/terms/Atom.h"
+#include "knowrob/ontologies/DataSource.h"
+#include "knowrob/ontologies/DataSourceHandler.h"
+#include "knowrob/storage/Storage.h"
+#include "knowrob/plugins/NamedPlugin.h"
 
 namespace knowrob {
+	// forward declaration
+	class ReasonerManager;
+
 	/**
-	 * Flags indicating the capability of a reasoner.
-	 * Flags can be combined into a bitmask of all reasoner capabilities.
+	 * A reasoner is a component that can infer new knowledge.
+	 * The inference process may refer to extensional data which is stored in a DataBackend.
+	 * Note that a reasoner is also a data source handler, i.e. data which is needed
+	 * by the reasoner to operate which is not stored in a backend.
 	 */
-	enum ReasonerCapability : unsigned long {
-		CAPABILITY_NONE = 1 << 0,
-		CAPABILITY_NEGATIONS = 1 << 1,
-		/** The reasoner can answer conjunctive queries */
-		CAPABILITY_CONJUNCTIVE_QUERIES = 1 << 1,
-		/** The reasoner can answer disjunctive queries */
-		CAPABILITY_DISJUNCTIVE_QUERIES = 1 << 2,
-        CAPABILITY_TOP_DOWN_EVALUATION  = 1 << 3,
-        CAPABILITY_BOTTOM_UP_EVALUATION = 1 << 4
-	};
-	
-	/**
-	 * An interface for reasoning subsystems.
-	 */
-	class Reasoner {
+	class Reasoner : public DataSourceHandler {
 	public:
-        Reasoner();
-		virtual ~Reasoner()= default;
+		Reasoner() : reasonerManager_(nullptr) {}
 
-        /**
-         * @return ID of the manager that created the reasoner.
-         */
-        uint32_t reasonerManagerID() const { return reasonerManagerID_; }
-
-        virtual void setDataBackend(const KnowledgeGraphPtr &knowledgeGraph) = 0;
+		virtual ~Reasoner() = default;
 
 		/**
-		 * @param format
-		 * @param fn
+		 * @return a term representing the reasoner name.
 		 */
-		void addDataSourceHandler(const std::string &format,
-                                  const std::function<bool(const DataSourcePtr &)> &fn);
+		auto &reasonerName() const { return t_reasonerName_; }
 
 		/**
-		 *
-		 * @param dataSource
-		 * @return
+		 * @return the reasoner manager associated with this reasoner.
 		 */
-		bool loadDataSource(const DataSourcePtr &dataSource);
+		ReasonerManager &reasonerManager() const;
 
 		/**
-		 * Load a reasoner configuration.
-		 * The knowledge base system only calls this function once for
-		 * each reasoner instance.
+		 * Evaluate a lambda function in a worker thread.
+		 * @param fn a function to be executed.
 		 */
-		virtual bool loadConfiguration(const ReasonerConfiguration &cfg) = 0;
+		void pushWork(const std::function<void(void)> &fn);
 
 		/**
-		 * Get the description of a predicate currently defined by this reasoner.
-		 * A predicate is thought to be currently defined if the reasoner can submitQuery it.
-		 *
-		 * @param indicator a predicate indicator
-		 * @return a predicate description if the predicate is a defined one or null otherwise.
+		 * Set the data backend of this reasoner.
 		 */
-		virtual std::shared_ptr<PredicateDescription> getPredicateDescription(
-				const std::shared_ptr<PredicateIndicator> &indicator) = 0;
+		virtual void setDataBackend(const StoragePtr &backend) = 0;
 
 		/**
-		 * @return bitmask of reasoner capabilities.
+		 * Initialize a reasoner by configuring it with a property tree.
+		 * @param ptree a PropertyTree object.
 		 */
-		virtual unsigned long getCapabilities() const = 0;
+		virtual bool initializeReasoner(const PropertyTree &ptree) = 0;
 
-		/**
-		 * @param capability a reasoner capability.
-		 * @return true of this reasoner has the capability.
-		 */
-		bool hasCapability(ReasonerCapability capability) const;
+	private:
+		AtomPtr t_reasonerName_;
+		ReasonerManager *reasonerManager_;
 
-		bool canEvaluate(const RDFLiteral &literal);
+		void setReasonerManager(ReasonerManager *reasonerManager) { reasonerManager_ = reasonerManager; }
 
-        virtual AnswerBufferPtr submitQuery(const RDFLiteralPtr &literal, int queryFlags) = 0;
-
-	protected:
-		std::map<std::string, DataSourceLoader> dataSourceHandler_;
-        uint32_t reasonerManagerID_;
-
-		virtual bool loadDataSourceWithUnknownFormat(const DataSourcePtr&) { return false; }
-
-        void setReasonerManager(uint32_t managerID);
+		void setReasonerName(std::string_view name) { t_reasonerName_ = Atom::Tabled(name); }
 
 		friend class ReasonerManager;
 	};
+
+	using NamedReasoner = NamedPlugin<Reasoner>;
+	using ReasonerFactory = PluginFactory<Reasoner>;
+	using ReasonerPtr = std::shared_ptr<Reasoner>;
 }
 
-#endif //KNOWROB_IREASONER_H_
+/**
+ * Define a reasoner plugin.
+ * The macro generates two functions that are used as entry points for loading the plugin.
+ * First, a factory function is defined that creates instances of classType.
+ * This will only work when classType has a single argument constructor that
+ * accepts a string as argument (the reasoner instance ID).
+ * Second, a function is generated that exposes the plugin name.
+ * @param classType the type of the reasoner, must be a subclass of IReasoner
+ * @param pluginName a plugin identifier, e.g. the name of the reasoner type.
+ */
+#define REASONER_PLUGIN(classType, pluginName) extern "C" { \
+        std::shared_ptr<knowrob::Reasoner> knowrob_createPlugin(std::string_view pluginID) \
+            { return std::make_shared<classType>(pluginID); } \
+        const char* knowrob_getPluginName() { return pluginName; } }
+
+#endif //KNOWROB_REASONER_H_

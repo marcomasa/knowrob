@@ -1,7 +1,4 @@
 /*
- * Copyright (c) 2022, Daniel Beßler
- * All rights reserved.
- *
  * This file is part of KnowRob, please consult
  * https://github.com/knowrob/knowrob for license details.
  */
@@ -11,118 +8,181 @@
 
 #include <memory>
 #include <boost/property_tree/ptree.hpp>
-#include "knowrob/reasoner/ReasonerManager.h"
-#include "knowrob/semweb/KnowledgeGraphManager.h"
-#include "ThreadPool.h"
-#include "knowrob/queries/DependencyGraph.h"
-#include "knowrob/queries/QueryPipeline.h"
+#include <utility>
+#include "knowrob/queries/QueryContext.h"
+#include "knowrob/storage/QueryableStorage.h"
+#include "knowrob/storage/StorageManager.h"
+#include "knowrob/storage/StorageInterface.h"
+#include "knowrob/triples/GraphPathQuery.h"
+#include "knowrob/ontologies/OntologySource.h"
 
 namespace knowrob {
-    enum QueryFlag {
-        QUERY_FLAG_ALL_SOLUTIONS     = 1 << 0,
-        QUERY_FLAG_ONE_SOLUTION      = 1 << 1,
-        QUERY_FLAG_PERSIST_SOLUTIONS = 1 << 2,
-        QUERY_FLAG_UNIQUE_SOLUTIONS  = 1 << 3
-    };
+	// forward declaration
+	class ReasonerManager;
 
-    class RDFComputable : public RDFLiteral
-    {
-    public:
-        RDFComputable(const RDFLiteral &lit, const std::vector<std::shared_ptr<Reasoner>> &reasonerList)
-        : RDFLiteral(lit), reasonerList_(reasonerList) {}
-
-        const auto& reasonerList() const { return reasonerList_; }
-    protected:
-        std::vector<std::shared_ptr<Reasoner>> reasonerList_;
-    };
-    using RDFComputablePtr = std::shared_ptr<RDFComputable>;
-
-    /**
-     * The main interface to the knowledge base system implementing
-     * its 'tell' and 'ask' interface.
-     */
+	/**
+	 * The main interface to the knowledge base system implementing
+	 * its 'tell' and 'ask' interface.
+	 */
 	class KnowledgeBase {
 	public:
-	    /**
-	     * @param config a property tree used to configure this.
-	     */
+		/**
+		 * @param config a property tree used to configure this.
+		 */
 		explicit KnowledgeBase(const boost::property_tree::ptree &config);
 
-        /**
-         * Asserts a proposition into the knowledge base.
-         * @param tripleData data representing the proposition.
-         * @return true on success.
-         */
-        bool insert(const StatementData &proposition);
+		/**
+		 * @param configFile path to file that encodes a boost property tree used to configure the KB.
+		 */
+		explicit KnowledgeBase(std::string_view configFile);
 
-        /**
-         * Asserts a sequence of propositions into the knowledge base.
-         * @param tripleData data representing a list of proposition.
-         * @return true on success.
-         */
-        bool insert(const std::vector<StatementData> &propositions);
+		KnowledgeBase();
 
-        /**
-         * @return a thread pool owned by this.
-         */
-        auto& threadPool() { return *threadPool_; }
+		~KnowledgeBase();
 
-        /**
-         * @return the vocabulary of this knowledge base, i.e. all known properties and classes
-         */
-        auto vocabulary() { return backendManager_->vocabulary(); }
+		void init();
 
-        std::shared_ptr<KnowledgeGraph> centralKG();
+		void loadCommon();
 
-        /**
-         * @return import hierarchy of named graphs
-         */
-        auto importHierarchy() { return backendManager_->importHierarchy(); }
+		/**
+		 * Load a data source into the knowledge base, possibly loading it into multiple backends.
+		 * @param source the data source to load
+		 * @return true if the data source was loaded successfully
+		 */
+		bool loadDataSource(const DataSourcePtr &source);
 
-        /**
-         * Evaluate a query represented as a vector of literals.
-         * The call is non-blocking and returns a stream of answers.
-         * @param literals a vector of literals
-         * @param label an optional modalFrame label
-         * @return a stream of query results
-         */
-        AnswerBufferPtr submitQuery(const GraphQueryPtr &graphQuery);
+		/**
+		 * @return the vocabulary of this knowledge base, i.e. all known properties and classes
+		 */
+		auto &vocabulary() const { return vocabulary_; }
 
-        /**
-         * Evaluate a query represented as a Literal.
-         * The call is non-blocking and returns a stream of answers.
-         * @param query a literal
-         * @return a stream of query results
-         */
-        AnswerBufferPtr submitQuery(const LiteralPtr &query, int queryFlags);
+		auto &edb() const { return edb_; }
 
-        /**
-         * Evaluate a query represented as a Formula.
-         * The call is non-blocking and returns a stream of answers.
-         * @param query a formula
-         * @return a stream of query results
-         */
-        AnswerBufferPtr submitQuery(const FormulaPtr &query, int queryFlags);
+		auto &reasonerManager() const { return reasonerManager_; }
+
+		auto &backendManager() const { return backendManager_; }
+
+		QueryableBackendPtr getBackendForQuery() const;
+
+		/**
+		 * Evaluate a query represented as a vector of literals.
+		 * The call is non-blocking and returns a stream of answers.
+		 * @param graphQuery a graph path query
+		 * @return a stream of query results
+		 */
+		TokenBufferPtr submitQuery(const GraphPathQueryPtr &graphQuery);
+
+		/**
+		 * Evaluate a query represented as a Literal.
+		 * The call is non-blocking and returns a stream of answers.
+		 * @param query a literal
+		 * @param ctx a query context
+		 * @return a stream of query results
+		 */
+		TokenBufferPtr submitQuery(const FirstOrderLiteralPtr &query, const QueryContextPtr &ctx);
+
+		/**
+		 * Evaluate a query represented as a Formula.
+		 * The call is non-blocking and returns a stream of answers.
+		 * @param query a formula
+		 * @param ctx a query context
+		 * @return a stream of query results
+		 */
+		TokenBufferPtr submitQuery(const FormulaPtr &query, const QueryContextPtr &ctx);
+
+		/**
+		 * Insert a single triple into the knowledge base.
+		 * @param triple the triple to insert
+		 * @return true if the triple was inserted successfully
+		 */
+		bool insertOne(const FramedTriple &triple);
+
+		/**
+		 * Insert a collection of triples into the knowledge base.
+		 * @param triples the triples to insert
+		 * @return true if the triples were inserted successfully
+		 */
+		bool insertAll(const TripleContainerPtr &triples);
+
+		/**
+		 * Insert a collection of triples into the knowledge base.
+		 * @param triples the triples to insert
+		 * @return true if the triples were inserted successfully
+		 */
+		bool insertAll(const std::vector<FramedTriplePtr> &triples);
+
+		/**
+		 * Remove a single triple from the knowledge base.
+		 * @param triple the triple to remove
+		 * @return true if the triple was removed successfully
+		 */
+		bool removeOne(const FramedTriple &triple);
+
+		/**
+		 * Remove a collection of triples from the knowledge base.
+		 * @param triples the triples to remove
+		 * @return true if the triples were removed successfully
+		 */
+		bool removeAll(const TripleContainerPtr &triples);
+
+		/**
+		 * Remove a collection of triples from the knowledge base.
+		 * @param triples the triples to remove
+		 * @return true if the triples were removed successfully
+		 */
+		bool removeAll(const std::vector<FramedTriplePtr> &triples);
+
+		/**
+		 * Remove all triples with a given origin from the knowledge base.
+		 * @param origin the origin of the triples to remove
+		 * @return true if the triples were removed successfully
+		 */
+		bool removeAllWithOrigin(std::string_view origin);
 
 	protected:
+		std::shared_ptr<StorageInterface> edb_;
 		std::shared_ptr<ReasonerManager> reasonerManager_;
-		std::shared_ptr<KnowledgeGraphManager> backendManager_;
-		std::shared_ptr<ThreadPool> threadPool_;
+		std::shared_ptr<StorageManager> backendManager_;
+		std::shared_ptr<Vocabulary> vocabulary_;
+		bool isInitialized_;
 
-		void loadConfiguration(const boost::property_tree::ptree &config);
+		void configure(const boost::property_tree::ptree &config);
 
-        static std::vector<RDFComputablePtr> createComputationSequence(
-                const std::list<DependencyNodePtr> &dependencyGroup);
+		static void configurePrefixes(const boost::property_tree::ptree &config);
 
-        void createComputationPipeline(
-            const std::shared_ptr<QueryPipeline> &pipeline,
-            const std::vector<RDFComputablePtr> &computableLiterals,
-            const std::shared_ptr<AnswerBroadcaster> &pipelineInput,
-            const std::shared_ptr<AnswerBroadcaster> &pipelineOutput,
-            int queryFlags);
+		void configureDataSources(const boost::property_tree::ptree &config);
+
+		void configureBackends(const boost::property_tree::ptree &config);
+
+		void configureReasoner(const boost::property_tree::ptree &config);
+
+		void initVocabulary();
+
+		void initBackends();
+
+		void synchronizeBackends();
+
+		std::shared_ptr<NamedBackend> findSourceBackend(const FramedTriple &triple);
+
+		void startReasoner();
+
+		void stopReasoner();
+
+		std::vector<std::shared_ptr<NamedBackend>>
+		prepareLoad(std::string_view origin, std::string_view newVersion) const;
+
+		void
+		finishLoad(const std::shared_ptr<OntologySource> &source, std::string_view origin, std::string_view newVersion);
+
+		bool loadNonOntologySource(const DataSourcePtr &source) const;
+
+		bool loadOntologySource(const std::shared_ptr<OntologySource> &source);
+
+		std::optional<std::string> getVersionOfOrigin(const std::shared_ptr<NamedBackend> &definedBackend,
+													  std::string_view origin) const;
 	};
 
-    using KnowledgeBasePtr = std::shared_ptr<KnowledgeBase>;
+	using KnowledgeBasePtr = std::shared_ptr<KnowledgeBase>;
 }
 
 #endif //KNOWROB_KNOWLEDGE_BASE_H

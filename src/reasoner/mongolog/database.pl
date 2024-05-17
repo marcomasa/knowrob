@@ -33,8 +33,8 @@ The following predicates are supported:
 :- dynamic mongolog_predicate/6.
 
 %% query commands
-:- mongolog:add_command(assert).
-:- mongolog:add_command(retractall).
+:- mongolog:add_command(assert,1).
+:- mongolog:add_command(retractall,1).
 
 %% mongolog_is_readonly is det.
 %
@@ -199,11 +199,10 @@ mongolog_add_predicate(Functor, Fields, SourceID, Options) :-
 	current_reasoner_module(DstModule),
 	setup_predicate_collection(Functor, Fields, Options),
 	assertz(mongolog_predicate(Functor, Arity, Fields, DstModule, SourceID, Options)),
-	mongolog:add_command(Functor, DstModule).
+	mongolog:add_command(Functor, Arity, DstModule).
 
 %%
 setup_predicate_collection(Functor, [FirstField|_], Options) :-
-	% TODO support fields marked with -/+ here
 	option(indices(Indices), Options, [[FirstField], [source]]),
 	setup_collection(Functor, Indices).
 
@@ -219,10 +218,6 @@ mongolog_drop_predicate(Functor) :-
 	mongolog_get_db(DB, Collection, Functor),
 	retractall(mongolog_predicate(Functor, _, _, _, _, _)),
 	mng_drop(DB, Collection).
-
-%%
-mongolog:step_expand(project(Term), assert(Term)) :-
-	mongolog_predicate(Term, _, _, _, _, _),!.
 
 %%
 mongolog:step_compile(assert(Term), Ctx, Pipeline, StepVars) :-

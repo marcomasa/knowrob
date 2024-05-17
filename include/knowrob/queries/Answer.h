@@ -1,132 +1,154 @@
 /*
- * Copyright (c) 2022, Daniel Beßler
- * All rights reserved.
- *
  * This file is part of KnowRob, please consult
  * https://github.com/knowrob/knowrob for license details.
  */
 
-#ifndef KNOWROB_QUERY_RESULT_H_
-#define KNOWROB_QUERY_RESULT_H_
+#ifndef KNOWROB_ANSWER_H_
+#define KNOWROB_ANSWER_H_
 
-#include <memory>
-#include <list>
-#include <optional>
-#include <ostream>
-#include "knowrob/terms/Term.h"
-#include "knowrob/terms/PredicateInstance.h"
-#include "knowrob/modalities/TimeInterval.h"
+#include "Token.h"
+#include "Query.h"
+#include "knowrob/terms/Atom.h"
 
 namespace knowrob {
 	/**
-	 * The result of query evaluation.
-	 * A result indicates that the evaluation succeeded, i.e.,
-	 * that a reasoner was able to find an instance of the query that is true.
+	 * The answer to a (sub)-query. It can be positive, negative or neither.
 	 */
-	class Answer {
+	class Answer : public Token {
 	public:
-		Answer();
+		Answer()
+				: Token(TokenType::ANSWER_TOKEN),
+				  frame_(std::make_shared<GraphSelector>()) {}
+
+		Answer(const Answer &other)
+				: Token(TokenType::ANSWER_TOKEN),
+				  frame_(other.frame_),
+				  reasonerTerm_(other.reasonerTerm_) {};
 
 		/**
-		 * Copy another result.
-		 * Modification of the constructed result won't affect the copied one.
-		 * @param other another query result.
+		 * The answer is framed in the context of a graph selector which determines
+		 * the set of graphs in which the answer is valid.
+		 * This can be used to e.g. address graphs that represent the world state from the
+		 * perspective of a specific agent, or a specific point in time.
+		 * @return a graph selector.
 		 */
-		Answer(const Answer &other);
+		auto &frame() const { return frame_; }
 
 		/**
-		 * @return a positive result without additional constraints.
+		 * Assign a graph selector to this answer.
+		 * @param frame a graph selector.
 		 */
-		static const std::shared_ptr<const Answer>& emptyAnswer();
-
-        /**
-         * @return true if truth of this answer is certain.
-         */
-        bool isCertain() const { return !isUncertain_; }
-
-        /**
-         * @return true if truth of this answer is uncertain.
-         */
-        bool isUncertain() const { return isUncertain_; }
-
-        void setIsUncertain(bool isUncertain) { isUncertain_ = (isUncertain_ || isUncertain); }
-
-        /**
-         * @return an optional time interval of this answer being true.
-         */
-        const auto& timeInterval() const { return timeInterval_; }
-
-        void setTimeInterval(const TimeInterval &timeInterval) { timeInterval_ = timeInterval; }
+		void setFrame(const std::shared_ptr<GraphSelector> &frame);
 
 		/**
-		 * Adds to this result a substitution of a variable with a term.
-		 * @param var a variable
-		 * @param term a term
+		 * Apply a frame to this answer.
+		 * @param frame a graph selector.
 		 */
-		void substitute(const Variable &var, const TermPtr &term);
+		void applyFrame(const GraphSelector &frame);
 
 		/**
-		 * @param var a variable.
-		 * @return true is this solution substitutes the variable
+		 * @return true if this answer is negative.
 		 */
-		bool hasSubstitution(const Variable &var) const;
+		bool isNegative() const { return isNegative_; }
 
 		/**
-		 * @return a mapping from variables to terms.
+		 * @return true if this answer is positive.
 		 */
-		const SubstitutionPtr& substitution() const { return substitution_; }
+		bool isPositive() const { return isPositive_; }
 
 		/**
-		 * @param reasonerModule the reasoner module the inferred the instance
-		 * @param instance an instance of a query predicate
+		 * @return true if truth of this answer is uncertain.
 		 */
-		void addPredicate(const std::shared_ptr<StringTerm> &reasonerModule,
-						  const std::shared_ptr<Predicate> &predicate);
+		bool isUncertain() const;
 
 		/**
-		 * A list of all query predicates that were instantiated to reach
-		 * this solution. Only predicates that appear in the user query are
-		 * included in this list.
-		 * @return instantiated predicates.
+		 * @return true if truth of this answer is certain.
 		 */
-		const auto& predicates() const { return predicates_; }
+		bool isCertain() const { return !isUncertain(); }
 
 		/**
-		 * Merge another query result into this one.
-		 * A merge failure is indicated by the return value, e.g. in case
-		 * both substitutions cannot be unified false is returned.
-		 * @param other another query result.
-		 * @param changes used to make the merge operation reversible, can be null.
-		 * @return false if merge is not possible.
+		 * Mark this answer as uncertain by modification of the associated frame.
+		 * @param val true if the answer is uncertain.
+		 * @param confidence the confidence value.
 		 */
-		bool combine(const std::shared_ptr<const Answer> &other, Reversible *changes=nullptr);
+		void setIsUncertain(bool val, std::optional<double> confidence);
 
-        /**
-         * @return the hash of this.
-         */
-		size_t computeHash() const;
+		/**
+		 * @return true if truth of this answer is uncertain.
+		 */
+		bool isOccasionallyTrue() const;
+
+		/**
+		 * @return true if truth of this answer is certain.
+		 */
+		bool isAllwaysTrue() const { return !isOccasionallyTrue(); }
+
+		/**
+		 * Mark this answer as occasionally true.
+		 * @param val true if the answer is occasionally true.
+		 */
+		void setIsOccasionallyTrue(bool val);
+
+		/**
+		 * @return the name of the reasoner that was used to generate this answer.
+		 */
+		void setReasonerTerm(const AtomPtr &reasonerTerm) { reasonerTerm_ = reasonerTerm; }
+
+		/**
+		 * @return the name of the reasoner that was used to generate this answer.
+		 */
+		auto &reasonerTerm() const { return reasonerTerm_; }
+
+		/**
+		 * @return the hash of this answer.
+		 */
+		size_t hashOfAnswer() const;
+
+		/**
+		 * @return a string representation of this answer.
+		 */
+		std::string stringFormOfAnswer() const;
+
+		/**
+		 * @return a human readable string representation of this answer.
+		 */
+		std::string humanReadableForm() const;
 
 	protected:
-		SubstitutionPtr substitution_;
-		std::list<PredicateInstance> predicates_;
-        std::optional<TimeInterval> timeInterval_;
-        bool isUncertain_;
+		std::shared_ptr<GraphSelector> frame_;
+		AtomPtr reasonerTerm_;
+		bool isPositive_ = false;
+		bool isNegative_ = false;
 
-		friend class AllocatedQuery;
+		void setIsPositive(bool val) { isPositive_ = val; }
+
+		void setIsNegative(bool val) { isNegative_ = val; }
 	};
+
 	// alias
 	using AnswerPtr = std::shared_ptr<const Answer>;
-	using AnswerMap = std::map<uint32_t, std::list<AnswerPtr>>;
 
-    class QueryResultHandler {
-    public:
-        virtual bool pushQueryResult(const AnswerPtr &solution) = 0;
-    };
+	/**
+	 * Merge two answers into one.
+	 * @param a a answer.
+	 * @param b a answer.
+	 * @param ignoreInconsistencies if true, inconsistencies are ignored.
+	 * @return a merged answer.
+	 */
+	AnswerPtr mergeAnswers(const AnswerPtr &a, const AnswerPtr &b, bool ignoreInconsistencies);
 
+	/**
+	 * Used to compare answers.
+	 */
+	struct AnswerComparator {
+		bool operator()(const AnswerPtr &v0, const AnswerPtr &v1) const;
+	};
+
+	/**
+	 * A set that removes duplicate answers.
+	 */
+	using AnswerSet = std::set<AnswerPtr, AnswerComparator>;
+	using AnswerHandler = std::function<void(const AnswerPtr &)>;
 }
 
-namespace std {
-	std::ostream& operator<<(std::ostream& os, const knowrob::Answer& solution);
-}
-
-#endif //KNOWROB_QUERY_RESULT_H_
+#endif //KNOWROB_ANSWER_H_

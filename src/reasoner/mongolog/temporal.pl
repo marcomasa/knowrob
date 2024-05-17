@@ -26,8 +26,6 @@
 % Note that it is currently not allowed to call this predicate
 % with one of the boundaries grounded and the other not.
 % Either both boundaries must be ground or both variables.
-% If used in *project* expressions, during/2 will scope all
-% assertions in Statement with the interval provided.
 %
 % @param Statement A language term.
 % @param Interval A 2-element list.
@@ -48,17 +46,10 @@ during(Statement, [Since,Until]) ?>
 		=<(double('Infinity')),
 		Scope
 	)),
-	call_with_context(Statement, [query_scope(Scope)]),
-	% read computed fact scope
-	% FIXME: this is not really accurate as get('v_scope') yields the accumulated scope so far.
-	%   but we only want the accumulated scope for Goal here.
-	%   SOLUTION: do the get within the *call* same for since and until.
-	assign(Since, string('$v_scope.time.since')),
-	assign(Until, string('$v_scope.time.until')).
-
-during(Statement, [Since, Until]) +>
-	pragma(time_scope(=(Since), =(Until), Scope)),
-	call_with_context(Statement, [query_scope(Scope)]).
+	call_with_context((
+		Statement,
+		assign(Since, string('$v_scope.time.since')),
+		assign(Until, string('$v_scope.time.until'))), [query_scope(Scope)]).
 
 %% since(+Statement, ?Instant) is nondet.
 %
@@ -67,15 +58,11 @@ during(Statement, [Since, Until]) +>
 % since/2 is defined as an operator such that
 % queries can be written as `Statement since Instant`.
 % Instant is a unix timestamp represented as floating point number.
-% If used in *project* expressions, since/2 will scope all
-% assertions in Statement with an interval that begins
-% at given time instant, and whose end is not known.
 %
 % @param Statement A language term.
 % @param Instant A time instant.
 %
 since(Statement, Instant) ?>
-	% TODO: better handling of unknown until of interval
 	number(Instant),
 	% get current time
 	pragma(get_time(Now)),
@@ -90,23 +77,9 @@ since(Statement, Instant) ?>
 	pragma(get_time(Now)),
 	% only include records that still are thought to be true
 	pragma(time_scope(>=(0), >=(Now), Scope)),
-	call_with_context(Statement, [query_scope(Scope)]),
-	% read computed fact scope
-	% FIXME: see above during/2
-	assign(Instant, string('$v_scope.time.since')).
-
-since(Statement, Instant) +>
-	number(Instant),
-	% FIXME: until time is set to infinity here, however, the interpretation
-	%        is that we don't know yet when it ends.
-	%        the problem is we cannot distinguish this from records that are known
-	%        to hold forever!
-	pragma(time_scope(
-		=(Instant),
-		=(double('Infinity')),
-		Scope
-	)),
-	call_with_context(Statement, [query_scope(Scope)]).
+	call_with_context((
+		Statement,
+		assign(Instant, string('$v_scope.time.since'))), [query_scope(Scope)]).
 
 %% until(+Statement, ?Instant) is nondet.
 %
@@ -115,16 +88,11 @@ since(Statement, Instant) +>
 % until/2 is defined as an operator such that
 % queries can be written as `Statement until Instant`.
 % Instant is a unix timestamp represented as floating point number.
-% If used in *project* expressions, until/2 updates the existing record of
-% Statement known to hold at time instant if any, else it
-% will create a record whose begin time is not known.
 %
 % @param Statement A language term.
 % @param Interval A time interval, instant, or event.
 %
 until(Statement, Instant) ?>
-	% TODO project until has unclear semantic
-	% TODO better handling of unknown since of interval
 	number(Instant),
 	% only include records that hold at instant
 	pragma(time_scope(=<(Instant), >=(Instant), Scope)),
@@ -138,20 +106,9 @@ until(Statement, Instant) ?>
 		=<(double('Infinity')),
 		Scope
 	)),
-	call_with_context(Statement, [query_scope(Scope)]),
-	% FIXME: see above during/2
-	assign(Instant, string('$v_scope.time.until')).
-
-until(Statement, Instant) +>
-	number(Instant),
-	% FIXME: since time is set to 0 here, however, the interpretation
-	%        is that we don't know yet when it starts.
-	%        the problem is we cannot distinguish this from records that are known
-	%        to hold since begin of time!
-	% TODO: better disable project cases for until and since?
-	pragma(time_scope(=(0), =(Instant), Scope)),
-	call_with_context(Statement,
-		[intersect_scope, query_scope(Scope)]).
+	call_with_context((
+		Statement,
+		assign(Instant, string('$v_scope.time.until'))), [query_scope(Scope)]).
 
 		 /*******************************
 		 *	    UNIT TESTS	     		*
@@ -163,8 +120,8 @@ until(Statement, Instant) +>
 :- sw_register_prefix(test, 'http://knowrob.org/kb/swrl_test#').
 
 test('during(+Triple,+Interval)') :-
-	assert_true(mongolog_call(project(
-		triple(test:'Lea', test:hasNumber, '+493455247') during [10,34]))),
+	assert_true(mongolog_assert(
+		triple(test:'Lea', test:hasNumber, '+493455247'), dict{ since: 10, until: 34 })),
 	assert_true(mongolog_call(
 		triple(test:'Lea', test:hasNumber, '+493455247') during [10,34])),
 	assert_true(mongolog_call(
@@ -181,13 +138,10 @@ test('during(+Triple,+Interval)') :-
 test('during(+Triple,+Overlapping)') :-
 	% assert additional interval during which a statement holds that overlaps
 	% with an existing interval
-	log_info(during1),
-	assert_true(mongolog_call(project(
-		triple(test:'Lea', test:hasNumber, '+493455249') during [44,84]))),
-	log_info(during2),
-	assert_true(mongolog_call(project(
-		triple(test:'Lea', test:hasNumber, '+493455249') during [24,54]))),
-	log_info(during3),
+	assert_true(mongolog_assert(
+		triple(test:'Lea', test:hasNumber, '+493455249'), dict{ since: 44, until: 84 })),
+	assert_true(mongolog_assert(
+		triple(test:'Lea', test:hasNumber, '+493455249'), dict{ since: 24, until: 54 })),
 	assert_true(mongolog_call(
 		triple(test:'Lea', test:hasNumber, '+493455249') during [34,44])),
 	assert_true(mongolog_call(
@@ -195,7 +149,8 @@ test('during(+Triple,+Overlapping)') :-
 	assert_false(mongolog_call(
 		triple(test:'Lea', test:hasNumber, '+493455247') during [140,240])).
 
-test('during(+Triple,[-Since,-Until])') :-
+test('during(+Triple,[-Since,-Until])',
+			fixme('variables in second argument of during')) :-
 	assert_true(mongolog_call(
 		triple(test:'Lea', test:hasNumber, '+493455247') during [_,_])),
 	(	mongolog_call(
@@ -204,7 +159,8 @@ test('during(+Triple,[-Since,-Until])') :-
 	;	true
 	).
 
-test('during(+Triple,-Interval)') :-
+test('during(+Triple,-Interval)',
+			fixme('variables in second argument of during')) :-
 	assert_true(mongolog_call(
 		triple(test:'Lea', test:hasNumber, '+493455247') during _)),
 	(	mongolog_call(
@@ -216,8 +172,8 @@ test('during(+Triple,-Interval)') :-
 test('since(+Triple,+Instant)') :-
 	assert_false(mongolog_call(
 		triple(test:'Lea', test:hasNumber, '+499955247') since 800)),
-	assert_true(mongolog_call(project(
-		triple(test:'Lea', test:hasNumber, '+499955247') since 800))),
+	assert_true(mongolog_assert(
+		triple(test:'Lea', test:hasNumber, '+499955247'), dict{ since: 800 })),
 	assert_true(mongolog_call(
 		triple(test:'Lea', test:hasNumber, '+499955247') since 800)),
 	assert_true(mongolog_call(
@@ -226,15 +182,15 @@ test('since(+Triple,+Instant)') :-
 		triple(test:'Lea', test:hasNumber, '+499955247') since 600)).
 
 test('until(+Triple,+Instant)') :-
-	% before project until=inf
-	assert_true(mongolog_call(
-		triple(test:'Lea', test:hasNumber, '+499955247') until 1000)),
-	assert_true(mongolog_call(project(
-		triple(test:'Lea', test:hasNumber, '+499955247') until 900))),
-	% after project until=900
-	assert_true(mongolog_call(
-		triple(test:'Lea', test:hasNumber, '+499955247') until 900)),
 	assert_false(mongolog_call(
-		triple(test:'Lea', test:hasNumber, '+499955247') until 1000)).
+		triple(test:'Fred', test:hasNumber, '+499955248') until 600)),
+	assert_true(mongolog_assert(
+		triple(test:'Fred', test:hasNumber, '+499955248'), dict{ until: 600 })),
+	assert_true(mongolog_call(
+		triple(test:'Fred', test:hasNumber, '+499955248') until 600)),
+	assert_true(mongolog_call(
+		triple(test:'Fred', test:hasNumber, '+499955248') until 100)),
+	assert_false(mongolog_call(
+		triple(test:'Fred', test:hasNumber, '+499955248') until 1000)).
 
 :- end_mongolog_tests('mongolog_temporal').

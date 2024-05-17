@@ -1,7 +1,4 @@
 /*
- * Copyright (c) 2022, Daniel Beßler
- * All rights reserved.
- *
  * This file is part of KnowRob, please consult
  * https://github.com/knowrob/knowrob for license details.
  */
@@ -9,44 +6,54 @@
 #ifndef KNOWROB_QUERY_H_
 #define KNOWROB_QUERY_H_
 
-#include <memory>
 #include <ostream>
-#include <optional>
-#include "knowrob/formulas/Predicate.h"
 #include <knowrob/formulas/Formula.h>
-#include "knowrob/modalities/TimeInterval.h"
-#include "knowrob/modalities/ConfidenceInterval.h"
+#include "QueryContext.h"
 
 namespace knowrob {
+	QueryContextPtr DefaultQueryContext();
+
+	QueryContextPtr OneSolutionContext();
+
 	/**
-	 * A query represented by a propositional formula.
-	 * @deprecated use Formula instead
+	 * A baseclass for queries. The only commitment is that queries are evaluated
+	 * within a certain context. The context defines additional parameters for the evaluation.
 	 */
 	class Query {
 	public:
 		/**
-		 * @formula the formula associated to this query.
+		 * @param ctx the query context.
 		 */
-        explicit Query(int flags) : flags_(flags) {}
-
-        static int defaultFlags();
-
-        int flags() const { return flags_; }
-
-        virtual std::ostream& print(std::ostream &os) const = 0;
+		explicit Query(QueryContextPtr ctx = DefaultQueryContext()) : ctx_(std::move(ctx)) {}
 
 		/**
-		 * @return the formula associated to this query.
+		 * @return the query context.
 		 */
-        virtual const FormulaPtr& formula() const = 0;
+		auto &ctx() const { return ctx_; }
+
+		/**
+		 * @param ctx the query context.
+		 */
+		void setContext(QueryContextPtr ctx) { ctx_ = std::move(ctx); }
 
 	protected:
-		const int flags_;
+		QueryContextPtr ctx_;
+
+		virtual void write(std::ostream &os) const = 0;
+
+		friend struct QueryWriter;
+	};
+
+	/**
+	 * Writes a term into an ostream.
+	 */
+	struct QueryWriter {
+		QueryWriter(const Query &q, std::ostream &os) { q.write(os); }
 	};
 }
 
 namespace std {
-	std::ostream& operator<<(std::ostream& os, const knowrob::Query& q);
+	std::ostream &operator<<(std::ostream &os, const knowrob::Query &q);
 }
 
 #endif //KNOWROB_QUERY_H_

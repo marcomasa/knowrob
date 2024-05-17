@@ -105,14 +105,23 @@ namespace knowrob {
 								  uint32_t max_files=4);
 
 		/**
+		 * @param sinkType the type of the sink to configure.
 		 * @param log_level the logging level for the console sink.
 		 */
 		static void setSinkLevel(SinkType sinkType, spdlog::level::level_enum log_level);
 
 		/**
+		 * @param sinkType the type of the sink to configure.
 		 * @param pattern the logging pattern for the console sink.
 		 */
 		static void setSinkPattern(SinkType sinkType, const std::string &pattern);
+
+		/**
+		 * @param name the name of a component.
+		 * @param type the type of action that failed.
+		 * @return a formatted error message.
+		 */
+		static std::string formatGenericFailure(const std::string &name, const std::string &type);
 
 	protected:
 		// hide implementation details
@@ -126,5 +135,35 @@ namespace knowrob {
 		static Logger& get();
 	};
 }
+
+/**
+ * Catch any exception that `goal` may throw and log it as an error.
+ */
+#define KB_LOGGED_TRY_CATCH(name, type, goal) do { \
+	try { goal } \
+	catch (const boost::python::error_already_set&) \
+	{ LOG_KNOWROB_ERROR(PythonError(), Logger::formatGenericFailure(name,type)); } \
+	catch (KnowRobError &e) \
+	{ LOG_KNOWROB_ERROR(e, Logger::formatGenericFailure(name,type)); } \
+	catch (std::exception &e) \
+	{ KB_ERROR("{}: {}", Logger::formatGenericFailure(name,type), e.what()); } \
+	catch (...) \
+	{ KB_ERROR("{}: unknown failure.", Logger::formatGenericFailure(name,type)); }  \
+} while(0)
+
+/**
+ * Catch any exception that `goal` may throw and log it as an error.
+ */
+#define KB_LOGGED_TRY_EXCEPT(name, type, goal, except) do { \
+	try { goal } \
+	catch (const boost::python::error_already_set&) \
+	{ LOG_KNOWROB_ERROR(PythonError(), Logger::formatGenericFailure(name,type)); except } \
+	catch (KnowRobError &e) \
+	{ LOG_KNOWROB_ERROR(e, Logger::formatGenericFailure(name,type)); except } \
+	catch (std::exception &e) \
+	{ KB_ERROR("{}: {}", Logger::formatGenericFailure(name,type), e.what()); except } \
+	catch (...) \
+	{ KB_ERROR("{}: unknown failure.", Logger::formatGenericFailure(name,type)); except }  \
+} while(0)
 
 #endif //KNOWROB_LOGGING_H_

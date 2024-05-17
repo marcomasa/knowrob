@@ -1,37 +1,61 @@
-//
-// Created by daniel on 21.03.23.
-//
+/*
+ * This file is part of KnowRob, please consult
+ * https://github.com/knowrob/knowrob for license details.
+ */
 
 #ifndef KNOWROB_QUERY_PARSER_H
 #define KNOWROB_QUERY_PARSER_H
 
 #include "knowrob/formulas/Formula.h"
 #include "knowrob/formulas/Predicate.h"
+#include "knowrob/terms/Function.h"
 
 namespace knowrob {
-	// note: forward declared to avoid including parser library in the header.
-	//       struct is defined in c++ file.
-	struct ParserRules;
-
-    /**
-     * Constructs formulae from strings.
-     */
-    class QueryParser {
-    protected:
-        QueryParser();
-        ~QueryParser();
-
-        static ParserRules* get();
-
+	/**
+	 * Constructs formulae from strings.
+	 */
+	class QueryParser {
 	public:
+		/**
+		 * Parse a query string into a formula.
+		 *
+		 * @param queryString the query string.
+		 * @return the parsed formula.
+		 */
 		static FormulaPtr parse(const std::string &queryString);
 
-        static PredicatePtr parsePredicate(const std::string &queryString);
+		/**
+		 * Parse a query string into a predicate.
+		 *
+		 * @param queryString the query string.
+		 * @return the parsed predicate.
+		 */
+		static PredicatePtr parsePredicate(const std::string &queryString);
 
-        static TermPtr parseConstant(const std::string &queryString);
+		/**
+		 * Parse a query string into a function.
+		 *
+		 * @param queryString the query string.
+		 * @return the parsed function.
+		 */
+		static FunctionPtr parseFunction(const std::string &queryString);
 
-	protected:
-		ParserRules *bnf_;
+		/**
+		 * Parse a query string into a constant term.
+		 *
+		 * @param queryString the query string.
+		 * @return the parsed constant term.
+		 */
+		static TermPtr parseConstant(const std::string &queryString);
+
+		/**
+		 * Parse a query string into a raw atom.
+		 *
+		 * @param queryString the query string.
+		 * @return the parsed raw atom.
+		 */
+		static std::string parseRawAtom(const std::string &queryString);
+
 	};
 
 } // knowrob

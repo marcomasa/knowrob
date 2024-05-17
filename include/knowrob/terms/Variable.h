@@ -1,7 +1,4 @@
 /*
- * Copyright (c) 2022, Daniel Beßler
- * All rights reserved.
- *
  * This file is part of KnowRob, please consult
  * https://github.com/knowrob/knowrob for license details.
  */
@@ -12,6 +9,7 @@
 #include <string>
 #include <ostream>
 #include "Term.h"
+#include "Atom.h"
 
 namespace knowrob {
 	/**
@@ -24,40 +22,45 @@ namespace knowrob {
 		/**
 		 * @name the name of the variable.
 		 */
-		explicit Variable(std::string name);
+		explicit Variable(std::string_view name);
 
 		/**
 		 * @param other another variable.
 		 * @return true if this name is alphabetically before other
 		 */
-		bool operator< (const Variable& other) const;
-		
+		bool operator<(const Variable &other) const;
+
+		/**
+		 * @param other another variable.
+		 * @return true if the names of the two variables are the same.
+		 */
+		bool isSameVariable(const Variable &other) const;
+
 		/**
 		 * @return the name of this variable.
 		 */
-		const std::string& name() const { return name_; }
-		
-		// Override Term
-		bool isGround() const override { return false; }
-		
-		// Override Term
-		bool isAtomic() const override { return false; }
+		std::string_view name() const { return nameAtom_->stringForm(); }
+
+		/**
+		 * @return the name of this variable.
+		 */
+		const AtomPtr &nameAtom() const { return nameAtom_; }
 
 		// Override Term
-		const VariableSet& getVariables() override { return variables_; }
-		
-		// Override Term
-		void write(std::ostream& os) const override;
-
-		// Override Term
-        size_t computeHash() const override { return std::hash<std::string>{}(name_); }
+		const std::set<std::string_view> &variables() const override { return variables_; }
 
 	protected:
-		const std::string name_;
-		const VariableSet variables_;
+		const AtomPtr nameAtom_;
+		const std::set<std::string_view> variables_;
 
 		// Override Term
-		bool isEqual(const Term &other) const override;
+		void write(std::ostream &os) const override;
+	};
+
+	using VariablePtr = std::shared_ptr<Variable>;
+
+	struct VariablePtrComparator {
+		bool operator()(const VariablePtr &lhs, const VariablePtr &rhs) const { return *lhs < *rhs; }
 	};
 }
 

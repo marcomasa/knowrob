@@ -18,13 +18,10 @@ The following predicates are supported:
 :- use_module('mongolog').
 
 %% query commands
-:- mongolog:add_command(functor).
-:- mongolog:add_command(arg).
-:- mongolog:add_command(copy_term).
-% TODO: support more term commands
-%:- mongolog:add_command(same_term).
-%:- mongolog:add_command(term_variables).
-:- mongolog:add_command(=..).
+:- mongolog:add_command(functor,3).
+:- mongolog:add_command(arg,3).
+:- mongolog:add_command(copy_term,2).
+:- mongolog:add_command(=..,2).
 
 %% functor(?Term, ?Name, ?Arity) [ISO]
 % True when Term is a term with functor Name/Arity.
@@ -61,14 +58,8 @@ mongolog:step_compile(functor(Term,Functor,Arity), Ctx, Pipeline) :-
 % argument number. Backtracking yields alternative solutions.
 %
 mongolog:step_compile(arg(Arg,Term,Value), Ctx, Pipeline) :-
-	% TODO: support var(Arg),var(Value):
-	%	- list all args with their index
-	%	- first add indices to list, then $unwind
-	% FIXME: arg also need to handle var unification as in:
-	%         arg(0,foo(X),Y) would imply X=Y
-	%		- can be handled with conditional $set, add [X,Y] to
-	%         var array if both of them are vars
-	%
+	% Note: Variable unification as in `arg(0,foo(X),Y)` would imply X=Y but is not supported here.
+	% Could be handled with conditional $set, add [X,Y] to var array if both of them are vars.
 	mongolog:var_key_or_val(Arg,Ctx,Arg0),
 	mongolog:var_key_or_val(Term,Ctx,Term0),
 	mongolog:var_key_or_val(Value,Ctx,Value0),
@@ -130,11 +121,9 @@ mongolog:step_compile(copy_term(In,Out), Ctx, Pipeline) :-
 % This predicate is called "Univ". 
 %
 mongolog:step_compile(=..(Term,List), Ctx, Pipeline) :-
-	% FIXME: it won't work to unify two variables with univ yet, as in:
-	%			foo(X,a) =.. [foo,Z,a] would imply X=Z which is not handled here yet!
-	%          - needs additional map/filter operation
-	%				- get args that are different vars in list and term, then add to var array
-	%
+	% Note: It won't work to unify two variables with univ yet, as in `foo(X,a) =.. [foo,Z,a]`.
+	% It would imply X=Z which is not handled here yet! needs additional map/filter operation.
+	% e.g. get args that are different vars in list and term, then add to var array
 	mongolog:var_key_or_val(Term,Ctx,Term0),
 	mongolog:var_key_or_val(List,Ctx,List0),
 	findall(Step,
@@ -204,7 +193,8 @@ test('arg(-Index,+Term,+Value)'):-
 	assert_false(mongolog:test_call(
 		arg(_,foo(a,b,c),Value), Value, d)).
 
-test('arg(-UnwindedIndex,+Term,+Value)', fixme('$indexOfArray only returns the first occurence')):-
+test('arg(-UnwindedIndex,+Term,+Value)',
+			fixme('$indexOfArray only returns the first occurence')):-
 	findall(Index,
 		mongolog:test_call(
 			arg(Index,foo(a,b,a),Value), Value, a),

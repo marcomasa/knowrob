@@ -295,40 +295,15 @@ swrl_is_builtin(Predicate) :-
   clause(swrl:swrl_builtin(Predicate,_,_,_),_).
 
 swrl_match_instance(IRI,Name,_) :-
-  atom(IRI),!,
-  rdf_split_url(_, Name, IRI).
-
-% FIXME: swrl_match_instance called with invalid input a lot, can be avoided?
-swrl_match_instance(_,'?',_)     :- !, fail.
-swrl_match_instance(_,'(',_)     :- !, fail.
-swrl_match_instance(_,'not',_)   :- !, fail.
-swrl_match_instance(_,'true',_)  :- !, fail.
-swrl_match_instance(_,'false',_) :- !, fail.
-swrl_match_instance(_,Name,_)    :- swrl_is_builtin(Name), !, fail.
+  atom(IRI),
+  rdf_split_url(_, Name, IRI),
+  !.
 
 swrl_match_instance(IRI,Name,_NS) :-
-	var(IRI), atom(Name),
-	% get cached IRI
-	swrl_iri(Name, IRI),
-	!.
+  var(IRI), atom(Name),
+  swrl_iri(Name, IRI),
+  !.
 
 swrl_match_instance(IRI,Name,NS) :-
-	var(IRI), atom(Name), atom(NS),
-	% try to use user-specified namespace to find the entity
-	atom_concat(NS,Name,IRI),
-	% check if IRI is a currently defined IRI
-	swrl_subject(IRI),!,
-	assertz(swrl_iri(Name,IRI)).
-
-swrl_match_instance(IRI,Name,NS) :-
-	var(IRI), atom(Name),
-	% TODO: find IRI with Name as suffix
-	log_warn(swrl(match_instance(Name,NS))),
-	fail,
-	%atomic_list_concat(['^.*#',Name,'$'],Pattern),
-	%kb_call(once(triple(regex(Pattern)->IRI,rdf:type,_))),!,
-	assertz(swrl_iri(Name,IRI)).
-
-swrl_match_instance(IRI,Name,NS) :-
-	throw(error(existence_error(instance,Name),
-	            swrl_match_instance(IRI,Name,NS))).
+  var(IRI), atom(Name), atom(NS),
+  atom_concat(NS,Name,IRI).

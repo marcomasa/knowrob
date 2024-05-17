@@ -13,40 +13,38 @@
 #include <memory>
 // KnowRob
 #include "knowrob/terms/Term.h"
-#include "knowrob/mongodb/MongoKnowledgeGraph.h"
+#include "knowrob/storage/mongo/MongoKnowledgeGraph.h"
 #include "knowrob/reasoner/Reasoner.h"
 #include "knowrob/reasoner/prolog/PrologReasoner.h"
 
 namespace knowrob {
 	class MongologReasoner : public PrologReasoner {
 	public:
-		explicit MongologReasoner(const std::string &reasonerID);
+		MongologReasoner();
 
 		~MongologReasoner() override;
 
-        unsigned long getCapabilities() const override;
+		//bool projectIntoEDB(const Statement &statement) override;
 
-        //bool projectIntoEDB(const Statement &statement) override;
+		//bool exportData(const std::filesystem::path &path) override;
 
-        //bool exportData(const std::filesystem::path &path) override;
+		//bool importData(const std::filesystem::path &path) override;
 
-        //bool importData(const std::filesystem::path &path) override;
+		bool initializeReasoner(const PropertyTree &cfg) override;
 
-        bool loadConfiguration(const ReasonerConfiguration &cfg) override;
+		void setDataBackend(const StoragePtr &backend) override;
 
-        void setDataBackend(const KnowledgeGraphPtr &knowledgeGraph) override;
+		const auto &knowledgeGraph() const { return knowledgeGraph_; }
 
-        const auto& knowledgeGraph() const { return knowledgeGraph_; }
-		
 	protected:
-	    std::shared_ptr<MongoKnowledgeGraph> knowledgeGraph_;
+		std::shared_ptr<MongoKnowledgeGraph> knowledgeGraph_;
 
 		// Override PrologReasoner
-		const functor_t& callFunctor() override;
+		std::string_view callFunctor() override;
 
 		// Override PrologReasoner
 		bool initializeDefaultPackages() override;
-    };
+	};
 }
 
 #endif //KNOWROB_MONGOLOG_REASONER_H_

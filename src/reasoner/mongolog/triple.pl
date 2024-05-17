@@ -2,8 +2,7 @@
         [ mng_triple_doc(t,-,t),
           triple(t,t,t),
           get_unique_name(r,-),
-          is_unique_name(r),
-          drop_graph(+)
+          is_unique_name(r)
         ]).
 /** <module> Handling of triples in query expressions.
 
@@ -19,7 +18,7 @@ The following predicates are supported:
 
 :- use_module(library('semweb/rdf_db'),
 		[ rdf_meta/1, rdf_equal/2 ]).
-:- use_module(library('blackboard'),
+:- use_module(library('reasoner'),
 		[ current_reasoner_module/1 ]).
 :- use_module('client').
 :- use_module(library('mongolog/mongolog')).
@@ -30,11 +29,7 @@ The following predicates are supported:
 :- rdf_meta(triple(t,t,t)).
 
 %% register query commands
-:- mongolog:add_command(triple).
-
-
-%%
-mongolog:step_expand(project(triple(S,P,O)), assert(triple(S,P,O))) :- !.
+:- mongolog:add_command(triple,3).
 
 %%
 mongolog:step_compile(assert(triple(S,P,term(O))), Ctx, Pipeline, StepVars) :-
@@ -54,7 +49,7 @@ mongolog:step_compile(assert(triple(S,P,O)), CtxIn, Pipeline, StepVars) :-
 	extend_context(triple(S,P,O), P1, Ctx, Ctx0),
 	option(collection(Collection), Ctx0),
 	option(query_scope(Scope), Ctx0),
-	triple_graph(Ctx0, Graph),
+	triple_graph_for_assert(Ctx0, Graph),
 	% throw instantiation_error if one of the arguments was not referred to before
 	mongolog:all_ground([S,O], Ctx),
 	% resolve arguments
@@ -138,6 +133,7 @@ compile_ask(triple(S,P,O), Ctx, Pipeline) :-
 		;	mongolog_scope_intersect('v_scope',
 				string('$next.scope.time.since'),
 				string('$next.scope.time.until'),
+				string('$next.scope.uncertain'),
 				Ctx0, Step)
 		% update "uncertain" flag
 		;	Step=['$set', [['v_scope.uncertain', [['$or', array([
@@ -165,7 +161,6 @@ lookup_triple(triple(S,P,V), Ctx, Step) :-
 	\+ memberchk(transitive, Ctx),
 	memberchk(collection(Coll), Ctx),
 	memberchk(step_vars(StepVars), Ctx),
-	% TODO: revise below
 	mng_triple_doc(triple(S,P,V), QueryDoc, Ctx),
 	(	memberchk(['s',_],QueryDoc)
 	->	StartValue='$start.s'
@@ -240,25 +235,24 @@ lookup_triple(triple(S,P,V), Ctx, Step) :-
 	mongolog_one_db(_DB, OneColl),
 	% infer lookup parameters
 	mng_query_value(P,Query_p),
-	% TODO: can query operators be supported?
 	mng_strip_variable(S, S0),
 	mng_strip_variable(V, V0),
 	mongolog:var_key_or_val(S0, Ctx, S_val),
 	mongolog:var_key_or_val(V0, Ctx, V_val),
-	
-	% FIXME: a runtime condition is needed to cover the case where S was
-	%        referred to in ignore'd goal that failed.
+
+	% TODO: Improve mongolog transitive triple lookup.
+	%	- support query operators
+	%   - include context parameters
+	%   - a runtime condition is needed to cover the case where S was referred to in ignore'd goal that failed.
+
 	(	has_value(S0,Ctx)
 	->	( Start=S_val, To='s', From='o', StartValue='$start.s' )
 	;	( Start=V_val, To='o', From='s', StartValue='$start.o' )
 	),
 	
-	% match doc for restring the search
+	% match doc by restricting search
 	findall(Restriction,
 		(	Restriction=['p*',Query_p]
-		% TODO: see how scope can be included
-		%;	graph_doc(Graph,Restriction)
-		%;	scope_doc(Scope,Restriction)
 		),
 		MatchDoc
 	),
@@ -302,7 +296,6 @@ lookup_triple(triple(S,P,V), Ctx, Step) :-
 	).
 
 %%
-% FIXME: need to do runtime check for ignored goals!
 %
 has_value(X, _Ctx) :-
 	ground(X),!.
@@ -392,7 +385,7 @@ triple(S,P,O) :-
 %
 mng_triple_doc(triple(S,P,V), Doc, Context) :-
 	%% read options
-	triple_graph(Context, Graph),
+	triple_graph_for_query(Context, Graph),
 	option(query_scope(Scope), Context, dict{}),
 	% special handling for some properties
 	(	taxonomical_property(P)
@@ -404,7 +397,6 @@ mng_triple_doc(triple(S,P,V), Doc, Context) :-
 	mng_strip_variable(P, P1),
 	mng_strip_variable(V, V1),
 	% get the query pattern
-	% FIXME: mng_query_value may silently fail on invalid input and this rule still succeeds
 	findall(X,
 		(	( mng_query_value(S1,Query_s), X=['s',Query_s] )
 		;	( mng_query_value(P1,Query_p), X=[Key_p,Query_p] )
@@ -431,8 +423,6 @@ triple_arg_var(Arg, ArgVar) :-
 %%
 triple_arg_value(_Arg, ArgValue, FieldValue, _Ctx, ['$in',
 		array([ string(ArgValue), string(FieldValue) ])]) :-
-	% FIXME: operators are ignored!!
-	% TODO: can be combined with other operators??
 	atom_concat(_,'*',FieldValue),!.
 	
 triple_arg_value(Arg, ArgValue, FieldValue, _Ctx, [ArgOperator,
@@ -442,8 +432,8 @@ triple_arg_value(Arg, ArgValue, FieldValue, _Ctx, [ArgOperator,
 	mng_operator(Operator1, ArgOperator).
 
 %%
-graph_doc('*', _)    :- !, fail.
-graph_doc('user', _) :- !, fail.
+graph_doc('any', _) :- !, fail.
+graph_doc('*', _)   :- !, fail.
 graph_doc(=(GraphName), ['graph',string(GraphName)]) :- !.
 graph_doc(  GraphName,  ['graph',['$in',array(Graphs)]]) :-
 	ground(GraphName),!,
@@ -451,25 +441,17 @@ graph_doc(  GraphName,  ['graph',['$in',array(Graphs)]]) :-
 		(X=GraphName ; sw_graph_includes(GraphName,X)),
 		Graphs).
 
-%% drop_graph(+Name) is det.
-%
-% Deletes all triples asserted into given named graph.
-%
-% @param Name the graph name.
-%
-drop_graph(Name) :-
-    current_reasoner_manager(ReasonerManager),
-    current_reasoner_module(Reasoner),
-	mng_drop_graph_cpp(ReasonerManager, Reasoner, Name).
-
 %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%% helper
 %%%%%%%%%%%%%%%%%%%%%%%
 
 %%
-triple_graph(Ctx, Graph) :-
+triple_graph_for_assert(Ctx, Graph) :-
 	once((sw_default_graph(DefaultGraph) ; DefaultGraph=user)),
 	option(graph(Graph), Ctx, DefaultGraph).
+
+triple_graph_for_query(Ctx, Graph) :-
+	option(graph(Graph), Ctx, any).
 
 %%
 extend_context(triple(_,P,_), P1, Context, Context0) :-
@@ -527,7 +509,6 @@ strip_property_modifier1(include_parents(X), pstar,      X).
 % True if Name is not the subject of any known fact.
 %
 is_unique_name(Name) :-
-	% TODO: rather interact with vocabulary of MongoKG in cpp
 	mongolog_get_db(DB, Coll, 'triples'),
 	\+ mng_find(DB, Coll, [['s',string(Name)]], _).
 
@@ -540,9 +521,6 @@ get_unique_name(Prefix, Name) :-
 	randseq(8, 25, Seq_random),
 	maplist(plus(65), Seq_random, Alpha_random),
 	atom_codes(Sub, Alpha_random),
-	% TODO: what IRI prefix? Currently we re-use the one of the type.
-	%        but that seems not optimal. Probably best to
-	%        have this in query context, and some meaningful default.
 	atomic_list_concat([Prefix,'_',Sub], IRI),
 	% check if there is no triple with this identifier as subject or object yet
 	(	is_unique_name(IRI)

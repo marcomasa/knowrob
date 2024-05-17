@@ -23,8 +23,8 @@
 
 % load swrl owl file for tripledb testing
 test('load local owl file') :-
-	assert_true(mongolog_call(load_rdf_xml('owl/test/swrl.owl', test))),
-	assert_true(mongolog_call(load_rdf_xml('owl/test/datatype_test.owl',test))).
+	assert_true(load_rdf_xml('owl/test/swrl.owl', test)),
+	assert_true(load_rdf_xml('owl/test/datatype_test.owl',test)).
 
 % check via tripledb_ask if individual triple exists
 test('query triple') :-
@@ -142,7 +142,7 @@ test('non alphabetic character'):-
 		'umlaut'
 	))).
 
-test('non utf8 character', fixme('bson_pl has issues reading non-utf8')):-
+test('non utf8 character'):-
 	mongolog_assert(triple(
 		test_datatype:'Lecturer3',
 		test_datatype:'last_name',

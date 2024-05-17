@@ -1,0 +1,41 @@
+{
+  "logging": {
+    "console-sink": { "level": "debug" },
+    "file-sink": { "level": "debug" }
+  },
+  "semantic-web": {
+    "prefixes": [
+      { "alias": "swrl_test", "uri":  "http://knowrob.org/kb/swrl_test" }
+    ]
+  },
+  "data-sources": [
+    {
+      "path": "owl/external/DUL.owl",
+      "language": "owl",
+      "format": "xml"
+    }
+  ],
+  "data-backends": [
+    {
+      "type": "MongoDB",
+      "name": "mongo",
+      "host": "localhost",
+      "port": 27017,
+      "db": "factxx",
+      "read-only": false
+    },
+    {
+      "name": "factxx",
+      "type": "FactxxBackend",
+      "module": "reasoner/owl/FactxxReasoner.py"
+    }
+  ],
+  "reasoner": [
+    {
+      "name": "factxx",
+      "type": "FactxxReasoner",
+      "module": "reasoner/owl/FactxxReasoner.py",
+      "data-backend": "factxx"
+    }
+  ]
+}

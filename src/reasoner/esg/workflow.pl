@@ -47,8 +47,8 @@ workflow_sequence(Steps, StepSequence) :-
 
 :- sw_register_prefix(test, 'http://knowrob.org/kb/pancake.owl#').
 
-test('WF_MakingPancakes_0 steps', [fixme('the OWL reasoner yields some redundant results')]) :-
-	findall(S, workflow_step(test:'WF_MakingPancakes_0',S), Steps),
+test('WF_MakingPancakes_0 steps') :-
+	findall(S, rdf_has(test:'WF_MakingPancakes_0',soma:hasStep,S), Steps),
 	assert_true(member(test:'Mixing_0',Steps)),
 	assert_true(member(test:'Baking_0',Steps)),
 	assert_unifies(Steps,[_,_]).

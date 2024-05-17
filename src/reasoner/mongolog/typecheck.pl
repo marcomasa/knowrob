@@ -21,13 +21,13 @@ The following predicates are supported:
 :- use_module('mongolog').
 
 %% register query commands
-:- mongolog:add_command(ground).
-:- mongolog:add_command(var).
-:- mongolog:add_command(nonvar).
-:- mongolog:add_command(number).
-:- mongolog:add_command(atom).
-:- mongolog:add_command(is_list).
-:- mongolog:add_command(compound).
+:- mongolog:add_command(ground,1).
+:- mongolog:add_command(var,1).
+:- mongolog:add_command(nonvar,1).
+:- mongolog:add_command(number,1).
+:- mongolog:add_command(atom,1).
+:- mongolog:add_command(is_list,1).
+:- mongolog:add_command(compound,1).
 
 %% ground(@Term)
 % True if Term holds no free variables. 
