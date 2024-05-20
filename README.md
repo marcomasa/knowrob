@@ -3,8 +3,26 @@ KnowRob
 
 ![CI](https://github.com/knowrob/knowrob/workflows/CI/badge.svg)
 
-The purpose of KnowRob is to equip robots with explicit knowledge about the world.
-Originally, it was implemented using the Prolog programming language.
+
+[KnowRob](http://www.knowrob.org) is a knowledge processing system designed for robots.
+Its purpose is to equip robots with the capability to organize information in re-usable
+knowledge chunks, and to perform reasoning in an expressive logic.
+It further provides a set of tools for visualization and acquisition of knowledge,
+aswell as a ROS interface for easy integration into custom projects.
+
+## Outline
+
+1. [Functionality]()
+2. [Dependencies]()
+3. [Install Instructions]()
+4. [Building Knowrob]()
+5. [Starting Knowrob]()
+6. [Using Knowrob]()
+
+
+## Functionality
+
+Originally, KnowRob was implemented using the Prolog programming language.
 In its second iteration, KnowRob is implemented in C++, but still supports Prolog
 for rule-based reasoning.
 
@@ -18,11 +36,19 @@ There are a few applications shipped with this repository including a terminal a
 that allows to interact with KnowRob using a command line interface, and a ROS node
 that exposes KnowRob's querying interface to the ROS ecosystem.
 
-## Getting Started
+For further information and details about how Knowrob functions, you can refer to the following pages:
 
-These instructions will get you a copy of KnowRob up and running on your local machine.
+- [Terms](src/terms/README.md)
+- [Formulas](src/formulas/README.md)
+- [Triples](src/triples/README.md)
+- [Ontologies](src/ontologies/README.md)
+- [Querying](src/queries/README.md)
+- [Backends](src/storage/README.md)
+- [Reasoner](src/reasoner/README.md)
 
-### Dependencies
+## Dependencies
+
+### Required
 
 The following list of software is required to build KnowRob:
 
@@ -38,13 +64,20 @@ The following list of software is required to build KnowRob:
   - serialization
 - [GTest](https://github.com/google/googletest)
 
-#### Optional Dependencies
+### Optional
 
 Some features will only be conditionally compiled if the following dependencies are found:
 
 - [ROS1](https://www.ros.org/) >= Melodic, ROS2 is not supported yet
 
-### Installation
+### Install instructions
+
+For more help during the installation of all dependencies, please refer to [these instructions](src/docs/install_instrutions.md).
+
+
+## Building Knowrob
+
+### Standalone Package
 
 KnowRob uses *CMake* as build system. The following steps will guide you through the installation process.
 Assuming you have cloned the repository to `~/knowrob`:
@@ -58,22 +91,134 @@ make
 sudo make install
 ```
 
-You may further need to set the *SWI_HOME_DIR* environment variable to the installation location of *swipl*:
+### ROS Package
+
+To build knowrob, you will need to add this repository to your catkin workspace.
+Then proceed by executing
+
+```bash
+catkin build knowrob
+```
+
+If you encounter errors regarding SWI Prolog or MongoDB versions,
+redo the install process and try again.
+Remember to 
+
+```bash
+catkin clean knowrob
+```
+
+If the package still does not build, try modifying the CMakeList.txt slightly, save and build again.
+Your build process might still be compromised by old errors and this restarts the build from scratch.
+
+
+## Starting Knowrob
+
+Being a shared library, KnowRob cannot be launched directly but only in the context
+of a program that uses it. We currently provide a standalone terminal application and a ROS1 node.
+
+
+### Terminal Application
+
+The terminal application allows the user to interact with KnowRob using a command line interface.
+
+
+#### Launch command
+
+To start the TA, use this command:
 
 ```
-export SWI_HOME_DIR=/usr/lib/swi-prolog
+knowrob-terminal --config-file ~/knowrob/settings/default.json
 ```
 
-Alternatively, you may clone the KnowRob repository into a ROS workspace and build it using *catkin*.
-Please refer to the [ROS](src/ros/README.md) documentation for further information.
+The configuration file is a required argument, there is no fallback configuration file.
+If you installed Knowrob anywhere else than under ~/knowrob,
+please adjust your filepath in the command above.
 
-### Development
+#### Expected output
 
-Any IDE with proper CMake and C++ language support should be able to load the project.
-For example, you can use *CLion* or *Visual Studio Code*.
-But support for Prolog code is usually quite limited or not existent.
+Once the terminal is up and running, you should see a greeting message and a prompt
+which looks like this:
 
-### Configuration
+```
+Welcome to KnowRob.
+For online help and background, visit http://knowrob.org/
+
+?- 
+```
+
+### ROS Node
+
+#### Launch command
+To launch the basic example, type
+
+```bash
+ roslaunch knowrob knowrob.launch
+ ```
+
+#### Expected Output
+
+You should see something like
+
+```bash
+# ROS Startup
+...
+
+setting /run_id to 1fa113aa-887c-11ee-8552-00155d76860c
+process[rosout-1]: started with pid [19352]
+started core service [/rosout]
+process[knowrob_ros-2]: started with pid [19355]
+[15:41:59.227] [info] Using knowledge graph `mongodb` with type `MongoDB`.
+[15:41:59.620] [info] dropping graph with name "user".
+[15:41:59.621] [info] Using reasoner `mongolog` with type `Mongolog`.
+[15:41:59.663] [info] common foreign Prolog modules have been registered.
+## The following will only appear on the first startup or when u delete the mongodb base
+[15:42:00.285] [info] Loading ontology at '/home/your_user/catkin_ws/src/knowrob/owl/rdf-schema.xml' with version "Mon Nov 20 11:56:29 2023" into graph "rdf-schema".
+[15:42:00.304] [info] Loading ontology at '/home/your_user/catkin_ws/src/knowrob/owl/owl.rdf' with version "Mon Nov 20 11:56:54 2023" into graph "owl".
+[15:42:00.329] [info] Loading ontology at '/home/your_user/catkin_ws/src/knowrob/owl/test/swrl.owl' with version "Mon Nov 20 11:56:54 2023" into graph "swrl".
+ ```
+
+### Troubleshooting
+
+If your output looks more like this,
+the mongoDB server is not running.
+
+```bash
+[15:44:50.789] [info] Using knowledge graph `mongodb` with type `MongoDB`.
+[15:45:20.791] [error] failed to load a knowledgeGraph: mng_error(create_index_failed,No suitable servers found: `serverSelectionTimeoutMS` expired: [connection refused calling ismaster on 'localhost:27017'])
+[15:45:20.791] [info] Using reasoner `mongolog` with type `Mongolog`.
+[15:45:20.791] [error] failed to load a reasoner: Reasoner `mongolog` refers to unknown data-backend `mongodb`.
+ ```
+
+
+On native linux systems, you can enable the service using systemd:
+
+```bash
+# Try to run the mongodb service
+sudo systemctl start mongod.service
+# Check if the service is running properly
+sudo systemctl status mongod.service
+```
+
+On a WSL2 machine you will need to manually launch a mongoDB server as .systemd does not exist in WSL2.
+To launch a seperate mongoDB process,  execute the following commands in a new terminal 
+(taken from [here](https://github.com/michaeltreat/Windows-Subsystem-For-Linux-Setup-Guide/blob/master/readmes/installs/MongoDB.md)):
+
+ ```bash
+# (once initially) create a directory for the mongoDB data
+sudo mkdir -p ~/data/db
+
+# launch mongoDB server with the created path as argument
+sudo mongod --dbpath ~/data/db
+ ```
+
+If you now re-launch [this example](#launch-command),
+you should see the [expected output](https://github.com/marcomasa/knowrob#expected-output).
+
+
+## Using Knowrob
+
+### Configuring your knowledge base
 
 KnowRob uses a configuration file to set up the knowledge base.
 Internally, boost's property tree is used to parse the configuration file.
@@ -113,111 +258,33 @@ An example configuration file is provided in `settings/default.json`:
 For more information about storage backends, please refer to the [Backends](src/storage/README.md) documentation,
 and for more information about reasoners, please refer to the [Reasoner](src/reasoner/README.md) documentation.
 
-### Launching
 
-Being a shared library, KnowRob cannot be launched directly but only in the context
-of a program that uses it.
-
-One such program is the terminal application that allows to interact with KnowRob
-using a command line interface.
-It can be launched as follows:
-
-```
-knowrob-terminal --config-file ~/knowrob/settings/default.json
-```
-
-The configuration file is a required argument, there is no fallback configuration file.
-
-Once the terminal is up and running, you should see a greeting message and a prompt
-which looks like this:
-
-```
-Welcome to KnowRob.
-For online help and background, visit http://knowrob.org/
-
-?- 
-```
+### Using the terminal application
 
 Please refer to the [CLI](src/queries/README.md) for documentation about the syntax of queries
 that can be typed into the terminal. Limited auto-completion is available. `exit/0` will
 terminate the terminal.
 
-Alternatively, you can expose the KnowRob querying interface as a ROS service.
-Please refer to the [ROS](src/ros/README.md) documentation for further information.
+### Using the ROS interface
 
-## Getting Familiar
+#### Provided Action interfaces
 
-Here we provide an overview about functionality of KnowRob.
+Once knowrob is launched, it provides four actions to ask queries:
+- askone
+- askincremental
+- askall
+- tell
 
-### Querying
+#### Client Interface libraries
 
-The core of KnowRob is a querying interface that is built around a custom querying language.
-Its syntax is similar to Prolog, but it is more simplified and not Turing-complete like Prolog is.
+For easier integration into your own project, we provide [client libraries](src/ros_client/README.md)
+that you can use in your own C++ or Python application.
 
-For more information on querying in KnowRob, please have a look
-[here](src/queries/README.md).
-
-### Ontologies
-
-KnowRob structures knowledge using ontologies. Ontologies are formal models of a domain that are
-used to describe the concepts in the domain and the relationships between them.
-In KnowRob, ontologies are generally represented as RDF graphs using the RDFS and OWL vocabularies.
-
-Ontologies are organized in a hierarchy where each ontology is a specialization of another ontology.
-A common distinction is made between foundational (or top-level) ontologies, domain ontologies, 
-and application ontologies.
-A foundational ontology fixes the basic concepts and relationships that are used
-across different domains.
-In KnowRob, we define a domain ontology for the robotics domain, and align it with a
-common foundational ontology.
-Applications can then import the domain ontology and extend it with application-specific concepts
-to cover the specific requirements of the application.
-
-For more information on ontologies in KnowRob, please have a look
-[here](src/ontologies/README.md).
-
-### Triple Store and Data Access
-
-Knowledge is represented in form of contextualized triples --
-each subject-predicate-object triple has additional fields
-that contextualize the triple.
-A configurable storage backend is used to store and retrieve triples --
-currently, triple stores based on Prolog, MongoDB and Redland are supported.
-
-One important aspect in knowledge representation for robots is that
-a lot of knowledge is *implicitly* encoded in the control structures
-of the robot. Hence, one goal is to make this implicit knowledge *explicit*.
-This is done by mapping data to symbols in an ontology.
-In case of querying, this is often referred to as *Ontology-based Data Access* (OBDA).
-
-For more information on storages in KnowRob, please have a look
-[here](src/storage/README.md).
-
-### Reasoning
-
-KnowRob uses an ensemble of reasoners approach where inferences
-of different reasoners are combined into correlated knowledge pieces.
-The reason for choosing this approach is that there is no single
-formalism that is suited for every reasoning tasks.
-Instead, given a problem, one should decide what the most suitable
-formalism is to tackle it.
-Consequently, KnowRob can be configured to solve specific problems
-by loading corresponding reasoning modules that implement a common interface.
-
-For more information on reasoning in KnowRob, please have a look
-[here](src/reasoner/README.md).
 
 ## Further Information
 
 More documentation can be found in the following pages:
 
-- [Terms](src/terms/README.md)
-- [Formulas](src/formulas/README.md)
-- [Triples](src/triples/README.md)
-- [Ontologies](src/ontologies/README.md)
-- [Querying](src/queries/README.md)
-- [Backends](src/storage/README.md)
-- [Reasoner](src/reasoner/README.md)
 - [Python Integration](src/integration/python/README.md)
 - [ROS Integration](src/integration/ros1/README.md)
 

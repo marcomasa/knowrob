@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-set(CMAKE_CXX_FLAGS "-Wswitch -std=c++0x -pthread ${CMAKE_CXX_FLAGS} -Wno-undef")
+set(CMAKE_CXX_FLAGS "-Wswitch -std=c++0x -O2 -pthread ${CMAKE_CXX_FLAGS} -Wno-undef")
 set(CMAKE_CXX_STANDARD 17)
 if (POLICY CMP0148)
     cmake_policy(SET CMP0148 OLD)
@@ -79,6 +79,10 @@ add_definitions(-DKNOWROB_BUILD_DIR=\"${CMAKE_BINARY_DIR}\")
 add_definitions(-DBOOST_ALLOW_DEPRECATED_HEADERS)
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 14a40fd6d2cd5793989b47408cad4c014528f454
 # NOTE: seems catkin_package must be called *before* any library is build.
 if (WITH_ROS1_INTERFACE)
     find_package(catkin REQUIRED COMPONENTS
@@ -92,32 +96,34 @@ if (WITH_ROS1_INTERFACE)
 
 endif()
 if (WITH_ROS1_INTERFACE AND catkin_FOUND)
-    message(STATUS "Building with ROS1 support.")
+        message(STATUS "Building with ROS1 support.")
 
-    add_message_files(
-            DIRECTORY ros1/msg
-            FILES
-            KeyValuePair.msg
-            GraphQueryMessage.msg
-            GraphAnswerMessage.msg
-            EventToken.msg
-    )
+        add_message_files(
+                DIRECTORY ros1/msg
+                FILES
+                KeyValuePair.msg
+                GraphQueryMessage.msg
+                GraphAnswerMessage.msg
+                EventToken.msg
+        )
 
-    add_action_files(
-            DIRECTORY ros1/action
-            FILES
-            AskAll.action
-            AskOne.action
-            AskIncremental.action
-            AskIncrementalNextSolution.action
-            Tell.action
-    )
+        add_action_files(
+                DIRECTORY ros1/action
+                FILES
+                AskAll.action
+                AskOne.action
+                AskIncremental.action
+                AskIncrementalNextSolution.action
+                Tell.action
+        )
 
-    generate_messages(DEPENDENCIES
-            std_msgs
-            actionlib_msgs)
+        generate_messages(DEPENDENCIES
+                        std_msgs
+                        actionlib_msgs)
 
     catkin_package(
+        INCLUDE_DIRS include
+	LIBRARIES knowrob-ros-cli
         CATKIN_DEPENDS roscpp roslib
         CFG_EXTRAS ontologies.cmake
     )
@@ -418,8 +424,47 @@ if (WITH_ROS1_INTERFACE AND catkin_FOUND AND CATKIN_DEVEL_PREFIX)
     install(TARGETS knowrob-ros RUNTIME DESTINATION bin)
 
 
+
+        
+
+	## ROS Client Interface
+	add_library( 
+		knowrob-ros-cli
+
+		include/knowrob/ros_client/cpp/knowrob_client.hpp
+		src/ros_client/knowrob_client.cpp	
+	)
+
+	add_dependencies(
+		knowrob-ros-cli
+		${catkin_EXPORTED_TARGETS}
+	)
+
+	target_link_libraries(
+		knowrob-ros-cli
+		${catkin_LIBRARIES}
+	)
+
+	install(
+  		TARGETS knowrob-ros-cli
+  		LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	)
+
+	## Test node for the client library
+	add_executable(
+		client-node
+		client-node
+		${catkin_EXPORTED_TARGETS}
+	)
+
+	target_link_libraries(
+		client-node
+		knowrob-ros-cli
+		${catkin_LIBRARIES}
+	)
+
 else ()
-    message(STATUS "Building without ROS1 support.")
+        message(STATUS "Building without ROS1 support.")
 endif ()
 
 ##############
